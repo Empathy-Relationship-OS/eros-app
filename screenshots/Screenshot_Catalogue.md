@@ -1,0 +1,137 @@
+# Screenshot Catalogue 
+The purpose of this folder is for planning. The screenshots show a plan/skeleton of the app. 
+The colour scheme should be that of the @screenshots/logo/eros_discord_icon.jpg mimicking the colour tones of the app screenshots, but replacing the purpley/red
+with the warm orange and white tones.
+
+
+Screenshot catalogue:
+- Logo/Colour Scheme:
+  - @screenshots/logo/eros_discord_icon.jpg
+    - Shows the apps icon. It also shows the Orange and white colour tones the app should use
+- Dates:
+  - @screenshots/dates/3BBCEC5E-DE55-41A8-9BDD-730526430ABD.png 
+    - Shows the dates tab when there is currently no dates for a user.
+    - The screenshot here shows the defined path/route of planned dates and their states.
+  - @screenshots/dates/IMG_2260.PNG
+    - Shows when a user has a date planned. Profile of user appears, with thumnbail pic + details about date
+- Login:
+  - @screenshots/login/create-user/8BA764E5-5619-47B6-BB51-C270658D3C33_1_105_c.jpeg
+    - Opening page of app
+    - Need breeze replaced with eros
+    - The screen can simply be the logo @screenshots/logo/eros_discord_icon.jpg for now + text like shown beneath it
+    - Start dating button pushes screen @screenshots/login/create-user/C66338AB-087A-4FD1-8A50-1B183B02E8A5_1_105_c.jpeg
+    - Globe EN Button opens up language popup menu shown in @screenshots/login/create-user/84623CD3-B81C-46DF-84FD-5F2C81BC72D9_1_105_c.jpeg
+  - @screenshots/login/create-user/84623CD3-B81C-46DF-84FD-5F2C81BC72D9_1_105_c.jpeg
+    - Pop up when languages icon is pressed in top corner
+    - List of all available app languages pop up
+    - Selecting different languages will alter local language settings.
+    - This value should be cached for a user locally
+  - @screenshots/login/create-user/C66338AB-087A-4FD1-8A50-1B183B02E8A5_1_105_c.jpeg
+    - Beginning page for both user login + create
+    - Will query backend call to send OTP for phone number
+  - @screenshots/login/create-user/47AC0BF3-AA2B-4449-8317-7A12EF24CA9E_1_105_c.jpeg
+    - Number verification screen, follows @screenshots/login/create-user/C66338AB-087A-4FD1-8A50-1B183B02E8A5_1_105_c.jpeg
+    - Shows users number prev inputted
+    - Shows input for OTP
+    - Shows resend code in X amount of seconds that will allow a resend
+    - Invalid input of code = pop up error
+    - Success (user exists for number) = fetch profile login
+    - Success (No content, no user existing) = push create segment pages
+  - @screenshots/login/create-user/0818BA8E-C49E-4657-A7F0-87429222351A.png
+    - First page in create user stack
+    - Prompts for users name via input text box
+    - Progress bar at top of page indicates what page we are on in the process
+    - Input text box cleans + validates input checking for SQL injection etc
+    - Once valid name inputted, next button becomes available
+  - @screenshots/login/create-user/7E4077C0-9A59-4E60-B938-15CC0824CE29.png
+    - Location screen
+    - Uses location of user if permissions granted OR input location manually via input text box. This can be seen in @screenshots/login/create-user/11483E57-4A96-4518-A342-95B435339F00.png
+    - Use nearest known/big city (Might be API integration we can already add for this map and closest feature)
+    - Future improvements show how many partners are near by. For now lets just put a placeholder value like 100+ venues
+  - @screenshots/login/create-user/11483E57-4A96-4518-A342-95B435339F00.png
+    - Same screen as previous
+    - Shows manual text input for location
+    - When city entered returns a list of potential locations.
+    - For the given location selected we will store the cities name and the lat Lon to send to back end
+    - Once user has selected from list we can proceed.
+  - @screenshots/login/create-user/EABDAE3A-4630-44B2-85B2-E97A280C19E2.png
+    - Dating City Selectors
+    - Presents a list of cities within the X amount of radius from users selected lat Lon. This is done via call to backend API with lat lon returning list of cities that are available to select from.
+    - Atleast one needs to be selected to proceed
+    - User can select multiple and then move on as well
+  - @screenshots/login/create-user/AAEC2A7B-6A73-467F-8689-04758736101A.png
+    - Gender Identity selection
+    - Return backend enum values or should they already be in FE? I believe we would need them in the FE anyway just need to ensure sink with BE
+    - Enum presents 3 options: Female, Male, Other
+  - @screenshots/login/create-user/29A37231-9F7E-4CF8-88F5-F6C4A92CCF01.png
+    - Same as above screen, but shown when none of the options is selected so we can’t proceed
+  - @screenshots/login/create-user/2759F84B-3B33-460F-A0F6-AED9FFEC0AA2.png
+    - Screen presented when gender selected and button pressed to define further, as seen in @screenshots/login/create-user/AAEC2A7B-6A73-467F-8689-04758736101A.png
+    - Select from pre defined or submit own description
+    - Bottom checkbox to show if gender identity should be shown.
+  - @screenshots/login/create-user/F5BCC916-69EC-4805-BC11-BD812A5BFA51.png
+    - 3 options: Men, Women, Other. These need to align with BE values
+    - Allows multiple to be ticked
+  - @screenshots/login/create-user/836BFF48-D008-40B9-A568-2E32E2580C72.png
+    - Day, Month, Year input
+    - Only 18+ allowed to be inputted
+    - Format of DD MM YYYY will be used
+    - Value is a permanently displayed field and cannot be hidden
+    - Requires valid input to proceed
+    - Max age of 120 allowed
+  - @screenshots/login/create-user/3501077E-60FD-4AB1-BDE8-BBC133EA7E48.png
+    - Shown here is a list of Enum accepted language values that we support
+    - Language will be displayed on profile
+    - Option to add sign language at the bottom, when pressed displays @screenshots/login/create-user/1C1E3F44-589F-41FD-8AF7-73C3D1E71AFA.png
+  - @screenshots/login/create-user/1C1E3F44-589F-41FD-8AF7-73C3D1E71AFA.png
+    - Show all available sign language values.
+    - None or 1 is allowed to be selected
+    - Save button allows user to go back with state stored
+  - @screenshots/login/create-user/F6C549FC-FECF-4410-9B00-DDF6001329B2.png
+    - Text input field where toggle between FT and CM allowed
+    - Only valid heights allowed. Min 3 FT MAX 9 FT
+    - If invalid input give pop up sauying invalid and prompt again until valid height inputted
+    - This will always be displayed on profile
+  - @screenshots/login/create-user/2B95D7A1-BF71-403E-8BFD-7B6733E633D7.png
+    - Shows format when height has been inputted
+    - Proceed button is press bale now that valid height inputted
+  - @screenshots/login/create-user/B9F9ABB6-7BE3-40B3-9160-CA7D48A096BD.png
+    - List of all the potential ways they may have found us
+    - We can send this data off to backend for metrics to do with Location + Advertising to see how affective etc most of our marketing works as.
+  - @screenshots/login/create-user/AD507A8B-D921-47A0-94D5-93959BFCCAD5.png
+    - Shows the text input field for other.
+    - Ensure text input is validated as real text not injectable and no more than 250 chars min 1 word or (2 chars)
+  - @screenshots/login/create-user/4AB7216B-DFC9-4716-9999-72A12357B8BB.png
+    - Email text input field
+    - Valid email must be inputted
+    - Can verify the email.
+    - May be used instead of phone number
+    - Checkbox for legally allowing us for consenting to receive emails from us
+    - Can only proceed when past validation.
+  - @screenshots/login/create-user/2B2A66BB-FECA-4ECA-B133-53CC77A34D91.png
+    - Finalising page
+    - Contains the legal Terms & Conditions
+    - The name of user should be displayed. Here in the screenshot Test is the placeholder for user's name
+    - See our guidelines should open up a page containing random text data for now
+- Match:
+  - @screenshots/match/87A5473E-37BE-403B-BBE2-76B03CD76AE6_1_105_c.jpeg
+    - Shows the match tab when a batches are present.
+    - Potential matchs name, thumbnail, badges, matching traits
+    - 2 Actions buttons that will call: /match/action/{matchId} API to backend
+    - After action taken card will be removed.
+  - @screenshots/match/1C92B78C-52C5-44B3-B72C-6B33A934F181_1_105_c.jpeg
+    - Shows the card when all profiles and daily batches have been served. Tells users to come back at 19:00
+  - Last 24 hours:
+    - @screenshots/match/last-24-hours/C88E1B6A-1B94-45D2-A84B-1EEF6DC223F7.png
+      - Shows the 24 hour button on match's tab.
+      - When pressed shows the last matches of 24 hours that have an action that can be taken.
+      - When pressed calls: /match/last-24 API to backend to fetch the last 24 hour missed matches
+    - @screenshots/match/last-24-hours/6F29C101-D725-492C-9F69-0A9232E93E8D.png
+      - Shows the 24 hours tab when empty list or no actions are left to be taken
+    - @screenshots/match/last-24-hours/C9E9D03A-D14D-40B8-8886-8B4CF1CB4147.png
+      - Shows the 24 hours tab when there is data present with a list of user profiles action can be taken upon
+    - @screenshots/match/last-24-hours/21DD77A9-0C8F-4521-85B1-4D43C349B54F.png
+      - Shows the UserProfile of a potential match that was a previous no. The only option available is a go for drink button
+      - The user can re-review the users profile and go for a drink via call: /match/action/{matchId} API to backend
+      - Or user will take no action so it will remain as an unsuccessful match
+      - When action taken, card removed from list of past 24 hours.

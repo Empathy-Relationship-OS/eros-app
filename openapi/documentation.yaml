@@ -1,0 +1,1388 @@
+openapi: 3.0.3
+info:
+  title: Eros Backend API
+  description: |
+    REST API for Project Eros - A dating application backend built with Ktor.
+
+    ## Authentication
+    All endpoints (except root `/`) require Firebase Authentication.
+    Include the Firebase ID token in the Authorization header:
+    ```
+    Authorization: Bearer <firebase-id-token>
+    ```
+
+    ## Rate Limiting
+    - Daily batch limit: 3 batches per day (21 total matches)
+    - Token bucket: 100 capacity, 10s refill rate
+
+  version: 0.0.1
+  contact:
+    name: Project Eros Team
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://api.eros.app
+    description: Production server
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: User Profiles
+    description: User profile management
+  - name: Photos
+    description: User photo management with S3
+  - name: Cities
+    description: City and location endpoints
+  - name: Preferences
+    description: User matching preferences
+  - name: Questions
+    description: Question management (admin)
+  - name: Q&A
+    description: User question and answer responses
+  - name: Matching
+    description: Daily batch matching and actions
+
+security:
+  - firebaseAuth: []
+
+components:
+  securitySchemes:
+    firebaseAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Firebase ID token
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+        status:
+          type: integer
+          description: HTTP status code
+      required:
+        - message
+        - status
+
+    UserProfile:
+      type: object
+      properties:
+        uid:
+          type: string
+          format: uuid
+          description: User's Firebase UID
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [MALE, FEMALE, NON_BINARY, OTHER]
+        cityId:
+          type: string
+          format: uuid
+        bio:
+          type: string
+          maxLength: 500
+        occupation:
+          type: string
+        education:
+          type: string
+        height:
+          type: integer
+          description: Height in centimeters
+        status:
+          type: string
+          enum: [ACTIVE, SLEEP_MODE, BANNED, DELETED]
+          description: Account status
+        role:
+          type: string
+          enum: [USER, ADMIN, EMPLOYEE]
+        elo:
+          type: integer
+          description: ELO rating for matching algorithm
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateUserRequest:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - dateOfBirth
+        - gender
+        - cityId
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+        lastName:
+          type: string
+          minLength: 1
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [MALE, FEMALE, NON_BINARY, OTHER]
+        cityId:
+          type: string
+          format: uuid
+        bio:
+          type: string
+          maxLength: 500
+        occupation:
+          type: string
+        education:
+          type: string
+        height:
+          type: integer
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [MALE, FEMALE, NON_BINARY, OTHER]
+        cityId:
+          type: string
+          format: uuid
+        bio:
+          type: string
+          maxLength: 500
+        occupation:
+          type: string
+        education:
+          type: string
+        height:
+          type: integer
+
+    City:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        state:
+          type: string
+        country:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+
+    Photo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        isPrimary:
+          type: boolean
+        order:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    PresignedUrlRequest:
+      type: object
+      required:
+        - fileName
+        - contentType
+      properties:
+        fileName:
+          type: string
+        contentType:
+          type: string
+          example: image/jpeg
+
+    PresignedUrlResponse:
+      type: object
+      properties:
+        uploadUrl:
+          type: string
+          format: uri
+        photoKey:
+          type: string
+        expiresIn:
+          type: integer
+
+    ConfirmPhotoRequest:
+      type: object
+      required:
+        - photoKey
+      properties:
+        photoKey:
+          type: string
+
+    UserPreference:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        ageMin:
+          type: integer
+          minimum: 18
+          maximum: 100
+        ageMax:
+          type: integer
+          minimum: 18
+          maximum: 100
+        maxDistance:
+          type: integer
+          minimum: 1
+          maximum: 500
+          description: Maximum distance in kilometers
+        genderPreference:
+          type: array
+          maxItems: 4
+          items:
+            type: string
+            enum: [MALE, FEMALE, NON_BINARY, OTHER]
+
+    Question:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        questionText:
+          type: string
+        category:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    UserQA:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        questionId:
+          type: string
+          format: uuid
+        answerText:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Match:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        targetUserId:
+          type: string
+          format: uuid
+        action:
+          type: string
+          enum: [LIKE, PASS, PENDING]
+        isMutual:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    DailyBatchResponse:
+      type: object
+      properties:
+        matches:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserProfile'
+          maxItems: 7
+        batchNumber:
+          type: integer
+          description: Current batch number (1-3)
+        remainingBatches:
+          type: integer
+          description: Remaining batches for today
+
+    MatchActionRequest:
+      type: object
+      required:
+        - liked
+      properties:
+        liked:
+          type: boolean
+          description: Whether the user liked the match (true) or passed (false)
+
+    MutualMatchInfo:
+      type: object
+      properties:
+        matchId:
+          type: string
+          format: uuid
+        userProfile:
+          $ref: '#/components/schemas/UserProfile'
+        message:
+          type: string
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid Firebase token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Unauthorized: Missing or invalid Firebase token"
+            status: 401
+
+    Forbidden:
+      description: User doesn't have permission
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Forbidden: Insufficient permissions"
+            status: 403
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Resource not found"
+            status: 404
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until next batch available
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Daily batch limit exceeded"
+            status: 429
+
+paths:
+  /:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns "Hello World!" to verify server is running
+      security: []
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Hello World!
+
+  /users:
+    post:
+      tags:
+        - User Profiles
+      summary: Create new user profile
+      description: Creates a new user profile. No role required for initial signup.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User profile created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Invalid input
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: User already exists
+
+  /users/exists:
+    get:
+      tags:
+        - User Profiles
+      summary: Check if user profile exists
+      description: Checks if the authenticated user has created a profile
+      responses:
+        '200':
+          description: Profile existence status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exists:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me:
+    get:
+      tags:
+        - User Profiles
+      summary: Get current user profile
+      description: Returns the authenticated user's profile
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags:
+        - User Profiles
+      summary: Update current user profile
+      description: Updates the authenticated user's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Invalid input
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - User Profiles
+      summary: Delete user account
+      description: Soft deletes the user account (GDPR compliance)
+      responses:
+        '204':
+          description: Account deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/me/visibility:
+    patch:
+      tags:
+        - User Profiles
+      summary: Update profile visibility
+      description: Toggle profile status between ACTIVE and SLEEP_MODE
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [ACTIVE, SLEEP_MODE]
+      responses:
+        '200':
+          description: Visibility updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Invalid status
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/id/{id}/public:
+    get:
+      tags:
+        - User Profiles
+      summary: Get public profile by ID
+      description: Returns another user's public profile (requires access control)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID
+      responses:
+        '200':
+          description: Public user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/id/{id}/admin:
+    patch:
+      tags:
+        - User Profiles
+      summary: Admin update user
+      description: Admin endpoint to update user role, ELO, badges, status (ADMIN/EMPLOYEE only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum: [USER, ADMIN, EMPLOYEE]
+                elo:
+                  type: integer
+                status:
+                  type: string
+                  enum: [ACTIVE, SLEEP_MODE, BANNED, DELETED]
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/me/photos/presigned-url:
+    post:
+      tags:
+        - Photos
+      summary: Get presigned S3 upload URL
+      description: Step 1 of photo upload - Get presigned URL to upload directly to S3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresignedUrlRequest'
+      responses:
+        '200':
+          description: Presigned URL generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresignedUrlResponse'
+        '400':
+          description: Invalid request
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/photos:
+    post:
+      tags:
+        - Photos
+      summary: Confirm photo upload
+      description: Step 2 of photo upload - Confirm S3 upload and save metadata to database
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmPhotoRequest'
+      responses:
+        '201':
+          description: Photo saved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Photo'
+        '400':
+          description: Invalid photo key or S3 verification failed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    get:
+      tags:
+        - Photos
+      summary: List user photos
+      description: Get all photos for the authenticated user
+      responses:
+        '200':
+          description: List of user photos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Photo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/photos/{photoId}:
+    delete:
+      tags:
+        - Photos
+      summary: Delete photo
+      description: Delete photo from S3 and database
+      parameters:
+        - name: photoId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Photo deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /city/all:
+    get:
+      tags:
+        - Cities
+      summary: List all cities
+      description: Get all available cities
+      responses:
+        '200':
+          description: List of cities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/City'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /city/{id}:
+    get:
+      tags:
+        - Cities
+      summary: Get city by ID
+      description: Get details of a specific city
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: City details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/City'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /city/nearest:
+    get:
+      tags:
+        - Cities
+      summary: Get nearest cities
+      description: Find nearest cities based on coordinates
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+          description: Latitude
+        - name: lon
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+          description: Longitude
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 1
+          description: Number of cities to return
+      responses:
+        '200':
+          description: Nearest cities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/City'
+        '400':
+          description: Invalid coordinates or limit
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /city/admin:
+    post:
+      tags:
+        - Cities
+      summary: Create city (Admin)
+      description: Create a new city (ADMIN/EMPLOYEE only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - state
+                - country
+                - latitude
+                - longitude
+              properties:
+                name:
+                  type: string
+                state:
+                  type: string
+                country:
+                  type: string
+                latitude:
+                  type: number
+                  format: double
+                longitude:
+                  type: number
+                  format: double
+      responses:
+        '201':
+          description: City created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/City'
+        '400':
+          description: Invalid input
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /city/admin/{id}:
+    patch:
+      tags:
+        - Cities
+      summary: Update city (Admin)
+      description: Update an existing city (ADMIN/EMPLOYEE only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                state:
+                  type: string
+                country:
+                  type: string
+                latitude:
+                  type: number
+                  format: double
+                longitude:
+                  type: number
+                  format: double
+      responses:
+        '200':
+          description: City updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/City'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Cities
+      summary: Delete city (Admin)
+      description: Delete a city (ADMIN/EMPLOYEE only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: City deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /preference:
+    post:
+      tags:
+        - Preferences
+      summary: Create user preferences
+      description: Create matching preferences for the user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreference'
+      responses:
+        '201':
+          description: Preferences created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+        '400':
+          description: Invalid input
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /preference/me:
+    get:
+      tags:
+        - Preferences
+      summary: Get current user preferences
+      description: Get matching preferences for authenticated user
+      responses:
+        '200':
+          description: User preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags:
+        - Preferences
+      summary: Update user preferences
+      description: Update matching preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreference'
+      responses:
+        '200':
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Preferences
+      summary: Delete user preferences
+      description: Delete user preferences
+      responses:
+        '204':
+          description: Preferences deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /preference/id/{id}:
+    get:
+      tags:
+        - Preferences
+      summary: Get another user's preferences
+      description: Get preferences for another user (access controlled)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /questions:
+    get:
+      tags:
+        - Questions
+      summary: Get all questions
+      description: Get all available questions for Q&A
+      responses:
+        '200':
+          description: List of questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Question'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /questions/admin:
+    post:
+      tags:
+        - Questions
+      summary: Create question (Admin)
+      description: Create a new question (ADMIN/EMPLOYEE only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - questionText
+                - category
+              properties:
+                questionText:
+                  type: string
+                category:
+                  type: string
+                isActive:
+                  type: boolean
+                  default: true
+      responses:
+        '201':
+          description: Question created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    patch:
+      tags:
+        - Questions
+      summary: Update question (Admin)
+      description: Update a question (ADMIN/EMPLOYEE only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                questionText:
+                  type: string
+                category:
+                  type: string
+                isActive:
+                  type: boolean
+      responses:
+        '200':
+          description: Question updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /questions/admin/{id}:
+    delete:
+      tags:
+        - Questions
+      summary: Delete question (Admin)
+      description: Delete a question (ADMIN/EMPLOYEE only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Question deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /users/qa:
+    post:
+      tags:
+        - Q&A
+      summary: Add single Q&A
+      description: Add a single question answer to user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - questionId
+                - answerText
+              properties:
+                questionId:
+                  type: string
+                  format: uuid
+                answerText:
+                  type: string
+      responses:
+        '201':
+          description: Q&A added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserQA'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/qa/me:
+    get:
+      tags:
+        - Q&A
+      summary: Get all user Q&As
+      description: Get all Q&As for authenticated user
+      responses:
+        '200':
+          description: List of user Q&As
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserQA'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    patch:
+      tags:
+        - Q&A
+      summary: Update single Q&A
+      description: Update a single Q&A answer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - qaId
+                - answerText
+              properties:
+                qaId:
+                  type: string
+                  format: uuid
+                answerText:
+                  type: string
+      responses:
+        '200':
+          description: Q&A updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserQA'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/qa/me/collection:
+    post:
+      tags:
+        - Q&A
+      summary: Create/update Q&A collection
+      description: Create or update entire Q&A collection for user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required:
+                  - questionId
+                  - answerText
+                properties:
+                  questionId:
+                    type: string
+                    format: uuid
+                  answerText:
+                    type: string
+      responses:
+        '200':
+          description: Q&A collection updated
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserQA'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/qa/{id}:
+    get:
+      tags:
+        - Q&A
+      summary: Get another user's Q&As
+      description: Get Q&As for another user (access controlled)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User Q&As
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserQA'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    delete:
+      tags:
+        - Q&A
+      summary: Delete all user Q&As
+      description: Delete all Q&As for a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: All Q&As deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/qa/{id}/{qaId}:
+    delete:
+      tags:
+        - Q&A
+      summary: Delete single Q&A
+      description: Delete a specific Q&A
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: qaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Q&A deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /match/:
+    get:
+      tags:
+        - Matching
+      summary: Fetch daily batch
+      description: Get daily batch of up to 7 matches. Limited to 3 batches per day (21 total matches).
+      responses:
+        '200':
+          description: Daily batch returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyBatchResponse'
+        '204':
+          description: No matches available
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /match/last-24:
+    get:
+      tags:
+        - Matching
+      summary: Get last 24 hours passes
+      description: Get profiles that were passed in the last 24 hours (for reconsideration)
+      responses:
+        '200':
+          description: List of passed profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /match/action/{matchId}:
+    patch:
+      tags:
+        - Matching
+      summary: Take action on match
+      description: Like or pass on a match. Returns mutual match info if it's a match.
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchActionRequest'
+      responses:
+        '200':
+          description: Mutual match found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutualMatchInfo'
+        '204':
+          description: Action recorded, no mutual match
+        '400':
+          description: Invalid action
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
