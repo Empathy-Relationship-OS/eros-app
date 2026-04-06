@@ -1,7 +1,9 @@
 # Screenshot Catalogue 
 The purpose of this folder is for planning. The screenshots show a plan/skeleton of the app. 
 The colour scheme should be that of the @screenshots/logo/eros_discord_icon.jpg mimicking the colour tones of the app screenshots, but replacing the purpley/red
-with the warm orange and white tones.
+with the warm orange and white tones with black for text.
+Where there is niche background drawings, you need not worry about adding the Drawing, instead just use a background
+Use Themes and a coherent 
 
 
 Screenshot catalogue:
@@ -135,3 +137,527 @@ Screenshot catalogue:
       - The user can re-review the users profile and go for a drink via call: /match/action/{matchId} API to backend
       - Or user will take no action so it will remain as an unsuccessful match
       - When action taken, card removed from list of past 24 hours.
+- Users:
+  - create-profile:
+    - @screenshots/users/create-profile/1F15020C-4606-4494-B042-6E25E65D4313.png
+      - The first page displayed when a user has been set up correctly. We now need to create a users profile to be displayed and assist with matching
+      - The only required from this page to implement is the text stating about reviewing profiles and getting the profiles setup
+      - The button at the bottom should begin the journey of setting up profile
+      - When we begin journey we need to create the object that will be sent to BE via POST /users
+    - @screenshots/users/create-profile/7366439D-0743-4B0F-B261-7455DCA007F1.png
+      - Asking users how they want to date. This is an enum based on BE vaulues: enum class DateIntentions { CASUAL_DATING,SERIOUS_DATING,FRIENDSHIP,NETWORKING,NOT_SURE}
+      - The enums should map to buttons as shown in image
+      - The top bar shows the progress/page we are on in the create profile progress
+      - When selecting value we store this locally for UserProfile, ready to send data for the users endpoint
+    - @screenshots/users/create-profile/02DFD182-353E-48F1-9DB2-AAD07E56791C.png
+      - Second Screen for having kids
+      - Options here correlate to the enum: enum class KidsPreference {
+        WANT_KIDS,
+        DONT_WANT_KIDS,
+        HAVE_KIDS,
+        OPEN_TO_KIDS,
+        PREFER_NOT_TO_SAY
+        }
+      - Only one option can be selected
+    - @screenshots/users/create-profile/9E6D741C-F92F-4828-B1CF-675E6ED8EACF.png
+      - Drinking preference of user
+      - Correlates too enum: enum class AlcoholConsumption {
+        NEVER,
+        SOMETIMES,
+        REGULARLY,
+        PREFER_NOT_TO_SAY
+        }
+      - Only one can be selected
+    - @screenshots/users/create-profile/446BC802-CBB0-4D66-8D09-C9A328C7753B.png
+      - Smoking habits
+      - Correlates to enum: enum class SmokingStatus {
+        NEVER,
+        SOMETIMES,
+        REGULARLY,
+        QUITTING,
+        PREFER_NOT_TO_SAY;
+        }
+      - Only one can be selected
+    - @screenshots/users/create-profile/278ED7CB-8AA4-4990-A13B-1D0F12431AC6.png
+      - Education Screen:
+      - Correlates to enum: enum class EducationLevel {
+        COLLEGE,
+        UNIVERSITY,
+        APPRENTICESHIP,
+        PREFER_NOT_TO_SAY
+        }
+      - Only one can be selected
+    - @screenshots/users/create-profile/A7C87B65-5F8F-4648-9E31-BD6C09779DEF.png
+      - Job and study section
+      - Top text input box for job
+      - Second text input box for study
+      - Text input needs to be validated against SQL or code injection attacks
+    - @screenshots/users/create-profile/E73ABF64-E138-4BC1-9A2B-8575B6FC21EC.png
+      - Interests screen. This screen allows a max and min of how many need to be picked.
+      - This correlates too a List<String>, where the String values are derived from the available enum options.
+      - The text input section at the top allows for searching for a given enum value in one of the subsections
+      - The following screens are subsections for each field shown here
+    - @screenshots/users/create-profile/F9D8151D-B02B-4B97-A3E6-C4A6B5F5871C.png
+      - Shows the subsection sports for Sports tab in @screenshots/users/create-profile/E73ABF64-E138-4BC1-9A2B-8575B6FC21EC.png
+      - Sports should have the enum values: enum class Sport {
+        KICK_BOXING,
+        GOLF,
+        KITE_SURFING,
+        ATHLETICS,
+        BADMINTON,
+        BALLET,
+        BASEBALL,
+        BASKETBALL,
+        BOULDERING,
+        BOWLING,
+        CLIMBING,
+        CRICKET,
+        CROSS_TRAINING,
+        CYCLING,
+        DANCING,
+        EXTREME_SPORTS,
+        FENCING,
+        FITNESS,
+        FOOTBALL,
+        HANDBALL,
+        HOCKEY,
+        HORSE_RIDING,
+        ICE_SKATING,
+        KAYAKING,
+        KITESURFING,
+        MARTIAL_ARTS,
+        MOTORCYCLING,
+        MOUNTAINBIKING,
+        PADEL,
+        PICKLEBALL,
+        PILATES,
+        ROWING,
+        RUGBY,
+        RUNNING,
+        SUP,
+        SAILING,
+        SCUBA_DIVING,
+        SKATEBOARDING,
+        SKIING,
+        SNOWBOARDING,
+        SPIKEBALL,
+        SQUASH,
+        SURFING,
+        SWIMMING,
+        TENNIS,
+        VOLLEYBALL,
+        YOGA
+        }
+      - When user selects an activity, on press it is added or removed from list based on its current state
+      - When selected alter the colour to a grey to indicate selection of box.
+    - @screenshots/users/create-profile/DBF8AB38-1124-425E-B71B-3BDBF0F6E06E.png
+      - Foods and Drink interest
+      - Correlates too enum: enum class FoodAndDrink {
+        BBQ,
+        BARBECUE,
+        BEER,
+        BIRYANI,
+        BOBA,
+        CHAMPAGNE,
+        CHARCUTERIE,
+        CHEESE,
+        CHOCOLATE,
+        COCKTAILS,
+        COFFEE,
+        CRAFT_BEERS,
+        CURRY,
+        EMPANADA,
+        FALAFEL,
+        HOT_POT,
+        JOLLOF,
+        MATCHA,
+        PASTA,
+        PIZZA,
+        PUBS,
+        RAMEN,
+        ROTI,
+        SUSHI,
+        TAPAS,
+        TEA,
+        WHISKEY,
+        WINE
+        }
+      - When user selects an activity, on press it is added or removed from list based on its current state
+      - When selected alter the colour to a grey to indicate selection of box.
+    - @screenshots/users/create-profile/B9B554CC-8902-400D-BA83-E0460202E9D7.png
+      - Creative screen
+      - Correlates to the enum: enum class Creative {
+        ACTING,
+        COMPOSING_MUSIC,
+        CRAFTS,
+        DIY,
+        DESIGN,
+        DRAWING,
+        FASHION,
+        KNITTING,
+        PAINTING,
+        PHOTOGRAPHY,
+        PLAYING_INSTRUMENTS,
+        POETRY,
+        POTTERY,
+        SEWING,
+        SINGING,
+        WRITING
+        }
+      - When user selects an activity, on press it is added or removed from list based on its current state
+      - When selected alter the colour to a grey to indicate selection of box.
+    - @screenshots/users/create-profile/881D2727-6446-47F5-BCC2-43CD32DB36C6.png
+      - Entertainment Tab for interest
+      - Correlates to the enum: enum class Entertainment {
+        READING,
+        ANIME,
+        BOARD_GAMES,
+        CARTOONS,
+        CHESS,
+        COMEDY,
+        COMICS,
+        DISNEY,
+        DOCUMENTARIES,
+        FANTASY,
+        GAMING,
+        HORROR,
+        MEMES,
+        MOVIES,
+        MUSICALS,
+        NETFLIX,
+        PODCASTS,
+        PUZZLES,
+        SCI_FI,
+        SITCOMS,
+        TRUE_CRIME,
+        VINYL_RECORDS,
+        YOUTUBE
+        }
+      - When user selects an activity, on press it is added or removed from list based on its current state
+      - When selected alter the colour to a grey to indicate selection of box.
+    - @screenshots/users/create-profile/063B6F67-89AB-47BB-81A7-11FFC8C6591C.png
+      - Music tab for interests
+      - Correlates too enum: enum class MusicGenre {
+        AFRO_BEATS,
+        BLUES,
+        CLASSICAL_MUSIC,
+        COUNTRY_MUSIC,
+        DJING,
+        DANCEHALL,
+        DISCO,
+        DRUM_AND_BASS,
+        DRUMS,
+        DUBSTEP,
+        EDM,
+        FUNK,
+        GUITAR,
+        HARDSTYLE,
+        HIPHOP,
+        HOUSE,
+        INDIE_MUSIC,
+        JAZZ,
+        K_POP,
+        LATIN_MUSIC,
+        METAL,
+        PIANO,
+        POP_MUSIC,
+        PUNK,
+        R_AND_B,
+        RAP,
+        REGGAE,
+        REGGAETON,
+        ROCK,
+        SALSA,
+        SOUL,
+        TECHNO
+        }
+      - When user selects an activity, on press it is added or removed from list based on its current state
+      - When selected alter the colour to a grey to indicate selection of box.
+    - @screenshots/users/create-profile/59AD97C6-6B96-4687-B06C-C28CF39CA052.png
+      - Activities tab for interests page
+      - Correlates too enum: enum class Activity {
+        CITY_TRIPS,
+        OUTDOORS,
+        PUB_QUIZ,
+        WELLNESS,
+        BACKPACKING,
+        BAKING,
+        BEACH,
+        CAMPING,
+        CONCERTS,
+        COOKING,
+        COSPLAY,
+        DINING_OUT,
+        DINNER_PARTIES,
+        ESCAPE_ROOMS,
+        FESTIVALS,
+        HAVING_DRINKS,
+        HIKING,
+        KARAOKE,
+        MEDITATION,
+        MOUNTAINS,
+        MUSEUM,
+        PARTY,
+        RESORT_VACATIONS,
+        ROAD_TRIPS,
+        SAUNA,
+        SHOPPING,
+        TAKING_A_WALK,
+        THRIFTING
+        }
+      - When user selects an activity, on press it is added or removed from list based on its current state
+      - When selected alter the colour to a grey to indicate selection of box.
+    - @screenshots/users/create-profile/2A5D9D2F-8D3C-4486-BEF9-3443CB9D0408.png
+      - Interests tab for interest page
+      - Correlates to enum: enum class Interest {
+        ENTREPRENEURSHIP,
+        FORMULA_1,
+        LANGUAGES,
+        AI,
+        ANIMALS,
+        ARCHITECTURE,
+        ART,
+        BIOLOGY,
+        CARS,
+        CATS,
+        CINEMA,
+        DOGS,
+        FINANCE,
+        HISTORY,
+        HORSES,
+        NATURE,
+        PERSONAL_DEVELOPMENT,
+        PHILOSOPHY,
+        PLANTS,
+        POLITICS,
+        PROGRAMMING,
+        PSYCHOLOGY,
+        SCIENCE,
+        SNEAKERS,
+        SUSTAINABILITY,
+        TATTOOS,
+        TECH,
+        THEATRE
+        }
+      - When user selects an activity, on press it is added or removed from list based on its current state
+      - When selected alter the colour to a grey to indicate selection of box.
+    - @screenshots/users/create-profile/F385FEFE-708E-434A-9D6F-DCC3B230A2E2.png
+      - How would you describe yourself screen
+      - Text input field allows searching in the subsection of following screens enums
+      - There is no personality type (MBTI). This can be removed and not implemented
+      - Lifestyle has been combined with Trait enum.
+      - The tab Personality Trait correlates to enum: enum class Trait {
+        ADVENTUROUS,
+        AMBITIOUS,
+        SPONTANEOUS,
+        ENERGETIC,
+        HONEST,
+        WITTY,
+        FAMILY_ORIENTATED,
+        MINIMALIST,
+        HEALTH_CONSCIOUS,
+        COMPETITION_SEEKER,
+        AMBIVERT,
+        CALM,
+        CARING,
+        CHAOTIC,
+        CREATIVE,
+        CURIOUS,
+        DEEP_THINKER,
+        DREAMER,
+        EMPATHETIC,
+        EXTRAVERT,
+        FLEXIBLE,
+        GENEROUS,
+        GO_GETTER,
+        INTROVERT,
+        KIND,
+        LISTENER,
+        OPEN_MINDED,
+        OPTIMISTIC,
+        ORGANIZED,
+        OUTGOING,
+        PASSIONATE,
+        PATIENT,
+        PLAYFUL,
+        PRACTICAL,
+        QUIET,
+        RELIABLE,
+        RESERVED,
+        ROMANTIC,
+        SARCASTIC,
+        SENSITIVE,
+        SERIOUS,
+        SHY,
+        THOUGHTFUL,
+        TRADITIONAL
+        }
+      - Star sign correlates to enum: enum class StarSign {
+        ARIES,
+        TAURUS,
+        GEMINI,
+        CANCER,
+        LEO,
+        VIRGO,
+        LIBRA,
+        SCORPIO,
+        SAGITTARIUS,
+        CAPRICORN,
+        AQUARIUS,
+        PISCES
+        }
+      - When a user selects. Display the currently selected with a dark background. And show selected at top of screen @screenshots/users/create-profile/D1846925-86A5-4AEF-93BE-37737041F8F0.png shows this as an example
+      - Max 10 Min 3 required to proceed
+    - @screenshots/users/create-profile/5A0A4901-671B-40D4-8071-C221FAE190A0.png
+      - Shows the QA section.
+      - A selection box is possible, when pressed @screenshots/users/create-profile/2773081D-DBB1-4E02-85A9-F9C8DAA60F46.png is shown
+      - A user can have 1 <= QA <= 3
+      - 1 must be present to proceed
+    - @screenshots/users/create-profile/2773081D-DBB1-4E02-85A9-F9C8DAA60F46.png
+      - Shows the Question screen
+      - 4 tabs: Interests, Personal, Fun, Ambitious
+      - Questions correlate to the enum: enum class PredefinedQuestion {
+        // Fun category
+        LAST_MEAL_EVER,
+        SECOND_DATE_IDEA,
+        PERFECT_HOLIDAY,
+        RAINY_SUNDAY_ACTIVITY,
+        MYTHICAL_CREATURE_RELATE,
+        WEIRDEST_FOOD_COMBO,
+        NEVER_FAILS_TO_LAUGH,
+        LIFE_THEME_SONG,
+        MOST_BEAUTIFUL_VIEW,
+        SUPERPOWER_FOR_FUN,
+        DINNER_WITH_3_FAMOUS,
+
+        Ambitions category
+        WANT_TO_LEARN,
+        DREAM_JOB_NO_MONEY,
+        LIFE_GOAL,
+        PROUD_OF,
+        WISH_REALLY_GOOD_AT,
+        CHALLENGE_SURPRISED_BEATING,
+        RANDOM_BUCKET_LIST,
+        IDEAL_PLACE_TO_LIVE,
+        LOOKING_FORWARD_TO,
+        POINTLESS_SKILL_PROUD_OF,
+    
+        // Interests category
+        TALK_ABOUT_FOR_HOURS,
+        READING_AT_MOMENT,
+        FAVOURITE_MUSIC_ARTIST,
+        FAVOURITE_BOOK_MOVIE_TV,
+        THINGS_GIVE_JOY,
+        EVERYONE_SHOULD_TRY,
+        CURRENTLY_OBSESSED_SONG,
+        OBSCURE_FACT_KNOW,
+        ACTIVITY_LOSE_MYSELF_IN,
+        FICTIONAL_CHARACTER_RELATE,
+        NICHE_RABBIT_HOLE,
+    
+        // Personal category
+        UNUSUAL_FIND_ATTRACTIVE,
+        CORE_VALUES,
+        RANDOM_FACTS,
+        MOST_AWKWARD_MOMENT,
+        PERSONAL_MOTTO,
+        FAVOURITE_TATTOO_STORY,
+        WHAT_HOME_MEANS,
+        BRINGS_OUT_INNER_CHILD,
+        COMPLIMENT_NEVER_FORGOTTEN,
+        FRIENDS_COME_TO_ME_FOR,
+        EMOJI_CAPTURES_ENERGY,
+        LOOKING_FOR,
+        RELATIONSHIP_GOALS;
+    
+        fun getDisplayText(): String = when (this) {
+        LAST_MEAL_EVER -> "My last meal ever would be"
+        SECOND_DATE_IDEA -> "If I could organize our second date, we would"
+        PERFECT_HOLIDAY -> "My perfect holiday"
+        RAINY_SUNDAY_ACTIVITY -> "What I like to do on a rainy Sunday"
+        MYTHICAL_CREATURE_RELATE -> "The mythical creature I relate to most"
+        WEIRDEST_FOOD_COMBO -> "The weirdest food combination I enjoy"
+        NEVER_FAILS_TO_LAUGH -> "This never fails to make me laugh"
+        LIFE_THEME_SONG -> "If my life had a theme song, it would be"
+        MOST_BEAUTIFUL_VIEW -> "The most beautiful view I have ever seen"
+        SUPERPOWER_FOR_FUN -> "A superpower I'd like to have just for fun"
+        DINNER_WITH_3_FAMOUS -> "I'd host dinner for these 3 famous people"
+        WANT_TO_LEARN -> "Something I still want to learn"
+        DREAM_JOB_NO_MONEY -> "My dream job if money didn't matter"
+        LIFE_GOAL -> "A life goal of mine"
+        PROUD_OF -> "What I'm proud of"
+        WISH_REALLY_GOOD_AT -> "Something I wish I was really good at"
+        CHALLENGE_SURPRISED_BEATING -> "A challenge I surprised myself by beating"
+        RANDOM_BUCKET_LIST -> "The most random thing on my bucket list"
+        IDEAL_PLACE_TO_LIVE -> "My ideal place to live"
+        LOOKING_FORWARD_TO -> "Something I'm currently looking forward to"
+        POINTLESS_SKILL_PROUD_OF -> "A pointless skill I'm oddly proud of"
+        TALK_ABOUT_FOR_HOURS -> "Something I could talk about for hours"
+        READING_AT_MOMENT -> "What I'm reading at the moment"
+        FAVOURITE_MUSIC_ARTIST -> "My favourite music artist or band"
+        FAVOURITE_BOOK_MOVIE_TV -> "My favourite book/movie/tv series"
+        THINGS_GIVE_JOY -> "Things that give me joy"
+        EVERYONE_SHOULD_TRY -> "What everyone should try at least once"
+        CURRENTLY_OBSESSED_SONG -> "The song I'm currently obsessed with"
+        OBSCURE_FACT_KNOW -> "The most obscure fact I know"
+        ACTIVITY_LOSE_MYSELF_IN -> "An activity I lose myself in"
+        FICTIONAL_CHARACTER_RELATE -> "The fictional character I relate to most"
+        NICHE_RABBIT_HOLE -> "A niche rabbit hole that fascinates me"
+        UNUSUAL_FIND_ATTRACTIVE -> "Something unusual I find attractive in a person"
+        CORE_VALUES -> "My core values"
+        RANDOM_FACTS -> "Random facts about me"
+        MOST_AWKWARD_MOMENT -> "Most awkward moment of my life"
+        PERSONAL_MOTTO -> "My personal motto"
+        FAVOURITE_TATTOO_STORY -> "The story behind my favourite tattoo"
+        WHAT_HOME_MEANS -> "What 'home' means to me"
+        BRINGS_OUT_INNER_CHILD -> "What brings out my inner child"
+        COMPLIMENT_NEVER_FORGOTTEN -> "A compliment I've never forgotten"
+        FRIENDS_COME_TO_ME_FOR -> "Friends always come to me for"
+        EMOJI_CAPTURES_ENERGY -> "The emoji(s) that captures my energy best"
+        LOOKING_FOR -> "I'm looking for"
+        RELATIONSHIP_GOALS -> "My relationship goals"
+        }}
+    - @screenshots/users/create-profile/CCD90428-DCE2-455B-A3A7-2EC6DC21F1C8.png
+      - Shows a Question selected with the text box for answering
+      - Text box should be cleaned and validated against SQL or injection attacks
+      - Answers should be no more than 150 characters long, and minimum 1 word or 2 chars
+      - Save answer button should append to the QA list of a user locally.
+    - @screenshots/users/create-profile/CDCD6B62-A04F-4222-B478-A4D29E198C6E.png
+      - Shows the QA section, with a QA box present
+      - QA box main text is Question, Text beneath is the answer supplied
+      - Once max QA been reached, add another question button should be removed from user
+      - Once min 1 answered next button can be proceeded
+      - Next button should make a call to BE via: /users/qa/me/collection
+    - @screenshots/users/create-profile/9D077F6E-F156-4B54-9297-37EC45AE7D10.png
+      - Section focuses on Pictures. Correlating to the Photos tag in documentation.yaml
+      - User is prompted to Add a thumbnail/profile picture
+      - Upon pressing add photo button, phones photo library should pop up. If user hasnt given permissions yet, then this is where we get permissions to access photos, this  can be seen in @@screenshots/users/create-profile/55C449A3-E330-435C-B630-12A4B08FD342.png
+    - @screenshots/users/create-profile/55C449A3-E330-435C-B630-12A4B08FD342.png
+      - Phones native photo library opens to allow selection of images once user given permission
+    - @screenshots/users/create-profile/B3F7C09E-4E3D-4DD4-BBB8-42DE6AB0C2D7.png
+      - Once image selected a caption can be applied via pressing select caption. This will open @@screenshots/users/create-profile/80DC933A-0EDC-479E-BEE5-443A0174135A.png
+      - If user doesn't like the image then change photo can be pressed. This will reopen @screenshots/users/create-profile/55C449A3-E330-435C-B630-12A4B08FD342.png to reselect a new image
+      - If a user is happy with is, then the continue button can be pressed. The image and its info will be stored in a list locally.
+    - @screenshots/users/create-profile/80DC933A-0EDC-479E-BEE5-443A0174135A.png
+      - Caption page
+      - Will display list of potential captions
+      - For now this isnt implemented so we will simply use dummy data. After it will correlate to enum in BE
+      - Once a caption selected, return to prev page with caption stored
+    - @screenshots/users/create-profile/31A175B9-8404-48F4-B608-8C751E1D03EF.png
+      - A page to show all photo selections, where the first is the thumnbail/profile pic prev selected
+      - Pressing on any of the Picture slots will open the @B3F7C09E-4E3D-4DD4-BBB8-42DE6AB0C2D7.png as before to select and edit pic
+      - A min of 3 and a max of 6 pics can be selected
+      - The Complete Profile Button is pressible if this requirement is met.
+      - For every picture we will follow the API path: /users/me/photos/presigned-url and then /users/me/photos . Where we get a presigned url first, then we upload  directly to that.
+    - @screenshots/users/create-profile/14FD30F8-F075-4743-ACE8-32CEF8978C75.png
+      - Shows the photo screen when 5/6 images have been provided
+      - Continue button is now pressable due to requirements met with valid pics
+    - @screenshots/users/create-profile/6F692A85-9439-4D16-BC71-1FC49E6EB3D1_1_105_c.jpeg
+      - Shows the preview page of what will be seen publicly to other users. This will correlate to the value returned from /users/id/{id}/public
+      - Once user has ticked box to agree that the data will be published to others then we can continue.
+      - If back button is pressed then we will return to the Photo selction screen @screenshots/users/create-profile/14FD30F8-F075-4743-ACE8-32CEF8978C75.png where user can alter pics.
+    - @screenshots/users/create-profile/A23E92F9-0A22-4216-9D1F-CAFE761F6C6F.png
+      - Final screen once user has confirmed data is correct
+      - When start dating occurs, we will go into the app.
+      - While we create profile in backend, when start dating is pressed, if we are still creating profile, give a prompt saying give us a moment while we set up your profile and get your potential matches ready
+      - Once this is complete we go into apps default look, which should be that of the Match tab.
