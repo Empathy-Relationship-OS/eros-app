@@ -49,9 +49,9 @@ class WelcomeScreen extends StatelessWidget {
               Text(
                 'Eros',
                 style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                      color: AppColors.primaryOrange,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: AppColors.primaryOrange,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
 
               const SizedBox(height: 16),
@@ -61,8 +61,8 @@ class WelcomeScreen extends StatelessWidget {
                 'Skip the small talk,\ngo straight to the date',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                  color: AppColors.textSecondary,
+                ),
               ),
 
               // Spacer to push button to bottom

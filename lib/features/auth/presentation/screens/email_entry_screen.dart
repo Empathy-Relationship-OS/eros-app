@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/validators.dart';
-import 'email_otp_verification_screen.dart';
+import '../providers/marketing_consent_provider.dart';
+import 'password_creation_screen.dart';
+import 'password_sign_in_screen.dart';
 
 /// Email Entry Screen
-/// User enters email address to receive OTP
+/// User enters email address to create account or sign in
 /// Reference: screenshots/login/create-user/4AB7216B-DFC9-4716-9999-72A12357B8BB.png
-class EmailEntryScreen extends StatefulWidget {
+class EmailEntryScreen extends ConsumerStatefulWidget {
   const EmailEntryScreen({super.key});
 
   @override
-  State<EmailEntryScreen> createState() => _EmailEntryScreenState();
+  ConsumerState<EmailEntryScreen> createState() => _EmailEntryScreenState();
 }
 
-class _EmailEntryScreenState extends State<EmailEntryScreen> {
+class _EmailEntryScreenState extends ConsumerState<EmailEntryScreen> {
   final TextEditingController _emailController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _acceptsMarketing = false;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -25,49 +27,46 @@ class _EmailEntryScreenState extends State<EmailEntryScreen> {
     super.dispose();
   }
 
-  Future<void> _sendOTP() async {
+  Future<void> _onCreateAccount() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    final email = _emailController.text.trim();
 
-    try {
-      final email = _emailController.text.trim();
+    // Store marketing consent locally
+    await ref
+        .read(marketingConsentProvider.notifier)
+        .setMarketingConsent(_acceptsMarketing);
 
-      // TODO: Call backend API to send OTP to email
-      // API should also store the marketing consent preference
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
-
-      if (mounted) {
-        // Navigate to email OTP verification screen
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => EmailOTPVerificationScreen(
-              email: email,
-            ),
+    if (mounted) {
+      // Navigate to password creation screen for new account
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PasswordCreationScreen(
+            email: email,
+            acceptsMarketing: _acceptsMarketing,
           ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+        ),
+      );
     }
+  }
+
+  void _onSignIn() {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final email = _emailController.text.trim();
+
+    // Navigate to sign-in screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PasswordSignInScreen(email: email),
+      ),
+    );
   }
 
   @override
@@ -147,9 +146,8 @@ class _EmailEntryScreenState extends State<EmailEntryScreen> {
                         Expanded(
                           child: Text(
                             'I consent to receive promotional emails and updates from Eros',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: AppColors.textSecondary),
                           ),
                         ),
                       ],
@@ -157,37 +155,29 @@ class _EmailEntryScreenState extends State<EmailEntryScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 16),
-
-                // Info text
-                Text(
-                  'We\'ll send you a verification code to confirm your email address',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                ),
-
                 const Spacer(),
 
-                // Continue Button
+                // Create Account Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _emailController.text.isNotEmpty && !_isLoading
-                        ? _sendOTP
+                    onPressed: _emailController.text.isNotEmpty
+                        ? _onCreateAccount
                         : null,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.white,
-                              ),
-                            ),
-                          )
-                        : const Text('Continue'),
+                    child: const Text('Create Account'),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Sign In Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: _emailController.text.isNotEmpty
+                        ? _onSignIn
+                        : null,
+                    child: const Text('Sign In'),
                   ),
                 ),
 

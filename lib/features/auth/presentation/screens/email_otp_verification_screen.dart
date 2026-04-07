@@ -9,10 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 class EmailOTPVerificationScreen extends StatefulWidget {
   final String email;
 
-  const EmailOTPVerificationScreen({
-    super.key,
-    required this.email,
-  });
+  const EmailOTPVerificationScreen({super.key, required this.email});
 
   @override
   State<EmailOTPVerificationScreen> createState() =>
@@ -25,10 +22,7 @@ class _EmailOTPVerificationScreenState
     6,
     (index) => TextEditingController(),
   );
-  final List<FocusNode> _focusNodes = List.generate(
-    6,
-    (index) => FocusNode(),
-  );
+  final List<FocusNode> _focusNodes = List.generate(6, (index) => FocusNode());
 
   bool _isLoading = false;
   int _resendTimer = 60;
@@ -196,8 +190,8 @@ class _EmailOTPVerificationScreenState
               RichText(
                 text: TextSpan(
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                    color: AppColors.textSecondary,
+                  ),
                   children: [
                     const TextSpan(text: 'We sent a verification code to\n'),
                     TextSpan(
@@ -246,9 +240,7 @@ class _EmailOTPVerificationScreenState
                           ),
                         ),
                       ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       onChanged: (value) {
                         if (value.isNotEmpty && index < 5) {
                           // Move to next field
@@ -298,8 +290,9 @@ class _EmailOTPVerificationScreenState
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed:
-                      _isOTPComplete() && !_isLoading ? _verifyOTP : null,
+                  onPressed: _isOTPComplete() && !_isLoading
+                      ? _verifyOTP
+                      : null,
                   child: _isLoading
                       ? const SizedBox(
                           height: 20,

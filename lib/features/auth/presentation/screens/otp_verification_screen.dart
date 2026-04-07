@@ -9,10 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 class OTPVerificationScreen extends StatefulWidget {
   final String phoneNumber;
 
-  const OTPVerificationScreen({
-    super.key,
-    required this.phoneNumber,
-  });
+  const OTPVerificationScreen({super.key, required this.phoneNumber});
 
   @override
   State<OTPVerificationScreen> createState() => _OTPVerificationScreenState();
@@ -23,10 +20,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     6,
     (index) => TextEditingController(),
   );
-  final List<FocusNode> _focusNodes = List.generate(
-    6,
-    (index) => FocusNode(),
-  );
+  final List<FocusNode> _focusNodes = List.generate(6, (index) => FocusNode());
 
   bool _isLoading = false;
   int _resendTimer = 60;
@@ -194,8 +188,8 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
               RichText(
                 text: TextSpan(
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                    color: AppColors.textSecondary,
+                  ),
                   children: [
                     const TextSpan(text: 'We sent a code to '),
                     TextSpan(
@@ -244,9 +238,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                           ),
                         ),
                       ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       onChanged: (value) {
                         if (value.isNotEmpty && index < 5) {
                           // Move to next field
@@ -296,8 +288,9 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed:
-                      _isOTPComplete() && !_isLoading ? _verifyOTP : null,
+                  onPressed: _isOTPComplete() && !_isLoading
+                      ? _verifyOTP
+                      : null,
                   child: _isLoading
                       ? const SizedBox(
                           height: 20,

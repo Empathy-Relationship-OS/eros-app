@@ -30,15 +30,9 @@ class LanguageSelectorButton extends ConsumerWidget {
       },
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 8,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          border: Border.all(
-            color: AppColors.border,
-            width: 1,
-          ),
+          border: Border.all(color: AppColors.border, width: 1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -55,9 +49,9 @@ class LanguageSelectorButton extends ConsumerWidget {
             Text(
               selectedLanguage.code.toUpperCase(),
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),

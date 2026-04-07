@@ -103,10 +103,7 @@ class _PhoneNumberScreenState extends State<PhoneNumberScreen> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    border: Border.all(
-                      color: AppColors.border,
-                      width: 1,
-                    ),
+                    border: Border.all(color: AppColors.border, width: 1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: InternationalPhoneNumberInput(
@@ -142,9 +139,7 @@ class _PhoneNumberScreenState extends State<PhoneNumberScreen> {
                     inputDecoration: const InputDecoration(
                       border: InputBorder.none,
                       hintText: 'Phone Number',
-                      hintStyle: TextStyle(
-                        color: AppColors.textTertiary,
-                      ),
+                      hintStyle: TextStyle(color: AppColors.textTertiary),
                       contentPadding: EdgeInsets.zero,
                     ),
                     inputBorder: InputBorder.none,
@@ -157,8 +152,8 @@ class _PhoneNumberScreenState extends State<PhoneNumberScreen> {
                 Text(
                   'We\'ll send you a verification code to confirm your number',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                    color: AppColors.textSecondary,
+                  ),
                 ),
 
                 const Spacer(),

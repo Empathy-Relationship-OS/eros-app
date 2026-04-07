@@ -16,9 +16,7 @@ class LanguageSelectionPopup extends ConsumerWidget {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         child: Column(
@@ -64,9 +62,10 @@ class LanguageSelectionPopup extends ConsumerWidget {
                     title: Text(
                       language.nativeName,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight:
-                                isSelected ? FontWeight.w600 : FontWeight.normal,
-                          ),
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                      ),
                     ),
                     subtitle: Text(
                       language.name,
@@ -80,7 +79,8 @@ class LanguageSelectionPopup extends ConsumerWidget {
                         : null,
                     onTap: () {
                       // Update selected language
-                      ref.read(selectedLanguageProvider.notifier).state = language;
+                      ref.read(selectedLanguageProvider.notifier).state =
+                          language;
                       // TODO: Save to SharedPreferences
                       // Close popup
                       Navigator.pop(context);

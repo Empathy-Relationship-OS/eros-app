@@ -142,4 +142,65 @@ class Validators {
 
     return null;
   }
+
+  /// Validate password (minimum 8 characters)
+  static String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Password is required';
+    }
+
+    if (value.length < 8) {
+      return 'Password must be at least 8 characters';
+    }
+
+    return null;
+  }
+
+  /// Check password strength
+  static PasswordStrength getPasswordStrength(String password) {
+    if (password.isEmpty) return PasswordStrength.none;
+    if (password.length < 8) return PasswordStrength.weak;
+
+    int strength = 0;
+
+    // Check length
+    if (password.length >= 12) strength++;
+
+    // Check for lowercase
+    if (RegExp(r'[a-z]').hasMatch(password)) strength++;
+
+    // Check for uppercase
+    if (RegExp(r'[A-Z]').hasMatch(password)) strength++;
+
+    // Check for numbers
+    if (RegExp(r'\d').hasMatch(password)) strength++;
+
+    // Check for special characters
+    if (RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) strength++;
+
+    if (strength <= 2) return PasswordStrength.weak;
+    if (strength <= 3) return PasswordStrength.medium;
+    return PasswordStrength.strong;
+  }
+
+  /// Validate confirm password matches
+  static String? validateConfirmPassword(String? value, String? password) {
+    if (value == null || value.isEmpty) {
+      return 'Please confirm your password';
+    }
+
+    if (value != password) {
+      return 'Passwords do not match';
+    }
+
+    return null;
+  }
+}
+
+/// Password strength enum
+enum PasswordStrength {
+  none,
+  weak,
+  medium,
+  strong,
 }

@@ -37,9 +37,9 @@ class AuthMethodSelectionScreen extends StatelessWidget {
               // Subtitle
               Text(
                 'Choose your preferred method to get started',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
               ),
 
               const SizedBox(height: 48),
@@ -87,8 +87,8 @@ class AuthMethodSelectionScreen extends StatelessWidget {
                     'By continuing, you agree to our Terms & Conditions\nand Privacy Policy',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textTertiary,
-                        ),
+                      color: AppColors.textTertiary,
+                    ),
                   ),
                 ),
               ),
@@ -124,10 +124,7 @@ class _AuthMethodCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          border: Border.all(
-            color: AppColors.border,
-            width: 1.5,
-          ),
+          border: Border.all(color: AppColors.border, width: 1.5),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -139,11 +136,7 @@ class _AuthMethodCard extends StatelessWidget {
                 color: AppColors.primaryOrange.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                size: 28,
-                color: AppColors.primaryOrange,
-              ),
+              child: Icon(icon, size: 28, color: AppColors.primaryOrange),
             ),
 
             const SizedBox(width: 16),
@@ -156,15 +149,15 @@ class _AuthMethodCard extends StatelessWidget {
                   Text(
                     title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     description,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
