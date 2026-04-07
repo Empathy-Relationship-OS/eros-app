@@ -1,30 +1,32 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('App loads welcome screen', (WidgetTester tester) async {
+    // Build our app and trigger a frame
+    await tester.pumpWidget(const ProviderScope(child: ErosApp()));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify that the welcome screen loads with the "Start Dating" button
+    expect(find.text('Eros'), findsOneWidget);
+    expect(find.text('Start Dating'), findsOneWidget);
+    expect(
+      find.text('Skip the small talk,\ngo straight to the date'),
+      findsOneWidget,
+    );
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('Navigate to auth method selection', (WidgetTester tester) async {
+    // Build our app and trigger a frame
+    await tester.pumpWidget(const ProviderScope(child: ErosApp()));
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Tap the "Start Dating" button
+    await tester.tap(find.text('Start Dating'));
+    await tester.pumpAndSettle();
+
+    // Verify that we navigate to auth method selection screen
+    expect(find.text('How would you like to\nsign up?'), findsOneWidget);
+    expect(find.text('Continue with Email'), findsOneWidget);
   });
 }
