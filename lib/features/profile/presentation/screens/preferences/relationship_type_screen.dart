@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:eros_app/core/constants/profile_creation.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
@@ -68,7 +69,10 @@ class _RelationshipTypeScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildProgressBar(6, 7),
+              _buildProgressBar(
+                ProfileCreationConstants.preferencesStepRelationshipType,
+                ProfileCreationConstants.preferencesTotalSteps,
+              ),
               const SizedBox(height: 32),
               Text(
                 'Relationship type',

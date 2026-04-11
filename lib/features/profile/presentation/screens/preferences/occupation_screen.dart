@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:eros_app/core/constants/profile_creation.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/utils/validators.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
@@ -68,7 +69,10 @@ class _OccupationScreenState extends ConsumerState<OccupationScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildProgressBar(5, 7),
+              _buildProgressBar(
+                ProfileCreationConstants.preferencesStepOccupation,
+                ProfileCreationConstants.preferencesTotalSteps,
+              ),
               const SizedBox(height: 32),
               Text(
                 'What do you do?',
