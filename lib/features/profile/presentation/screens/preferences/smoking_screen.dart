@@ -5,6 +5,7 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
+import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 
 /// Smoking status preference screen
 /// Matches screenshot: @screenshots/users/create-profile/446BC802-CBB0-4D66-8D09-C9A328C7753B.png
@@ -68,9 +69,10 @@ class _SmokingScreenState extends ConsumerState<SmokingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildProgressBar(
-                ProfileCreationConstants.preferencesStepSmoking,
-                ProfileCreationConstants.preferencesTotalSteps,
+              ProfileProgressBar(
+                currentStep: ProfileCreationConstants.preferencesStepSmoking,
+                totalSteps: ProfileCreationConstants.preferencesTotalSteps,
+                sectionLabel: 'Preferences',
               ),
               const SizedBox(height: 32),
               Text(
@@ -164,45 +166,6 @@ class _SmokingScreenState extends ConsumerState<SmokingScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildProgressBar(int currentStep, int totalSteps) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Preferences $currentStep of $totalSteps',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            Text(
-              '${((currentStep / totalSteps) * 100).toInt()}%',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: currentStep / totalSteps,
-            backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-            minHeight: 8,
-          ),
-        ),
-      ],
     );
   }
 }

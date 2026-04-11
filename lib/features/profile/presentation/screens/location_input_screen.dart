@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/constants/profile_creation.dart';
+import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 
 /// Location input screen - allows GPS or manual city entry
@@ -138,7 +140,10 @@ class _LocationInputScreenState extends ConsumerState<LocationInputScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Progress indicator
-              _buildProgressBar(2, 11),
+              ProfileProgressBar(
+                currentStep: ProfileCreationConstants.basicInfoStepLocation,
+                totalSteps: ProfileCreationConstants.basicInfoTotalSteps,
+              ),
               const SizedBox(height: 32),
 
               // Title
@@ -307,45 +312,6 @@ class _LocationInputScreenState extends ConsumerState<LocationInputScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildProgressBar(int currentStep, int totalSteps) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Step $currentStep of $totalSteps',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            Text(
-              '${((currentStep / totalSteps) * 100).toInt()}%',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: currentStep / totalSteps,
-            backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-            minHeight: 8,
-          ),
-        ),
-      ],
     );
   }
 }

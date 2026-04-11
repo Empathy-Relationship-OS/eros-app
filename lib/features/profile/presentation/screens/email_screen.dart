@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/utils/validators.dart';
+import 'package:eros_app/core/constants/profile_creation.dart';
+import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 
 /// Email confirmation screen - auto-populated from Firebase Auth
@@ -100,7 +102,10 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildProgressBar(10, 11),
+              ProfileProgressBar(
+                currentStep: ProfileCreationConstants.basicInfoStepEmail,
+                totalSteps: ProfileCreationConstants.basicInfoTotalSteps,
+              ),
               const SizedBox(height: 32),
               Text(
                 _isEmailFromFirebase ? 'Confirm your email' : 'What\'s your email?',
@@ -179,45 +184,6 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildProgressBar(int currentStep, int totalSteps) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Step $currentStep of $totalSteps',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            Text(
-              '${((currentStep / totalSteps) * 100).toInt()}%',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: currentStep / totalSteps,
-            backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-            minHeight: 8,
-          ),
-        ),
-      ],
     );
   }
 }
