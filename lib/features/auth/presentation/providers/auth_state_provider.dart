@@ -109,11 +109,6 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     return result.isSuccess;
   }
 
-  /// Check if email is already in use
-  Future<bool> isEmailAlreadyInUse(String email) async {
-    return await _authRepository.isEmailAlreadyInUse(email);
-  }
-
   /// Clear error message
   void clearError() {
     state = state.clearError();

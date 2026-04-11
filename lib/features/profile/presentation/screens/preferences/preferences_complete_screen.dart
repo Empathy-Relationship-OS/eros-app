@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
-import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 
 /// Screen shown after preferences section is complete
 class PreferencesCompleteScreen extends ConsumerWidget {
@@ -110,7 +109,7 @@ class PreferencesCompleteScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isComplete ? AppColors.primary.withOpacity(0.1) : Colors.grey[100],
+        color: isComplete ? AppColors.primary.withValues(alpha: 0.1) : Colors.grey[100],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isComplete ? AppColors.primary : Colors.grey[300]!,

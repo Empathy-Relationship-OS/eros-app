@@ -130,7 +130,7 @@ class _LanguagesScreenState extends ConsumerState<LanguagesScreen> {
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? AppColors.primary.withOpacity(0.1)
+                                ? AppColors.primary.withValues(alpha: 0.1)
                                 : Colors.grey[100],
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(

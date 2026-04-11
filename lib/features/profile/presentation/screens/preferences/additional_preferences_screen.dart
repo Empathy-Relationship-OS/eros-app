@@ -122,7 +122,7 @@ class _AdditionalPreferencesScreenState
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? AppColors.primary.withOpacity(0.1)
+                                  ? AppColors.primary.withValues(alpha: 0.1)
                                   : Colors.grey[100],
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
@@ -157,7 +157,7 @@ class _AdditionalPreferencesScreenState
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
                     const SizedBox(height: 8),
                     CheckboxListTile(
                       value: _showRelationship,
@@ -190,7 +190,7 @@ class _AdditionalPreferencesScreenState
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? AppColors.primary.withOpacity(0.1)
+                                  ? AppColors.primary.withValues(alpha: 0.1)
                                   : Colors.grey[100],
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
@@ -225,7 +225,7 @@ class _AdditionalPreferencesScreenState
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
                     const SizedBox(height: 8),
                     CheckboxListTile(
                       value: _showOrientation,

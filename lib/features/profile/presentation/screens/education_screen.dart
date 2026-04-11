@@ -78,7 +78,7 @@ class _EducationScreenState extends ConsumerState<EducationScreen> {
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? AppColors.primary.withOpacity(0.1)
+                            ? AppColors.primary.withValues(alpha: 0.1)
                             : Colors.grey[100],
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
@@ -109,7 +109,7 @@ class _EducationScreenState extends ConsumerState<EducationScreen> {
                     ),
                   ),
                 );
-              }).toList(),
+              }),
               const Spacer(),
               SizedBox(
                 width: double.infinity,

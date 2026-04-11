@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
-import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 
 /// Dating cities selector - choose cities where user wants to date
 /// Matches screenshot: @screenshots/login/create-user/EABDAE3A-4630-44B2-85B2-E97A280C19E2.png

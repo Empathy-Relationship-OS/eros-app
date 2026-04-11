@@ -112,7 +112,7 @@ class BasicInfoCompleteScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isComplete ? AppColors.primary.withOpacity(0.1) : Colors.grey[100],
+        color: isComplete ? AppColors.primary.withValues(alpha: 0.1) : Colors.grey[100],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isComplete ? AppColors.primary : Colors.grey[300]!,

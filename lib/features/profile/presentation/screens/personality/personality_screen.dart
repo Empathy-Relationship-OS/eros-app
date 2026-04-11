@@ -220,7 +220,7 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, -5),
                   ),
@@ -240,7 +240,7 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
                             padding: const EdgeInsets.only(right: 8),
                             child: Chip(
                               label: Text(trait.displayName),
-                              backgroundColor: AppColors.primary.withOpacity(0.1),
+                              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                               deleteIcon: const Icon(Icons.close, size: 18),
                               onDeleted: () => _toggleTrait(trait),
                               labelStyle: TextStyle(

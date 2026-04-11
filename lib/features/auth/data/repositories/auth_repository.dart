@@ -113,30 +113,6 @@ class AuthRepository {
     }
   }
 
-  /// Check if email is already in use
-  /// Note: This uses a try-catch approach since fetchSignInMethodsForEmail is deprecated
-  /// We attempt to create an account and check for email-already-in-use error
-  Future<bool> isEmailAlreadyInUse(String email) async {
-    try {
-      // Attempt to fetch sign-in methods (deprecated but still functional)
-      final methods = await _firebaseAuth.fetchSignInMethodsForEmail(
-        email.trim(),
-      );
-      return methods.isNotEmpty;
-    } on FirebaseAuthException catch (e) {
-      // If there's an auth exception, the email might not exist
-      if (e.code == 'invalid-email') {
-        return false;
-      }
-      // For other errors, assume email doesn't exist to allow user to proceed
-      return false;
-    } catch (e) {
-      // On any other error, assume email doesn't exist
-      // This allows the user to proceed and get a proper error during sign-up
-      return false;
-    }
-  }
-
   /// Reload current user data
   Future<void> reloadUser() async {
     await currentUser?.reload();

@@ -16,7 +16,7 @@ class OccupationScreen extends ConsumerStatefulWidget {
 class _OccupationScreenState extends ConsumerState<OccupationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _jobController = TextEditingController();
-  bool _canContinue = true; // Occupation is optional
+  final bool _canContinue = true; // Occupation is optional
 
   @override
   void initState() {
