@@ -102,25 +102,13 @@ class _PasswordCreationScreenState
       if (!mounted) return;
 
       if (success) {
-        // Get Firebase ID token for backend calls
-        final idToken = await authNotifier.getIdToken();
-
-        // TODO: Call backend POST /users to create user profile
-        // Include marketing consent in the request
-        // For now, we'll show success and navigate to next screen
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account created successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // TODO: Navigate to profile setup screen
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => ProfileSetupScreen()),
-        // );
+        // Navigate to profile creation flow
+        if (mounted) {
+          Navigator.pushReplacementNamed(
+            context,
+            '/profile-creation/name',
+          );
+        }
       } else {
         // Show error from auth state
         final errorMessage =

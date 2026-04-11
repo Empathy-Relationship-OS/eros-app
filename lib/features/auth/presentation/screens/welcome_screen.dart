@@ -47,7 +47,7 @@ class WelcomeScreen extends StatelessWidget {
 
               // App Name
               Text(
-                'Eros',
+                'Muse',
                 style: Theme.of(context).textTheme.displayLarge?.copyWith(
                   color: AppColors.primaryOrange,
                   fontWeight: FontWeight.bold,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// App color palette based on Eros brand identity
+/// App color palette based on Muse brand identity
 /// Warm orange gradient with white and black accents
 class AppColors {
   AppColors._();
@@ -9,6 +9,9 @@ class AppColors {
   static const Color primaryOrange = Color(0xFFFF8A65); // Coral orange
   static const Color primaryOrangeLight = Color(0xFFFFAB91); // Light coral
   static const Color primaryOrangeDark = Color(0xFFFF6E40); // Deep coral
+
+  // Convenience getter for primary color
+  static const Color primary = primaryOrange;
 
   // Secondary Colors
   static const Color secondaryOrange = Color(0xFFFFCC80); // Peach

@@ -19,7 +19,7 @@ Screenshot catalogue:
 - Login:
   - @screenshots/login/create-user/8BA764E5-5619-47B6-BB51-C270658D3C33_1_105_c.jpeg
     - Opening page of app
-    - Need breeze replaced with eros
+    - Need breeze replaced with muse
     - The screen can simply be the logo @screenshots/logo/eros_discord_icon.jpg for now + text like shown beneath it
     - Start dating button pushes screen @screenshots/login/create-user/C66338AB-087A-4FD1-8A50-1B183B02E8A5_1_105_c.jpeg
     - Globe EN Button opens up language popup menu shown in @screenshots/login/create-user/84623CD3-B81C-46DF-84FD-5F2C81BC72D9_1_105_c.jpeg

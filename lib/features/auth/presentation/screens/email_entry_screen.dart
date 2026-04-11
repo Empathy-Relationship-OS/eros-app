@@ -145,7 +145,7 @@ class _EmailEntryScreenState extends ConsumerState<EmailEntryScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'I consent to receive promotional emails and updates from Eros',
+                            'I consent to receive promotional emails and updates from Muse',
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: AppColors.textSecondary),
                           ),

@@ -9,7 +9,7 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: ErosApp()));
 
     // Verify that the welcome screen loads with the "Start Dating" button
-    expect(find.text('Eros'), findsOneWidget);
+    expect(find.text('Muse'), findsOneWidget);
     expect(find.text('Start Dating'), findsOneWidget);
     expect(
       find.text('Skip the small talk,\ngo straight to the date'),

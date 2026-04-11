@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 **Eros** is a Flutter-based dating application focused on preventing small talk and facilitating actual dates. The app shows a limited number of matches per day at predefined times, handles location-based date planning, and includes a deposit system to ensure commitment to scheduled dates.
+Eros = project code name. The real name of the company and app is Muse
 
 ### Core User Flow
 1. **Profile Setup**: Users create profiles with photos, preferences, interests, and Q&A responses
@@ -151,7 +152,7 @@ Based on `screenshots/logo/eros_discord_icon.jpg`:
 ### UI/UX Guidelines
 - Reference designs in `screenshots/` directory
 - See `screenshots/Screenshot_Catalogue.md` for detailed screen-by-screen breakdown
-- All screenshots show skeleton/wireframe - implement with Eros branding
+- All screenshots show skeleton/wireframe - implement with Muse branding
 - No need to replicate decorative background drawings; use solid backgrounds instead
 
 ### Key UI Patterns

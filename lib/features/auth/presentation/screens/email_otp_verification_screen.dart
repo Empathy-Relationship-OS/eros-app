@@ -94,13 +94,11 @@ class _EmailOTPVerificationScreenState
       await Future.delayed(const Duration(seconds: 1)); // Simulate API call
 
       if (mounted) {
-        // For now, just show success message
-        // TODO: Navigate to profile creation or main app based on API response
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Email verified successfully!'),
-            backgroundColor: AppColors.success,
-          ),
+        // Navigate to profile creation flow
+        // In production, this would check if user profile exists first
+        Navigator.pushReplacementNamed(
+          context,
+          '/profile-creation/name',
         );
       }
     } catch (e) {
