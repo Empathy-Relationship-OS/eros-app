@@ -5,27 +5,28 @@ import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 
-/// Smoking status preference screen
-/// Matches screenshot: @screenshots/users/create-profile/446BC802-CBB0-4D66-8D09-C9A328C7753B.png
-class SmokingScreen extends ConsumerStatefulWidget {
-  const SmokingScreen({super.key});
+/// Sexual orientation preference screen
+class SexualOrientationScreen extends ConsumerStatefulWidget {
+  const SexualOrientationScreen({super.key});
 
   @override
-  ConsumerState<SmokingScreen> createState() => _SmokingScreenState();
+  ConsumerState<SexualOrientationScreen> createState() =>
+      _SexualOrientationScreenState();
 }
 
-class _SmokingScreenState extends ConsumerState<SmokingScreen> {
-  SmokingStatus? _selected;
+class _SexualOrientationScreenState
+    extends ConsumerState<SexualOrientationScreen> {
+  SexualOrientation? _selected;
   bool _isVisible = true;
 
   @override
   void initState() {
     super.initState();
     final draft = ref.read(profileCreationProvider);
-    if (draft.smokingStatus != null) {
+    if (draft.sexualOrientation != null) {
       setState(() {
-        _selected = draft.smokingStatus!.field;
-        _isVisible = draft.smokingStatus!.visible;
+        _selected = draft.sexualOrientation!.field;
+        _isVisible = draft.sexualOrientation!.visible;
       });
     }
   }
@@ -33,19 +34,19 @@ class _SmokingScreenState extends ConsumerState<SmokingScreen> {
   Future<void> _continue() async {
     if (_selected == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your preference')),
+        const SnackBar(content: Text('Please select your sexual orientation')),
       );
       return;
     }
 
     final currentDraft = ref.read(profileCreationProvider);
     final updatedDraft = currentDraft.copyWith(
-      smokingStatus: DisplayableField(field: _selected, visible: _isVisible),
+      sexualOrientation: DisplayableField(field: _selected!, visible: _isVisible),
     );
     await ref.read(profileCreationProvider.notifier).updateDraft(updatedDraft);
 
     if (mounted) {
-      Navigator.pushNamed(context, '/profile-creation/preferences/occupation');
+      Navigator.pushNamed(context, '/profile-creation/preferences/complete');
     }
   }
 
@@ -67,24 +68,31 @@ class _SmokingScreenState extends ConsumerState<SmokingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildProgressBar(4, 7),
+              _buildProgressBar(7, 7),
               const SizedBox(height: 32),
               Text(
-                'Do you smoke?',
+                'Sexual orientation',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
                     ),
               ),
+              const SizedBox(height: 8),
+              Text(
+                'What best describes you?',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+              ),
               const SizedBox(height: 32),
               Expanded(
                 child: ListView(
-                  children: SmokingStatus.values.map((status) {
-                    final isSelected = _selected == status;
+                  children: SexualOrientation.values.map((orientation) {
+                    final isSelected = _selected == orientation;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: InkWell(
-                        onTap: () => setState(() => _selected = status),
+                        onTap: () => setState(() => _selected = orientation),
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           padding: const EdgeInsets.all(20),
@@ -108,7 +116,7 @@ class _SmokingScreenState extends ConsumerState<SmokingScreen> {
                               ),
                               const SizedBox(width: 16),
                               Text(
-                                status.displayName,
+                                orientation.displayName,
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight:

@@ -67,7 +67,7 @@ class _KidsPreferenceScreenState extends ConsumerState<KidsPreferenceScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildProgressBar(2, 6),
+              _buildProgressBar(2, 7),
               const SizedBox(height: 32),
               Text(
                 'Do you want kids?',

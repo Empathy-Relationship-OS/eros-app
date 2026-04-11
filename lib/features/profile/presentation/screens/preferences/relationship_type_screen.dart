@@ -1,53 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
-import 'package:eros_app/core/utils/validators.dart';
+import 'package:eros_app/features/profile/domain/enums/preferences.dart';
+import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 
-/// Occupation and study screen
-/// Matches screenshot: @screenshots/users/create-profile/A7C87B65-5F8F-4648-9E31-BD6C09779DEF.png
-class OccupationScreen extends ConsumerStatefulWidget {
-  const OccupationScreen({super.key});
+/// Relationship type preference screen
+class RelationshipTypeScreen extends ConsumerStatefulWidget {
+  const RelationshipTypeScreen({super.key});
 
   @override
-  ConsumerState<OccupationScreen> createState() => _OccupationScreenState();
+  ConsumerState<RelationshipTypeScreen> createState() =>
+      _RelationshipTypeScreenState();
 }
 
-class _OccupationScreenState extends ConsumerState<OccupationScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _jobController = TextEditingController();
-  final bool _canContinue = true; // Occupation is optional
+class _RelationshipTypeScreenState
+    extends ConsumerState<RelationshipTypeScreen> {
+  RelationshipType? _selected;
+  bool _isVisible = true;
 
   @override
   void initState() {
     super.initState();
     final draft = ref.read(profileCreationProvider);
-    if (draft.occupation != null) {
-      _jobController.text = draft.occupation!;
+    if (draft.relationshipType != null) {
+      setState(() {
+        _selected = draft.relationshipType!.field;
+        _isVisible = draft.relationshipType!.visible;
+      });
     }
   }
 
   Future<void> _continue() async {
-    // Sanitize input
-    final occupation = _jobController.text.isNotEmpty
-        ? Validators.sanitizeInput(_jobController.text)
-        : null;
+    if (_selected == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select your relationship type')),
+      );
+      return;
+    }
 
     final currentDraft = ref.read(profileCreationProvider);
     final updatedDraft = currentDraft.copyWith(
-      occupation: occupation,
+      relationshipType: DisplayableField(field: _selected!, visible: _isVisible),
     );
     await ref.read(profileCreationProvider.notifier).updateDraft(updatedDraft);
 
     if (mounted) {
-      Navigator.pushNamed(context, '/profile-creation/preferences/relationship-type');
+      Navigator.pushNamed(context, '/profile-creation/preferences/sexual-orientation');
     }
-  }
-
-  @override
-  void dispose() {
-    _jobController.dispose();
-    super.dispose();
   }
 
   @override
@@ -68,10 +68,10 @@ class _OccupationScreenState extends ConsumerState<OccupationScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildProgressBar(5, 7),
+              _buildProgressBar(6, 7),
               const SizedBox(height: 32),
               Text(
-                'What do you do?',
+                'Relationship type',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
@@ -79,54 +79,74 @@ class _OccupationScreenState extends ConsumerState<OccupationScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Optional - skip if you prefer',
+                'What best describes you?',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.grey[600],
                     ),
               ),
               const SizedBox(height: 32),
-              Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _jobController,
-                      decoration: InputDecoration(
-                        labelText: 'Job / Occupation',
-                        hintText: 'e.g. Software Engineer',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: AppColors.primary,
-                            width: 2,
+              Expanded(
+                child: ListView(
+                  children: RelationshipType.values.map((type) {
+                    final isSelected = _selected == type;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: InkWell(
+                        onTap: () => setState(() => _selected = type),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.primary.withValues(alpha: 0.1)
+                                : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected ? AppColors.primary : Colors.grey[300]!,
+                              width: 2,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isSelected
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_unchecked,
+                                color: isSelected ? AppColors.primary : Colors.grey[400],
+                              ),
+                              const SizedBox(width: 16),
+                              Text(
+                                type.displayName,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight:
+                                      isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: isSelected ? AppColors.primary : Colors.black,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                      maxLength: 50,
-                      textInputAction: TextInputAction.done,
-                      validator: (value) {
-                        if (value != null && value.isNotEmpty) {
-                          return Validators.validateText(
-                            value,
-                            maxLength: 50,
-                            fieldName: 'Occupation',
-                          );
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
+                    );
+                  }).toList(),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(height: 16),
+              CheckboxListTile(
+                value: _isVisible,
+                onChanged: (value) => setState(() => _isVisible = value ?? true),
+                title: const Text('Show on my profile'),
+                controlAffinity: ListTileControlAffinity.leading,
+                activeColor: AppColors.primary,
+                contentPadding: EdgeInsets.zero,
+              ),
+              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _canContinue ? _continue : null,
+                  onPressed: _selected != null ? _continue : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     disabledBackgroundColor: Colors.grey[300],
@@ -143,11 +163,6 @@ class _OccupationScreenState extends ConsumerState<OccupationScreen> {
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => _continue(),
-                child: const Text('Skip for now'),
               ),
             ],
           ),

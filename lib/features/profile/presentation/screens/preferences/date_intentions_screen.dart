@@ -67,7 +67,7 @@ class _DateIntentionsScreenState extends ConsumerState<DateIntentionsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildProgressBar(1, 6),
+              _buildProgressBar(1, 7),
               const SizedBox(height: 32),
               Text(
                 'How do you want to date?',

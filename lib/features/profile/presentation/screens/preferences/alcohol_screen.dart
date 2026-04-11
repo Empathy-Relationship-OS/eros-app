@@ -67,7 +67,7 @@ class _AlcoholScreenState extends ConsumerState<AlcoholScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildProgressBar(3, 6),
+              _buildProgressBar(3, 7),
               const SizedBox(height: 32),
               Text(
                 'How often do you drink?',

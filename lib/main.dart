@@ -21,7 +21,8 @@ import 'features/profile/presentation/screens/preferences/kids_preference_screen
 import 'features/profile/presentation/screens/preferences/alcohol_screen.dart';
 import 'features/profile/presentation/screens/preferences/smoking_screen.dart';
 import 'features/profile/presentation/screens/preferences/occupation_screen.dart';
-import 'features/profile/presentation/screens/preferences/additional_preferences_screen.dart';
+import 'features/profile/presentation/screens/preferences/relationship_type_screen.dart';
+import 'features/profile/presentation/screens/preferences/sexual_orientation_screen.dart';
 import 'features/profile/presentation/screens/preferences/preferences_complete_screen.dart';
 import 'features/profile/presentation/screens/interests/interests_screen.dart';
 import 'features/profile/presentation/screens/personality/personality_screen.dart';
@@ -84,7 +85,8 @@ class ErosApp extends StatelessWidget {
         '/profile-creation/preferences/alcohol': (context) => const AlcoholScreen(),
         '/profile-creation/preferences/smoking': (context) => const SmokingScreen(),
         '/profile-creation/preferences/occupation': (context) => const OccupationScreen(),
-        '/profile-creation/preferences/additional': (context) => const AdditionalPreferencesScreen(),
+        '/profile-creation/preferences/relationship-type': (context) => const RelationshipTypeScreen(),
+        '/profile-creation/preferences/sexual-orientation': (context) => const SexualOrientationScreen(),
         '/profile-creation/preferences/complete': (context) => const PreferencesCompleteScreen(),
 
         // Profile creation routes - Interests & Personality
