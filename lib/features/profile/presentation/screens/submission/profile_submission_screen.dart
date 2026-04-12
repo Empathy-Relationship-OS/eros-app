@@ -126,7 +126,7 @@ class _ProfileSubmissionScreenState
 
   DisplayableField<RelationshipType> _defaultRelationshipType() {
     return DisplayableField(
-      field: RelationshipType.preferNotToSay,
+      field: RelationshipType.monogamous,
       visible: false,
     );
   }

@@ -34,7 +34,7 @@ class DisplayableField<T> {
   Map<String, dynamic> toJson(dynamic Function(T) fieldToJson) {
     return {
       'field': fieldToJson(field),
-      'visible': visible,
+      'display': visible,
     };
   }
 
@@ -45,7 +45,7 @@ class DisplayableField<T> {
   ) {
     return DisplayableField(
       field: fieldFromJson(json['field']),
-      visible: json['visible'] as bool? ?? true,
+      visible: json['display'] as bool? ?? true,
     );
   }
 
@@ -61,5 +61,5 @@ class DisplayableField<T> {
   int get hashCode => field.hashCode ^ visible.hashCode;
 
   @override
-  String toString() => 'DisplayableField(field: $field, visible: $visible)';
+  String toString() => 'DisplayableField(field: $field, display: $visible)';
 }

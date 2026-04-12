@@ -267,20 +267,17 @@ enum EducationLevel {
 /// Relationship type preference
 enum RelationshipType {
   monogamous,
-  openRelationship,
-  ethicallyNonMonogamous,
-  preferNotToSay;
+  nonMonogamous,
+  open;
 
   String get displayName {
     switch (this) {
       case RelationshipType.monogamous:
         return 'Monogamous';
-      case RelationshipType.openRelationship:
-        return 'Open relationship';
-      case RelationshipType.ethicallyNonMonogamous:
-        return 'Ethically non-monogamous';
-      case RelationshipType.preferNotToSay:
-        return 'Prefer not to say';
+      case RelationshipType.nonMonogamous:
+        return 'Non-monogamous';
+      case RelationshipType.open:
+        return 'Open';
     }
   }
 
@@ -288,12 +285,10 @@ enum RelationshipType {
     switch (this) {
       case RelationshipType.monogamous:
         return 'MONOGAMOUS';
-      case RelationshipType.openRelationship:
-        return 'OPEN_RELATIONSHIP';
-      case RelationshipType.ethicallyNonMonogamous:
-        return 'ETHICALLY_NON_MONOGAMOUS';
-      case RelationshipType.preferNotToSay:
-        return 'PREFER_NOT_TO_SAY';
+      case RelationshipType.nonMonogamous:
+        return 'NON_MONOGAMOUS';
+      case RelationshipType.open:
+        return 'OPEN';
     }
   }
 
@@ -301,12 +296,10 @@ enum RelationshipType {
     switch (value) {
       case 'MONOGAMOUS':
         return RelationshipType.monogamous;
-      case 'OPEN_RELATIONSHIP':
-        return RelationshipType.openRelationship;
-      case 'ETHICALLY_NON_MONOGAMOUS':
-        return RelationshipType.ethicallyNonMonogamous;
-      case 'PREFER_NOT_TO_SAY':
-        return RelationshipType.preferNotToSay;
+      case 'NON_MONOGAMOUS':
+        return RelationshipType.nonMonogamous;
+      case 'OPEN':
+        return RelationshipType.open;
       default:
         throw ArgumentError('Invalid RelationshipType value: $value');
     }
@@ -321,8 +314,8 @@ enum SexualOrientation {
   bisexual,
   pansexual,
   asexual,
-  queer,
   questioning,
+  other,
   preferNotToSay;
 
   String get displayName {
@@ -339,10 +332,10 @@ enum SexualOrientation {
         return 'Pansexual';
       case SexualOrientation.asexual:
         return 'Asexual';
-      case SexualOrientation.queer:
-        return 'Queer';
       case SexualOrientation.questioning:
         return 'Questioning';
+      case SexualOrientation.other:
+        return 'Other';
       case SexualOrientation.preferNotToSay:
         return 'Prefer not to say';
     }
@@ -362,10 +355,10 @@ enum SexualOrientation {
         return 'PANSEXUAL';
       case SexualOrientation.asexual:
         return 'ASEXUAL';
-      case SexualOrientation.queer:
-        return 'QUEER';
       case SexualOrientation.questioning:
         return 'QUESTIONING';
+      case SexualOrientation.other:
+        return 'OTHER';
       case SexualOrientation.preferNotToSay:
         return 'PREFER_NOT_TO_SAY';
     }
@@ -385,10 +378,10 @@ enum SexualOrientation {
         return SexualOrientation.pansexual;
       case 'ASEXUAL':
         return SexualOrientation.asexual;
-      case 'QUEER':
-        return SexualOrientation.queer;
       case 'QUESTIONING':
         return SexualOrientation.questioning;
+      case 'OTHER':
+        return SexualOrientation.other;
       case 'PREFER_NOT_TO_SAY':
         return SexualOrientation.preferNotToSay;
       default:
@@ -402,7 +395,8 @@ enum Pronouns {
   heHim,
   sheHer,
   theyThem,
-  other;
+  other,
+  preferNotToSay;
 
   String get displayName {
     switch (this) {
@@ -414,6 +408,8 @@ enum Pronouns {
         return 'They/Them';
       case Pronouns.other:
         return 'Other';
+      case Pronouns.preferNotToSay:
+        return 'Prefer not to say';
     }
   }
 
@@ -427,6 +423,8 @@ enum Pronouns {
         return 'THEY_THEM';
       case Pronouns.other:
         return 'OTHER';
+      case Pronouns.preferNotToSay:
+        return 'PREFER_NOT_TO_SAY';
     }
   }
 
@@ -440,6 +438,8 @@ enum Pronouns {
         return Pronouns.theyThem;
       case 'OTHER':
         return Pronouns.other;
+      case 'PREFER_NOT_TO_SAY':
+        return Pronouns.preferNotToSay;
       default:
         throw ArgumentError('Invalid Pronouns value: $value');
     }
@@ -549,10 +549,8 @@ enum PoliticalView {
   liberal,
   moderate,
   conservative,
-  leftWing,
-  rightWing,
-  centrist,
   apolitical,
+  other,
   preferNotToSay;
 
   String get displayName {
@@ -563,14 +561,10 @@ enum PoliticalView {
         return 'Moderate';
       case PoliticalView.conservative:
         return 'Conservative';
-      case PoliticalView.leftWing:
-        return 'Left-wing';
-      case PoliticalView.rightWing:
-        return 'Right-wing';
-      case PoliticalView.centrist:
-        return 'Centrist';
       case PoliticalView.apolitical:
         return 'Apolitical';
+      case PoliticalView.other:
+        return 'Other';
       case PoliticalView.preferNotToSay:
         return 'Prefer not to say';
     }
@@ -584,14 +578,10 @@ enum PoliticalView {
         return 'MODERATE';
       case PoliticalView.conservative:
         return 'CONSERVATIVE';
-      case PoliticalView.leftWing:
-        return 'LEFT_WING';
-      case PoliticalView.rightWing:
-        return 'RIGHT_WING';
-      case PoliticalView.centrist:
-        return 'CENTRIST';
       case PoliticalView.apolitical:
         return 'APOLITICAL';
+      case PoliticalView.other:
+        return 'OTHER';
       case PoliticalView.preferNotToSay:
         return 'PREFER_NOT_TO_SAY';
     }
@@ -605,14 +595,10 @@ enum PoliticalView {
         return PoliticalView.moderate;
       case 'CONSERVATIVE':
         return PoliticalView.conservative;
-      case 'LEFT_WING':
-        return PoliticalView.leftWing;
-      case 'RIGHT_WING':
-        return PoliticalView.rightWing;
-      case 'CENTRIST':
-        return PoliticalView.centrist;
       case 'APOLITICAL':
         return PoliticalView.apolitical;
+      case 'OTHER':
+        return PoliticalView.other;
       case 'PREFER_NOT_TO_SAY':
         return PoliticalView.preferNotToSay;
       default:
@@ -623,13 +609,11 @@ enum PoliticalView {
 
 /// Diet preference
 enum Diet {
-  vegan,
-  vegetarian,
-  pescatarian,
   omnivore,
-  keto,
-  paleo,
-  glutenFree,
+  flexitarian,
+  vegetarian,
+  vegan,
+  pescatarian,
   halal,
   kosher,
   other,
@@ -637,20 +621,16 @@ enum Diet {
 
   String get displayName {
     switch (this) {
-      case Diet.vegan:
-        return 'Vegan';
-      case Diet.vegetarian:
-        return 'Vegetarian';
-      case Diet.pescatarian:
-        return 'Pescatarian';
       case Diet.omnivore:
         return 'Omnivore';
-      case Diet.keto:
-        return 'Keto';
-      case Diet.paleo:
-        return 'Paleo';
-      case Diet.glutenFree:
-        return 'Gluten-free';
+      case Diet.flexitarian:
+        return 'Flexitarian';
+      case Diet.vegetarian:
+        return 'Vegetarian';
+      case Diet.vegan:
+        return 'Vegan';
+      case Diet.pescatarian:
+        return 'Pescatarian';
       case Diet.halal:
         return 'Halal';
       case Diet.kosher:
@@ -664,20 +644,16 @@ enum Diet {
 
   String toBackend() {
     switch (this) {
-      case Diet.vegan:
-        return 'VEGAN';
-      case Diet.vegetarian:
-        return 'VEGETARIAN';
-      case Diet.pescatarian:
-        return 'PESCATARIAN';
       case Diet.omnivore:
         return 'OMNIVORE';
-      case Diet.keto:
-        return 'KETO';
-      case Diet.paleo:
-        return 'PALEO';
-      case Diet.glutenFree:
-        return 'GLUTEN_FREE';
+      case Diet.flexitarian:
+        return 'FLEXITARIAN';
+      case Diet.vegetarian:
+        return 'VEGETARIAN';
+      case Diet.vegan:
+        return 'VEGAN';
+      case Diet.pescatarian:
+        return 'PESCATARIAN';
       case Diet.halal:
         return 'HALAL';
       case Diet.kosher:
@@ -691,20 +667,16 @@ enum Diet {
 
   static Diet fromBackend(String value) {
     switch (value) {
-      case 'VEGAN':
-        return Diet.vegan;
-      case 'VEGETARIAN':
-        return Diet.vegetarian;
-      case 'PESCATARIAN':
-        return Diet.pescatarian;
       case 'OMNIVORE':
         return Diet.omnivore;
-      case 'KETO':
-        return Diet.keto;
-      case 'PALEO':
-        return Diet.paleo;
-      case 'GLUTEN_FREE':
-        return Diet.glutenFree;
+      case 'FLEXITARIAN':
+        return Diet.flexitarian;
+      case 'VEGETARIAN':
+        return Diet.vegetarian;
+      case 'VEGAN':
+        return Diet.vegan;
+      case 'PESCATARIAN':
+        return Diet.pescatarian;
       case 'HALAL':
         return Diet.halal;
       case 'KOSHER':
@@ -721,24 +693,24 @@ enum Diet {
 
 /// Ethnicity
 enum Ethnicity {
-  asian,
-  black,
-  hispanic,
+  blackAfricanDescent,
+  eastAsian,
+  hispanicLatino,
   middleEastern,
   nativeAmerican,
   pacificIslander,
-  white,
-  mixed,
-  other,
-  preferNotToSay;
+  southAsian,
+  southeastAsian,
+  whiteCaucasian,
+  other;
 
   String get displayName {
     switch (this) {
-      case Ethnicity.asian:
-        return 'Asian';
-      case Ethnicity.black:
-        return 'Black';
-      case Ethnicity.hispanic:
+      case Ethnicity.blackAfricanDescent:
+        return 'Black/African Descent';
+      case Ethnicity.eastAsian:
+        return 'East Asian';
+      case Ethnicity.hispanicLatino:
         return 'Hispanic/Latino';
       case Ethnicity.middleEastern:
         return 'Middle Eastern';
@@ -746,218 +718,192 @@ enum Ethnicity {
         return 'Native American';
       case Ethnicity.pacificIslander:
         return 'Pacific Islander';
-      case Ethnicity.white:
-        return 'White';
-      case Ethnicity.mixed:
-        return 'Mixed';
+      case Ethnicity.southAsian:
+        return 'South Asian';
+      case Ethnicity.southeastAsian:
+        return 'Southeast Asian';
+      case Ethnicity.whiteCaucasian:
+        return 'White/Caucasian';
       case Ethnicity.other:
         return 'Other';
-      case Ethnicity.preferNotToSay:
-        return 'Prefer not to say';
     }
   }
 
   String toBackend() {
     switch (this) {
-      case Ethnicity.asian:
-        return 'ASIAN';
-      case Ethnicity.black:
-        return 'BLACK';
-      case Ethnicity.hispanic:
-        return 'HISPANIC';
+      case Ethnicity.blackAfricanDescent:
+        return 'BLACK_AFRICAN_DESCENT';
+      case Ethnicity.eastAsian:
+        return 'EAST_ASIAN';
+      case Ethnicity.hispanicLatino:
+        return 'HISPANIC_LATINO';
       case Ethnicity.middleEastern:
         return 'MIDDLE_EASTERN';
       case Ethnicity.nativeAmerican:
         return 'NATIVE_AMERICAN';
       case Ethnicity.pacificIslander:
         return 'PACIFIC_ISLANDER';
-      case Ethnicity.white:
-        return 'WHITE';
-      case Ethnicity.mixed:
-        return 'MIXED';
+      case Ethnicity.southAsian:
+        return 'SOUTH_ASIAN';
+      case Ethnicity.southeastAsian:
+        return 'SOUTHEAST_ASIAN';
+      case Ethnicity.whiteCaucasian:
+        return 'WHITE_CAUCASIAN';
       case Ethnicity.other:
         return 'OTHER';
-      case Ethnicity.preferNotToSay:
-        return 'PREFER_NOT_TO_SAY';
     }
   }
 
   static Ethnicity fromBackend(String value) {
     switch (value) {
-      case 'ASIAN':
-        return Ethnicity.asian;
-      case 'BLACK':
-        return Ethnicity.black;
-      case 'HISPANIC':
-        return Ethnicity.hispanic;
+      case 'BLACK_AFRICAN_DESCENT':
+        return Ethnicity.blackAfricanDescent;
+      case 'EAST_ASIAN':
+        return Ethnicity.eastAsian;
+      case 'HISPANIC_LATINO':
+        return Ethnicity.hispanicLatino;
       case 'MIDDLE_EASTERN':
         return Ethnicity.middleEastern;
       case 'NATIVE_AMERICAN':
         return Ethnicity.nativeAmerican;
       case 'PACIFIC_ISLANDER':
         return Ethnicity.pacificIslander;
-      case 'WHITE':
-        return Ethnicity.white;
-      case 'MIXED':
-        return Ethnicity.mixed;
+      case 'SOUTH_ASIAN':
+        return Ethnicity.southAsian;
+      case 'SOUTHEAST_ASIAN':
+        return Ethnicity.southeastAsian;
+      case 'WHITE_CAUCASIAN':
+        return Ethnicity.whiteCaucasian;
       case 'OTHER':
         return Ethnicity.other;
-      case 'PREFER_NOT_TO_SAY':
-        return Ethnicity.preferNotToSay;
       default:
         throw ArgumentError('Invalid Ethnicity value: $value');
     }
   }
 }
 
-/// Brain attributes (thinking style)
+/// Brain attributes - neurodiversity and mental health
+/// Optional multi-select field with description support
 enum BrainAttribute {
-  analytical,
-  creative,
-  logical,
-  intuitive,
-  detailOriented,
-  bigPictureThinker,
-  strategic,
-  spontaneous;
+  adhd,
+  learningDisability,
+  mentalHealthChallenges,
+  hsp, // Highly Sensitive Person
+  autistic,
+  neurodivergent;
 
   String get displayName {
     switch (this) {
-      case BrainAttribute.analytical:
-        return 'Analytical';
-      case BrainAttribute.creative:
-        return 'Creative';
-      case BrainAttribute.logical:
-        return 'Logical';
-      case BrainAttribute.intuitive:
-        return 'Intuitive';
-      case BrainAttribute.detailOriented:
-        return 'Detail-oriented';
-      case BrainAttribute.bigPictureThinker:
-        return 'Big picture thinker';
-      case BrainAttribute.strategic:
-        return 'Strategic';
-      case BrainAttribute.spontaneous:
-        return 'Spontaneous';
+      case BrainAttribute.adhd:
+        return 'I have AD(H)D';
+      case BrainAttribute.learningDisability:
+        return 'I have a learning disability';
+      case BrainAttribute.mentalHealthChallenges:
+        return 'I have mental health challenges';
+      case BrainAttribute.hsp:
+        return "I'm an HSP";
+      case BrainAttribute.autistic:
+        return "I'm autistic";
+      case BrainAttribute.neurodivergent:
+        return "I'm neurodivergent";
     }
   }
 
   String toBackend() {
     switch (this) {
-      case BrainAttribute.analytical:
-        return 'ANALYTICAL';
-      case BrainAttribute.creative:
-        return 'CREATIVE';
-      case BrainAttribute.logical:
-        return 'LOGICAL';
-      case BrainAttribute.intuitive:
-        return 'INTUITIVE';
-      case BrainAttribute.detailOriented:
-        return 'DETAIL_ORIENTED';
-      case BrainAttribute.bigPictureThinker:
-        return 'BIG_PICTURE_THINKER';
-      case BrainAttribute.strategic:
-        return 'STRATEGIC';
-      case BrainAttribute.spontaneous:
-        return 'SPONTANEOUS';
+      case BrainAttribute.adhd:
+        return 'ADHD';
+      case BrainAttribute.learningDisability:
+        return 'LEARNING_DISABILITY';
+      case BrainAttribute.mentalHealthChallenges:
+        return 'MENTAL_HEALTH_CHALLENGES';
+      case BrainAttribute.hsp:
+        return 'HSP';
+      case BrainAttribute.autistic:
+        return 'AUTISTIC';
+      case BrainAttribute.neurodivergent:
+        return 'NEURODIVERGENT';
     }
   }
 
   static BrainAttribute fromBackend(String value) {
     switch (value) {
-      case 'ANALYTICAL':
-        return BrainAttribute.analytical;
-      case 'CREATIVE':
-        return BrainAttribute.creative;
-      case 'LOGICAL':
-        return BrainAttribute.logical;
-      case 'INTUITIVE':
-        return BrainAttribute.intuitive;
-      case 'DETAIL_ORIENTED':
-        return BrainAttribute.detailOriented;
-      case 'BIG_PICTURE_THINKER':
-        return BrainAttribute.bigPictureThinker;
-      case 'STRATEGIC':
-        return BrainAttribute.strategic;
-      case 'SPONTANEOUS':
-        return BrainAttribute.spontaneous;
+      case 'ADHD':
+        return BrainAttribute.adhd;
+      case 'LEARNING_DISABILITY':
+        return BrainAttribute.learningDisability;
+      case 'MENTAL_HEALTH_CHALLENGES':
+        return BrainAttribute.mentalHealthChallenges;
+      case 'HSP':
+        return BrainAttribute.hsp;
+      case 'AUTISTIC':
+        return BrainAttribute.autistic;
+      case 'NEURODIVERGENT':
+        return BrainAttribute.neurodivergent;
       default:
         throw ArgumentError('Invalid BrainAttribute value: $value');
     }
   }
 }
 
-/// Body attributes (physical attributes)
+/// Body attributes - physical health and accessibility
+/// Optional multi-select field with description support
 enum BodyAttribute {
-  slim,
-  athletic,
-  average,
-  curvy,
-  muscular,
-  heavyset,
-  petite,
-  tall;
+  chronicIllness,
+  visualImpairment,
+  deaf,
+  immunocompromised,
+  mobilityAid,
+  wheelchair;
 
   String get displayName {
     switch (this) {
-      case BodyAttribute.slim:
-        return 'Slim';
-      case BodyAttribute.athletic:
-        return 'Athletic';
-      case BodyAttribute.average:
-        return 'Average';
-      case BodyAttribute.curvy:
-        return 'Curvy';
-      case BodyAttribute.muscular:
-        return 'Muscular';
-      case BodyAttribute.heavyset:
-        return 'Heavyset';
-      case BodyAttribute.petite:
-        return 'Petite';
-      case BodyAttribute.tall:
-        return 'Tall';
+      case BodyAttribute.chronicIllness:
+        return 'I have a chronic illness';
+      case BodyAttribute.visualImpairment:
+        return 'I have a visual impairment';
+      case BodyAttribute.deaf:
+        return "I'm deaf";
+      case BodyAttribute.immunocompromised:
+        return "I'm immunocompromised";
+      case BodyAttribute.mobilityAid:
+        return 'I use a mobility aid';
+      case BodyAttribute.wheelchair:
+        return 'I use a wheelchair';
     }
   }
 
   String toBackend() {
     switch (this) {
-      case BodyAttribute.slim:
-        return 'SLIM';
-      case BodyAttribute.athletic:
-        return 'ATHLETIC';
-      case BodyAttribute.average:
-        return 'AVERAGE';
-      case BodyAttribute.curvy:
-        return 'CURVY';
-      case BodyAttribute.muscular:
-        return 'MUSCULAR';
-      case BodyAttribute.heavyset:
-        return 'HEAVYSET';
-      case BodyAttribute.petite:
-        return 'PETITE';
-      case BodyAttribute.tall:
-        return 'TALL';
+      case BodyAttribute.chronicIllness:
+        return 'CHRONIC_ILLNESS';
+      case BodyAttribute.visualImpairment:
+        return 'VISUAL_IMPAIRMENT';
+      case BodyAttribute.deaf:
+        return 'DEAF';
+      case BodyAttribute.immunocompromised:
+        return 'IMMUNOCOMPROMISED';
+      case BodyAttribute.mobilityAid:
+        return 'MOBILITY_AID';
+      case BodyAttribute.wheelchair:
+        return 'WHEELCHAIR';
     }
   }
 
   static BodyAttribute fromBackend(String value) {
     switch (value) {
-      case 'SLIM':
-        return BodyAttribute.slim;
-      case 'ATHLETIC':
-        return BodyAttribute.athletic;
-      case 'AVERAGE':
-        return BodyAttribute.average;
-      case 'CURVY':
-        return BodyAttribute.curvy;
-      case 'MUSCULAR':
-        return BodyAttribute.muscular;
-      case 'HEAVYSET':
-        return BodyAttribute.heavyset;
-      case 'PETITE':
-        return BodyAttribute.petite;
-      case 'TALL':
-        return BodyAttribute.tall;
+      case 'CHRONIC_ILLNESS':
+        return BodyAttribute.chronicIllness;
+      case 'VISUAL_IMPAIRMENT':
+        return BodyAttribute.visualImpairment;
+      case 'DEAF':
+        return BodyAttribute.deaf;
+      case 'IMMUNOCOMPROMISED':
+        return BodyAttribute.immunocompromised;
+      case 'MOBILITY_AID':
+        return BodyAttribute.mobilityAid;
+      case 'WHEELCHAIR':
+        return BodyAttribute.wheelchair;
       default:
         throw ArgumentError('Invalid BodyAttribute value: $value');
     }
