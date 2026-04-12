@@ -1,138 +1,239 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:logger/logger.dart';
 import 'package:eros_app/features/profile/domain/models/create_user_request.dart';
 
 /// Repository for profile-related API calls
 class ProfileRepository {
   final String baseUrl;
   final FirebaseAuth _auth;
+  final Logger _logger;
 
   ProfileRepository({
-    this.baseUrl = 'http://localhost:8080', // Change to production URL when deploying
+    this.baseUrl = 'http://localhost:8940', // Change to production URL when deploying
     FirebaseAuth? auth,
-  }) : _auth = auth ?? FirebaseAuth.instance;
+    Logger? logger,
+  })  : _auth = auth ?? FirebaseAuth.instance,
+        _logger = logger ?? Logger(
+          printer: PrettyPrinter(
+            methodCount: 0,
+            errorMethodCount: 5,
+            lineLength: 80,
+            colors: true,
+            printEmojis: true,
+            dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+          ),
+        );
 
   /// Get Firebase ID token for authentication
   Future<String> _getIdToken() async {
+    _logger.d('Getting Firebase ID token...');
     final user = _auth.currentUser;
     if (user == null) {
+      _logger.e('No authenticated user found');
       throw ProfileRepositoryException('User not authenticated');
     }
+    _logger.d('User authenticated: ${user.uid}');
     final token = await user.getIdToken();
     if (token == null) {
+      _logger.e('Failed to retrieve ID token');
       throw ProfileRepositoryException('Failed to get authentication token');
     }
+    _logger.d('Successfully retrieved ID token (length: ${token.length})');
     return token;
   }
 
   /// Create a new user profile
   /// POST /users
   Future<void> createUser(CreateUserRequest request) async {
+    final endpoint = '$baseUrl/users';
+    _logger.i('📤 POST $endpoint');
+
     try {
       final token = await _getIdToken();
+      final requestBody = request.toJson();
+
+      _logger.d('Request body: ${jsonEncode(requestBody)}');
+
+      final headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
+
+      _logger.d('Request headers: ${headers.keys.join(", ")}');
+
       final response = await http.post(
-        Uri.parse('$baseUrl/users'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(request.toJson()),
+        Uri.parse(endpoint),
+        headers: headers,
+        body: jsonEncode(requestBody),
       );
 
+      _logger.i('📥 Response status: ${response.statusCode}');
+      _logger.d('Response headers: ${response.headers}');
+      _logger.d('Response body: ${response.body}');
+
       if (response.statusCode == 201) {
-        // Success
+        _logger.i('✅ User profile created successfully');
         return;
       } else if (response.statusCode == 400) {
         // Validation error
         final error = jsonDecode(response.body);
+        _logger.w('⚠️  Validation error: ${error['message']}');
+        _logger.w('Validation errors: ${error['errors']}');
         throw ProfileValidationException(
           error['message'] ?? 'Validation failed',
           errors: error['errors'] as Map<String, dynamic>?,
         );
       } else if (response.statusCode == 409) {
         // User already exists
-        throw ProfileRepositoryException('User profile already exists');
-      } else if (response.statusCode == 401) {
-        throw ProfileRepositoryException('Authentication failed');
-      } else {
+        _logger.w('⚠️  User profile already exists');
         throw ProfileRepositoryException(
-          'Failed to create profile: ${response.statusCode}',
+          'It looks like you already have an account. Please try logging in instead.',
+        );
+      } else if (response.statusCode == 401) {
+        _logger.e('🔒 Authentication failed (401)');
+        _logger.e('Auth failure details: ${response.body}');
+        throw ProfileRepositoryException(
+          'There was a problem verifying your identity. Please try signing in again.',
+        );
+      } else if (response.statusCode == 403) {
+        _logger.e('🚫 Forbidden (403) - Server rejected the request');
+        _logger.e('Server response: ${response.body}');
+        throw ProfileRepositoryException(
+          'We couldn\'t process your request at this time. Please try again later.',
+        );
+      } else {
+        _logger.e('❌ Unexpected status code: ${response.statusCode}');
+        _logger.e('Response body: ${response.body}');
+        throw ProfileRepositoryException(
+          'Something went wrong while creating your profile. Please try again.',
         );
       }
     } on ProfileRepositoryException {
       rethrow;
     } on ProfileValidationException {
       rethrow;
-    } catch (e) {
-      throw ProfileRepositoryException('Network error: $e');
+    } catch (e, stackTrace) {
+      _logger.e('💥 Network error', error: e, stackTrace: stackTrace);
+      throw ProfileRepositoryException(
+        'Unable to connect to the server. Please check your internet connection and try again.',
+      );
     }
   }
 
   /// Get current user's profile
   /// GET /users/me
   Future<Map<String, dynamic>> getCurrentUser() async {
+    final endpoint = '$baseUrl/users/me';
+    _logger.i('📤 GET $endpoint');
+
     try {
       final token = await _getIdToken();
       final response = await http.get(
-        Uri.parse('$baseUrl/users/me'),
+        Uri.parse(endpoint),
         headers: {
           'Authorization': 'Bearer $token',
         },
       );
 
+      _logger.i('📥 Response status: ${response.statusCode}');
+      _logger.d('Response body: ${response.body}');
+
       if (response.statusCode == 200) {
+        _logger.i('✅ User profile retrieved successfully');
         return jsonDecode(response.body) as Map<String, dynamic>;
       } else if (response.statusCode == 404) {
-        throw ProfileRepositoryException('User profile not found');
-      } else if (response.statusCode == 401) {
-        throw ProfileRepositoryException('Authentication failed');
-      } else {
+        _logger.w('⚠️  User profile not found (404)');
         throw ProfileRepositoryException(
-          'Failed to get profile: ${response.statusCode}',
+          'We couldn\'t find your profile. Please complete your profile setup.',
+        );
+      } else if (response.statusCode == 401) {
+        _logger.e('🔒 Authentication failed (401)');
+        _logger.e('Auth failure details: ${response.body}');
+        throw ProfileRepositoryException(
+          'There was a problem verifying your identity. Please try signing in again.',
+        );
+      } else {
+        _logger.e('❌ Unexpected status code: ${response.statusCode}');
+        _logger.e('Response body: ${response.body}');
+        throw ProfileRepositoryException(
+          'We couldn\'t load your profile. Please try again.',
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (e is ProfileRepositoryException) rethrow;
-      throw ProfileRepositoryException('Network error: $e');
+      _logger.e('💥 Network error', error: e, stackTrace: stackTrace);
+      throw ProfileRepositoryException(
+        'Unable to connect to the server. Please check your internet connection and try again.',
+      );
     }
   }
 
   /// Update user profile
   /// PATCH /users/me
   Future<void> updateUser(Map<String, dynamic> updates) async {
+    final endpoint = '$baseUrl/users/me';
+    _logger.i('📤 PATCH $endpoint');
+
     try {
       final token = await _getIdToken();
+
+      _logger.d('Update payload: ${jsonEncode(updates)}');
+
+      final headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
+
       final response = await http.patch(
-        Uri.parse('$baseUrl/users/me'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        Uri.parse(endpoint),
+        headers: headers,
         body: jsonEncode(updates),
       );
 
+      _logger.i('📥 Response status: ${response.statusCode}');
+      _logger.d('Response body: ${response.body}');
+
       if (response.statusCode == 200) {
+        _logger.i('✅ User profile updated successfully');
         return;
       } else if (response.statusCode == 400) {
         final error = jsonDecode(response.body);
+        _logger.w('⚠️  Validation error: ${error['message']}');
+        _logger.w('Validation errors: ${error['errors']}');
         throw ProfileValidationException(
           error['message'] ?? 'Validation failed',
           errors: error['errors'] as Map<String, dynamic>?,
         );
       } else if (response.statusCode == 401) {
-        throw ProfileRepositoryException('Authentication failed');
-      } else {
+        _logger.e('🔒 Authentication failed (401)');
+        _logger.e('Auth failure details: ${response.body}');
         throw ProfileRepositoryException(
-          'Failed to update profile: ${response.statusCode}',
+          'There was a problem verifying your identity. Please try signing in again.',
+        );
+      } else if (response.statusCode == 403) {
+        _logger.e('🚫 Forbidden (403) - Server rejected the request');
+        _logger.e('Server response: ${response.body}');
+        throw ProfileRepositoryException(
+          'We couldn\'t process your request at this time. Please try again later.',
+        );
+      } else {
+        _logger.e('❌ Unexpected status code: ${response.statusCode}');
+        _logger.e('Response body: ${response.body}');
+        throw ProfileRepositoryException(
+          'We couldn\'t update your profile. Please try again.',
         );
       }
     } on ProfileRepositoryException {
       rethrow;
     } on ProfileValidationException {
       rethrow;
-    } catch (e) {
-      throw ProfileRepositoryException('Network error: $e');
+    } catch (e, stackTrace) {
+      _logger.e('💥 Network error', error: e, stackTrace: stackTrace);
+      throw ProfileRepositoryException(
+        'Unable to connect to the server. Please check your internet connection and try again.',
+      );
     }
   }
 }
