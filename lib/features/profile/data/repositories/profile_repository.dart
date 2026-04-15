@@ -1,20 +1,20 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logger/logger.dart';
+import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/profile/domain/models/create_user_request.dart';
 
 /// Repository for profile-related API calls
 class ProfileRepository {
   final String baseUrl;
-  final FirebaseAuth _auth;
+  final AuthService _authService;
   final Logger _logger;
 
   ProfileRepository({
     this.baseUrl = 'http://localhost:8940', // Change to production URL when deploying
-    FirebaseAuth? auth,
+    required AuthService authService,
     Logger? logger,
-  })  : _auth = auth ?? FirebaseAuth.instance,
+  })  : _authService = authService,
         _logger = logger ?? Logger(
           printer: PrettyPrinter(
             methodCount: 0,
@@ -26,25 +26,6 @@ class ProfileRepository {
           ),
         );
 
-  /// Get Firebase ID token for authentication
-  /// Set [forceRefresh] to true to get a fresh token (e.g., after role claims update)
-  Future<String> _getIdToken({bool forceRefresh = false}) async {
-    _logger.d('Getting Firebase ID token (forceRefresh: $forceRefresh)...');
-    final user = _auth.currentUser;
-    if (user == null) {
-      _logger.e('No authenticated user found');
-      throw ProfileRepositoryException('User not authenticated');
-    }
-    _logger.d('User authenticated: ${user.uid}');
-    final token = await user.getIdToken(forceRefresh);
-    if (token == null) {
-      _logger.e('Failed to retrieve ID token');
-      throw ProfileRepositoryException('Failed to get authentication token');
-    }
-    _logger.d('Successfully retrieved ID token (length: ${token.length})');
-    return token;
-  }
-
   /// Create a new user profile
   /// POST /users
   /// After successful creation, forces a token refresh to get updated role claims
@@ -53,7 +34,7 @@ class ProfileRepository {
     _logger.i('📤 POST $endpoint');
 
     try {
-      final token = await _getIdToken();
+      final token = await _authService.getIdToken();
       final requestBody = request.toJson();
 
       _logger.d('Request body: ${jsonEncode(requestBody)}');
@@ -80,7 +61,7 @@ class ProfileRepository {
 
         // Force token refresh to get updated role claims
         _logger.i('🔄 Forcing token refresh to get updated role claims...');
-        await _getIdToken(forceRefresh: true);
+        await _authService.getIdToken(forceRefresh: true);
         _logger.i('✅ Token refreshed successfully');
 
         return;
@@ -137,7 +118,7 @@ class ProfileRepository {
     _logger.i('📤 GET $endpoint');
 
     try {
-      final token = await _getIdToken();
+      final token = await _authService.getIdToken();
       final response = await http.get(
         Uri.parse(endpoint),
         headers: {
@@ -185,7 +166,7 @@ class ProfileRepository {
     _logger.i('📤 PATCH $endpoint');
 
     try {
-      final token = await _getIdToken();
+      final token = await _authService.getIdToken();
 
       _logger.d('Update payload: ${jsonEncode(updates)}');
 

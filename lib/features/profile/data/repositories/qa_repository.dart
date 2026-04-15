@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logger/logger.dart';
+import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/profile/domain/models/question_dto.dart';
 import 'package:eros_app/features/profile/domain/models/user_qa_item_dto.dart';
 import 'package:eros_app/features/profile/domain/models/user_qa_collection_dto.dart';
@@ -9,14 +9,14 @@ import 'package:eros_app/features/profile/domain/models/user_qa_collection_dto.d
 /// Repository for Q&A related API calls
 class QARepository {
   final String baseUrl;
-  final FirebaseAuth _auth;
+  final AuthService _authService;
   final Logger _logger;
 
   QARepository({
     this.baseUrl = 'http://localhost:8940',
-    FirebaseAuth? auth,
+    required AuthService authService,
     Logger? logger,
-  })  : _auth = auth ?? FirebaseAuth.instance,
+  })  : _authService = authService,
         _logger = logger ??
             Logger(
               printer: PrettyPrinter(
@@ -29,25 +29,6 @@ class QARepository {
               ),
             );
 
-  /// Get Firebase ID token for authentication
-  /// Set [forceRefresh] to true to get a fresh token (e.g., after role claims update)
-  Future<String> _getIdToken({bool forceRefresh = false}) async {
-    _logger.d('Getting Firebase ID token for Q&A request (forceRefresh: $forceRefresh)...');
-    final user = _auth.currentUser;
-    if (user == null) {
-      _logger.e('No authenticated user found');
-      throw QARepositoryException('User not authenticated');
-    }
-    _logger.d('User authenticated: ${user.uid}');
-    final token = await user.getIdToken(forceRefresh);
-    if (token == null) {
-      _logger.e('Failed to retrieve ID token');
-      throw QARepositoryException('Failed to get authentication token');
-    }
-    _logger.d('Successfully retrieved ID token');
-    return token;
-  }
-
   /// Fetch all available questions from the backend
   /// GET /questions
   /// Automatically retries with token refresh on 403 (in case of stale token)
@@ -58,7 +39,7 @@ class QARepository {
     try {
       return await _makeAuthenticatedRequest<List<QuestionDTO>>(
         () async {
-          final token = await _getIdToken();
+          final token = await _authService.getIdToken();
           return http.get(
             Uri.parse(endpoint),
             headers: {
@@ -100,7 +81,7 @@ class QARepository {
     // If we get 403, refresh token and retry once
     if (response.statusCode == 403) {
       _logger.w('⚠️  403 Forbidden - Token may be stale, refreshing and retrying...');
-      await _getIdToken(forceRefresh: true);
+      await _authService.getIdToken(forceRefresh: true);
 
       // Retry with fresh token
       response = await makeRequest();
@@ -164,11 +145,11 @@ class QARepository {
     }
 
     try {
-      final userId = _auth.currentUser!.uid;
+      final userId = _authService.getUserId();
 
       return await _makeAuthenticatedRequest<UserQACollectionDTO>(
         () async {
-          final token = await _getIdToken();
+          final token = await _authService.getIdToken();
 
           final requestBody = {
             'userId': userId,
@@ -223,7 +204,7 @@ class QARepository {
     try {
       return await _makeAuthenticatedRequest<UserQACollectionDTO>(
         () async {
-          final token = await _getIdToken();
+          final token = await _authService.getIdToken();
           return http.get(
             Uri.parse(endpoint),
             headers: {
@@ -236,7 +217,7 @@ class QARepository {
             _logger.w('⚠️  No Q&As found (404)');
             // Return empty collection
             return UserQACollectionDTO(
-              userId: _auth.currentUser!.uid,
+              userId: _authService.getUserId(),
               qas: [],
               totalCount: 0,
             );

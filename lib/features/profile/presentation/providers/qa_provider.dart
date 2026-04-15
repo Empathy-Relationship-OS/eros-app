@@ -1,13 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/profile/data/repositories/qa_repository.dart';
 import 'package:eros_app/features/profile/domain/models/question_dto.dart';
 import 'package:eros_app/features/profile/domain/models/qa_draft.dart';
 import 'package:eros_app/features/profile/domain/models/user_qa_item_dto.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 /// Provider for the QA repository
 final qaRepositoryProvider = Provider<QARepository>((ref) {
-  return QARepository();
+  return QARepository(
+    authService: ref.watch(authServiceProvider),
+  );
 });
 
 /// Provider for fetching all available questions
@@ -105,11 +107,8 @@ final qaDraftsProvider = StateNotifierProvider<QADraftsNotifier, List<QADraft>>(
 /// Provider for submitting Q&A collection
 final submitQACollectionProvider = FutureProvider.family<void, List<QADraft>>((ref, qaDrafts) async {
   final repository = ref.watch(qaRepositoryProvider);
-  final userId = FirebaseAuth.instance.currentUser?.uid;
-
-  if (userId == null) {
-    throw Exception('User not authenticated');
-  }
+  final authService = ref.watch(authServiceProvider);
+  final userId = authService.getUserId();
 
   if (qaDrafts.isEmpty || qaDrafts.length > 3) {
     throw Exception('Must provide between 1 and 3 Q&As');

@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:eros_app/core/auth/auth_service.dart';
 
 /// Provider for FirebaseAuth instance
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
@@ -8,7 +9,10 @@ final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
 
 /// Provider for AuthRepository
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepository(ref.read(firebaseAuthProvider));
+  return AuthRepository(
+    ref.read(firebaseAuthProvider),
+    ref.read(authServiceProvider),
+  );
 });
 
 /// Result class for auth operations
@@ -29,10 +33,14 @@ class AuthResult {
 }
 
 /// Repository for Firebase Authentication
+///
+/// Handles authentication operations (sign up, sign in, sign out, password reset).
+/// For token management and current user access, delegates to AuthService.
 class AuthRepository {
   final FirebaseAuth _firebaseAuth;
+  final AuthService _authService;
 
-  AuthRepository(this._firebaseAuth);
+  AuthRepository(this._firebaseAuth, this._authService);
 
   /// Get current user
   User? get currentUser => _firebaseAuth.currentUser;
@@ -88,12 +96,10 @@ class AuthRepository {
   }
 
   /// Get Firebase ID token for backend API calls
+  /// Delegates to AuthService for consistent token management
   Future<String?> getIdToken({bool forceRefresh = false}) async {
-    final user = currentUser;
-    if (user == null) return null;
-
     try {
-      return await user.getIdToken(forceRefresh);
+      return await _authService.getIdToken(forceRefresh: forceRefresh);
     } catch (e) {
       return null;
     }
@@ -114,8 +120,9 @@ class AuthRepository {
   }
 
   /// Reload current user data
+  /// Delegates to AuthService for consistent user management
   Future<void> reloadUser() async {
-    await currentUser?.reload();
+    await _authService.reloadUser();
   }
 
   /// Delete current user account
