@@ -24,6 +24,34 @@ class Validators {
     return null;
   }
 
+  /// Check if text is safe (no SQL injection or XSS attempts)
+  /// This is a more lenient check that allows common punctuation
+  /// but blocks actual SQL injection and script tags
+  static bool isSafeText(String text) {
+    // Block obvious SQL injection patterns (multiple dangerous keywords together)
+    final dangerousPatterns = [
+      RegExp(r'\bDROP\s+TABLE\b', caseSensitive: false),
+      RegExp(r'\bDELETE\s+FROM\b', caseSensitive: false),
+      RegExp(r'\bINSERT\s+INTO\b', caseSensitive: false),
+      RegExp(r'\bUPDATE\s+\w+\s+SET\b', caseSensitive: false), // UPDATE tablename SET
+      RegExp(r'\bSELECT\s+.+\s+FROM\b', caseSensitive: false),
+      RegExp(r'\bUNION\s+SELECT\b', caseSensitive: false),
+      RegExp(r'--\s*$', caseSensitive: false), // SQL comment at end
+      RegExp(r'/\*|\*/', caseSensitive: false), // SQL block comments
+      RegExp(r'<script[^>]*>', caseSensitive: false), // Script tags
+      RegExp(r'javascript:', caseSensitive: false), // JavaScript protocol
+      RegExp(r'on\w+\s*=', caseSensitive: false), // Event handlers like onclick=
+    ];
+
+    for (final pattern in dangerousPatterns) {
+      if (pattern.hasMatch(text)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   /// Sanitize text input to prevent SQL injection and XSS
   static String sanitizeInput(String input) {
     // Remove potential SQL injection characters

@@ -27,15 +27,16 @@ class ProfileRepository {
         );
 
   /// Get Firebase ID token for authentication
-  Future<String> _getIdToken() async {
-    _logger.d('Getting Firebase ID token...');
+  /// Set [forceRefresh] to true to get a fresh token (e.g., after role claims update)
+  Future<String> _getIdToken({bool forceRefresh = false}) async {
+    _logger.d('Getting Firebase ID token (forceRefresh: $forceRefresh)...');
     final user = _auth.currentUser;
     if (user == null) {
       _logger.e('No authenticated user found');
       throw ProfileRepositoryException('User not authenticated');
     }
     _logger.d('User authenticated: ${user.uid}');
-    final token = await user.getIdToken();
+    final token = await user.getIdToken(forceRefresh);
     if (token == null) {
       _logger.e('Failed to retrieve ID token');
       throw ProfileRepositoryException('Failed to get authentication token');
@@ -46,6 +47,7 @@ class ProfileRepository {
 
   /// Create a new user profile
   /// POST /users
+  /// After successful creation, forces a token refresh to get updated role claims
   Future<void> createUser(CreateUserRequest request) async {
     final endpoint = '$baseUrl/users';
     _logger.i('📤 POST $endpoint');
@@ -75,6 +77,12 @@ class ProfileRepository {
 
       if (response.statusCode == 201) {
         _logger.i('✅ User profile created successfully');
+
+        // Force token refresh to get updated role claims
+        _logger.i('🔄 Forcing token refresh to get updated role claims...');
+        await _getIdToken(forceRefresh: true);
+        _logger.i('✅ Token refreshed successfully');
+
         return;
       } else if (response.statusCode == 400) {
         // Validation error

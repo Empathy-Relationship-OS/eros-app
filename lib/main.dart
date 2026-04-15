@@ -27,7 +27,11 @@ import 'features/profile/presentation/screens/preferences/preferences_complete_s
 import 'features/profile/presentation/screens/interests/interests_screen.dart';
 import 'features/profile/presentation/screens/personality/personality_screen.dart';
 import 'features/profile/presentation/screens/submission/profile_submission_screen.dart';
+import 'features/profile/presentation/screens/qa/qa_main_screen.dart';
+import 'features/profile/presentation/screens/qa/question_selector_screen.dart';
+import 'features/profile/presentation/screens/qa/answer_input_screen.dart';
 import 'features/profile/presentation/providers/profile_creation_provider.dart';
+import 'features/profile/domain/models/question_dto.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -93,10 +97,22 @@ class ErosApp extends StatelessWidget {
         '/profile-creation/interests': (context) => const InterestsScreen(),
         '/profile-creation/personality': (context) => const PersonalityScreen(),
 
+        // Profile creation routes - Q&A Section
+        '/profile-creation/qa': (context) => const QAMainScreen(),
+        '/profile-creation/qa/select-question': (context) => const QuestionSelectorScreen(),
+
         // Profile creation routes - Submission
         '/profile-creation/submit': (context) => const ProfileSubmissionScreen(),
-
-        // TODO: Add routes for Q&A and photos sections (optional)
+      },
+      onGenerateRoute: (settings) {
+        // Handle routes with arguments
+        if (settings.name == '/profile-creation/qa/answer') {
+          final question = settings.arguments as QuestionDTO;
+          return MaterialPageRoute(
+            builder: (context) => AnswerInputScreen(question: question),
+          );
+        }
+        return null;
       },
     );
   }

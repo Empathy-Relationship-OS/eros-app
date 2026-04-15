@@ -94,6 +94,8 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
     await ref.read(profileCreationProvider.notifier).updateDraft(updatedDraft);
 
     if (mounted) {
+      // Navigate to profile submission to create user account first
+      // After user creation, it will navigate to Q&A section
       Navigator.pushNamed(context, '/profile-creation/submit');
     }
   }

@@ -160,23 +160,18 @@ class _ProfileSubmissionScreenState
       final repository = ref.read(profileRepositoryProvider);
       await repository.createUser(request);
 
-      // Clear draft on success
-      await ref.read(profileCreationProvider.notifier).clearDraft();
-
-      // Navigate to main app
+      // Navigate to Q&A section (user account is now created)
       if (mounted) {
-        // TODO: Navigate to main app home screen
-        // For now, show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Profile created successfully! 🎉'),
+            content: Text('Profile created! Now let\'s add some Q&A'),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
+            duration: Duration(seconds: 2),
           ),
         );
 
-        // Pop back to welcome or show success screen
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        // Navigate to Q&A section (replace current route)
+        Navigator.pushReplacementNamed(context, '/profile-creation/qa');
       }
     } on ProfileValidationException catch (e) {
       setState(() {
