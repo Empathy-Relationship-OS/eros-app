@@ -3,6 +3,7 @@ import 'package:eros_app/features/profile/domain/enums/personality.dart';
 import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/domain/models/create_user_request.dart';
+import 'package:eros_app/features/profile/domain/models/photo_models.dart';
 import 'package:eros_app/core/constants/languages.dart';
 
 /// Draft model for profile creation with all optional fields
@@ -49,6 +50,9 @@ class ProfileCreationDraft {
   DisplayableField<List<BodyAttribute>?>? bodyAttributes;
   DisplayableField<String?>? bodyDescription;
 
+  // Photos
+  List<PhotoUploadDraft>? photos;
+
   ProfileCreationDraft({
     this.firstName,
     this.lastName,
@@ -83,6 +87,7 @@ class ProfileCreationDraft {
     this.brainDescription,
     this.bodyAttributes,
     this.bodyDescription,
+    this.photos,
   });
 
   /// Check if all required fields are filled
@@ -233,6 +238,7 @@ class ProfileCreationDraft {
         ),
       if (bodyDescription != null)
         'bodyDescription': bodyDescription!.toJson((d) => d),
+      if (photos != null) 'photos': photos!.map((p) => p.toJson()).toList(),
     };
   }
 
@@ -393,6 +399,11 @@ class ProfileCreationDraft {
               (field) => field as String?,
             )
           : null,
+      photos: json['photos'] != null
+          ? (json['photos'] as List)
+              .map((p) => PhotoUploadDraft.fromJson(p as Map<String, dynamic>))
+              .toList()
+          : null,
     );
   }
 
@@ -431,6 +442,7 @@ class ProfileCreationDraft {
     DisplayableField<String?>? brainDescription,
     DisplayableField<List<BodyAttribute>?>? bodyAttributes,
     DisplayableField<String?>? bodyDescription,
+    List<PhotoUploadDraft>? photos,
   }) {
     return ProfileCreationDraft(
       firstName: firstName ?? this.firstName,
@@ -466,6 +478,7 @@ class ProfileCreationDraft {
       brainDescription: brainDescription ?? this.brainDescription,
       bodyAttributes: bodyAttributes ?? this.bodyAttributes,
       bodyDescription: bodyDescription ?? this.bodyDescription,
+      photos: photos ?? this.photos,
     );
   }
 }

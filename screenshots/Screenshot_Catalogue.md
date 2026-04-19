@@ -631,11 +631,11 @@ Screenshot catalogue:
     - @screenshots/users/create-profile/9D077F6E-F156-4B54-9297-37EC45AE7D10.png
       - Section focuses on Pictures. Correlating to the Photos tag in documentation.yaml
       - User is prompted to Add a thumbnail/profile picture
-      - Upon pressing add photo button, phones photo library should pop up. If user hasnt given permissions yet, then this is where we get permissions to access photos, this  can be seen in @@screenshots/users/create-profile/55C449A3-E330-435C-B630-12A4B08FD342.png
+      - Upon pressing add photo button, phones photo library should pop up. If user hasnt given permissions yet, then this is where we get permissions to access photos, this  can be seen in @screenshots/users/create-profile/55C449A3-E330-435C-B630-12A4B08FD342.png
     - @screenshots/users/create-profile/55C449A3-E330-435C-B630-12A4B08FD342.png
       - Phones native photo library opens to allow selection of images once user given permission
     - @screenshots/users/create-profile/B3F7C09E-4E3D-4DD4-BBB8-42DE6AB0C2D7.png
-      - Once image selected a caption can be applied via pressing select caption. This will open @@screenshots/users/create-profile/80DC933A-0EDC-479E-BEE5-443A0174135A.png
+      - Once image selected a caption can be applied via pressing select caption. This will open @screenshots/users/create-profile/80DC933A-0EDC-479E-BEE5-443A0174135A.png
       - If user doesn't like the image then change photo can be pressed. This will reopen @screenshots/users/create-profile/55C449A3-E330-435C-B630-12A4B08FD342.png to reselect a new image
       - If a user is happy with is, then the continue button can be pressed. The image and its info will be stored in a list locally.
     - @screenshots/users/create-profile/80DC933A-0EDC-479E-BEE5-443A0174135A.png

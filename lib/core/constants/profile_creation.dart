@@ -33,4 +33,15 @@ class ProfileCreationConstants {
   static const int preferencesStepOccupation = 5;
   static const int preferencesStepRelationshipType = 6;
   static const int preferencesStepSexualOrientation = 7;
+
+  // ==================== Profile Section ====================
+
+  /// Total number of steps in the profile section (Interests, Personality, Q&A, Photos)
+  static const int profileTotalSteps = 4;
+
+  /// Profile step numbers
+  static const int profileStepInterests = 1;
+  static const int profileStepPersonality = 2;
+  static const int profileStepQA = 3;
+  static const int profileStepPhotos = 4;
 }

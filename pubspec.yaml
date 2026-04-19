@@ -62,6 +62,7 @@ dependencies:
   # Utils
   intl: ^0.20.1
   logger: ^2.5.0
+  path: ^1.9.0
 
 dev_dependencies:
   flutter_test:

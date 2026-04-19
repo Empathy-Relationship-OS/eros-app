@@ -4,6 +4,8 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/presentation/providers/qa_provider.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
+import 'package:eros_app/features/profile/presentation/screens/photos/all_photos_screen.dart';
+import 'package:eros_app/core/constants/profile_creation.dart' as constants;
 
 /// Main Q&A screen
 /// Matches screenshot: @screenshots/users/create-profile/5A0A4901-671B-40D4-8071-C221FAE190A0.png
@@ -28,8 +30,9 @@ class QAMainScreen extends ConsumerWidget {
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(4),
           child: ProfileProgressBar(
-            currentStep: 9,  // Adjust based on actual flow
-            totalSteps: 11,
+            currentStep: constants.ProfileCreationConstants.profileStepQA,
+            totalSteps: constants.ProfileCreationConstants.profileTotalSteps,
+            sectionLabel: 'Profile',
           ),
         ),
       ),
@@ -314,15 +317,18 @@ class QAMainScreen extends ConsumerWidget {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Q&As saved successfully! 🎉'),
+          content: Text('Q&As saved successfully!'),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 2),
         ),
       );
 
-      // Navigate to main app home screen or photos section
-      // For now, navigate back to welcome screen (TODO: Navigate to photos or main app)
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      // Navigate to photos section
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const AllPhotosScreen(),
+        ),
+      );
     } catch (e) {
       if (!context.mounted) return;
 
