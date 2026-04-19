@@ -317,7 +317,7 @@ class PhotoRepository {
           fileName: photo.fileName,
           contentType: photo.contentType,
           fileSizeBytes: fileBytes.length,
-          displayOrder: i,
+          displayOrder: i + 1, // Display order is 1-indexed (1-6)
           isPrimary: i == 0, // First photo is always primary
         );
 
