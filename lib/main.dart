@@ -30,6 +30,10 @@ import 'features/profile/presentation/screens/submission/profile_submission_scre
 import 'features/profile/presentation/screens/qa/qa_main_screen.dart';
 import 'features/profile/presentation/screens/qa/question_selector_screen.dart';
 import 'features/profile/presentation/screens/qa/answer_input_screen.dart';
+import 'features/profile/presentation/screens/photos/all_photos_screen.dart';
+import 'features/profile/presentation/screens/photos/profile_preview_screen.dart';
+import 'features/profile/presentation/screens/photos/profile_completion_loading_screen.dart';
+import 'features/profile/presentation/screens/photos/welcome_onboarding_screen.dart';
 import 'features/profile/presentation/providers/profile_creation_provider.dart';
 import 'features/profile/domain/models/question_dto.dart';
 
@@ -101,8 +105,17 @@ class ErosApp extends StatelessWidget {
         '/profile-creation/qa': (context) => const QAMainScreen(),
         '/profile-creation/qa/select-question': (context) => const QuestionSelectorScreen(),
 
+        // Profile creation routes - Photos & Completion
+        '/profile-creation/photos': (context) => const AllPhotosScreen(),
+        '/profile/preview': (context) => const ProfilePreviewScreen(),
+        '/profile/complete-loading': (context) => const ProfileCompletionLoadingScreen(),
+        '/profile/welcome': (context) => const WelcomeOnboardingScreen(),
+
         // Profile creation routes - Submission
         '/profile-creation/submit': (context) => const ProfileSubmissionScreen(),
+
+        // Main app routes (placeholder - will be implemented later)
+        // '/match': (context) => const MatchScreen(), // TODO: Implement Match screen
       },
       onGenerateRoute: (settings) {
         // Handle routes with arguments

@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/profile/domain/models/create_user_request.dart';
+import 'package:eros_app/features/profile/domain/models/public_profile.dart';
 
 /// Repository for profile-related API calls
 class ProfileRepository {
@@ -219,6 +220,62 @@ class ProfileRepository {
     } on ProfileValidationException {
       rethrow;
     } catch (e, stackTrace) {
+      _logger.e('💥 Network error', error: e, stackTrace: stackTrace);
+      throw ProfileRepositoryException(
+        'Unable to connect to the server. Please check your internet connection and try again.',
+      );
+    }
+  }
+
+  /// Get public profile by user ID
+  /// GET /users/id/{id}/public
+  /// Used for viewing other users' profiles and previewing own profile
+  Future<PublicProfileDTO> getPublicProfile(String userId) async {
+    final endpoint = '$baseUrl/users/id/$userId/public';
+    _logger.i('📤 GET $endpoint');
+
+    try {
+      final token = await _authService.getIdToken();
+      final response = await http.get(
+        Uri.parse(endpoint),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      _logger.i('📥 Response status: ${response.statusCode}');
+      _logger.d('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        _logger.i('✅ Public profile retrieved successfully');
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+        return PublicProfileDTO.fromJson(jsonData);
+      } else if (response.statusCode == 404) {
+        _logger.w('⚠️  Profile not found (404)');
+        throw ProfileRepositoryException(
+          'We couldn\'t find this profile.',
+        );
+      } else if (response.statusCode == 401) {
+        _logger.e('🔒 Authentication failed (401)');
+        _logger.e('Auth failure details: ${response.body}');
+        throw ProfileRepositoryException(
+          'There was a problem verifying your identity. Please try signing in again.',
+        );
+      } else if (response.statusCode == 403) {
+        _logger.e('🚫 Forbidden (403) - Access denied');
+        _logger.e('Server response: ${response.body}');
+        throw ProfileRepositoryException(
+          'You don\'t have permission to view this profile.',
+        );
+      } else {
+        _logger.e('❌ Unexpected status code: ${response.statusCode}');
+        _logger.e('Response body: ${response.body}');
+        throw ProfileRepositoryException(
+          'We couldn\'t load this profile. Please try again.',
+        );
+      }
+    } catch (e, stackTrace) {
+      if (e is ProfileRepositoryException) rethrow;
       _logger.e('💥 Network error', error: e, stackTrace: stackTrace);
       throw ProfileRepositoryException(
         'Unable to connect to the server. Please check your internet connection and try again.',

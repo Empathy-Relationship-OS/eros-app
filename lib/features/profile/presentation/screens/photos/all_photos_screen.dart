@@ -221,8 +221,8 @@ class AllPhotosScreen extends ConsumerWidget {
   }
 
   void _handleContinue(BuildContext context) {
-    // Navigate to next screen in profile creation flow
-    // TODO: Navigate to profile preview/submission screen
+    // Navigate to profile preview screen
+    // User will review their public profile and give consent
     Navigator.of(context).pushNamed('/profile/preview');
   }
 }

@@ -289,6 +289,87 @@ class PhotoRepository {
       rethrow;
     }
   }
+
+  /// Batch upload multiple photos
+  /// Uploads photos sequentially to maintain order and avoid overwhelming the server
+  /// Returns list of uploaded media items in the same order as input
+  /// Throws BatchPhotoUploadException with partial results if any upload fails
+  Future<List<UserMediaItemDTO>> batchUploadPhotos({
+    required List<PhotoUploadDraft> photos,
+    void Function(int current, int total)? onProgress,
+  }) async {
+    _logger.i('🚀 Starting batch upload of ${photos.length} photos');
+
+    final results = <UserMediaItemDTO>[];
+
+    try {
+      for (var i = 0; i < photos.length; i++) {
+        final photo = photos[i];
+        _logger.i('📸 Uploading photo ${i + 1}/${photos.length}');
+
+        onProgress?.call(i + 1, photos.length);
+
+        final file = File(photo.localPath);
+        final fileBytes = await file.readAsBytes();
+
+        final mediaItem = await uploadPhoto(
+          file: file,
+          fileName: photo.fileName,
+          contentType: photo.contentType,
+          fileSizeBytes: fileBytes.length,
+          displayOrder: i,
+          isPrimary: i == 0, // First photo is always primary
+        );
+
+        results.add(mediaItem);
+      }
+
+      _logger.i('✅ Batch upload completed successfully (${results.length}/${photos.length})');
+      return results;
+    } catch (e, stackTrace) {
+      _logger.e(
+        '❌ Batch upload failed after uploading ${results.length}/${photos.length} photos',
+        error: e,
+        stackTrace: stackTrace,
+      );
+
+      throw BatchPhotoUploadException(
+        message: 'Failed to upload all photos',
+        uploadedPhotos: results,
+        totalPhotos: photos.length,
+        failedAtIndex: results.length,
+        originalError: e,
+      );
+    }
+  }
+}
+
+/// Exception thrown when batch photo upload fails
+class BatchPhotoUploadException implements Exception {
+  final String message;
+  final List<UserMediaItemDTO> uploadedPhotos;
+  final int totalPhotos;
+  final int failedAtIndex;
+  final Object originalError;
+
+  BatchPhotoUploadException({
+    required this.message,
+    required this.uploadedPhotos,
+    required this.totalPhotos,
+    required this.failedAtIndex,
+    required this.originalError,
+  });
+
+  @override
+  String toString() {
+    return 'BatchPhotoUploadException: $message '
+        '(uploaded ${uploadedPhotos.length}/$totalPhotos, failed at index $failedAtIndex)';
+  }
+
+  String getUserMessage() {
+    return 'Uploaded ${uploadedPhotos.length} out of $totalPhotos photos. '
+        'Please try again to upload the remaining photos.';
+  }
 }
 
 /// Exception for photo repository errors

@@ -200,6 +200,27 @@ class PhotoUploadDraft {
   /// Check if upload has been confirmed with backend
   bool get isConfirmed => mediaId != null;
 
+  /// Get file name from local path
+  String get fileName {
+    return localPath.split('/').last;
+  }
+
+  /// Get content type based on file extension
+  String get contentType {
+    final extension = localPath.toLowerCase().split('.').last;
+    switch (extension) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'heic':
+        return 'image/heic';
+      default:
+        return 'image/jpeg'; // Default fallback
+    }
+  }
+
   PhotoUploadDraft copyWith({
     String? localPath,
     int? displayOrder,
