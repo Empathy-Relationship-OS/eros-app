@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/validators.dart';
 import '../providers/auth_state_provider.dart';
+import '../../../profile/presentation/providers/profile_repository_provider.dart';
+import '../../../profile/data/repositories/profile_repository.dart';
+import '../../../profile/domain/models/public_profile.dart';
 
 /// Password Sign In Screen
 /// User enters password to sign in to existing account
@@ -50,24 +53,8 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
       if (!mounted) return;
 
       if (success) {
-        // Get Firebase ID token for backend calls
-        final idToken = await authNotifier.getIdToken();
-
-        // TODO: Call backend GET /users/me to fetch user profile
-        // This will determine if user needs to complete profile setup or go to home
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Signed in successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // TODO: Navigate based on user profile completion status
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => HomeScreen()),
-        // );
+        // Fetch user profile from backend to check completion status
+        await _checkProfileAndNavigate();
       } else {
         // Show error from auth state
         final errorMessage =
@@ -94,6 +81,137 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  /// Check user profile status and navigate accordingly
+  /// Uses two-step process:
+  /// 1. Check if user exists in backend (GET /users/exists)
+  /// 2. If exists, check profile completeness (GET /users/id/{id}/public)
+  Future<void> _checkProfileAndNavigate() async {
+    try {
+      final profileRepository = ref.read(profileRepositoryProvider);
+
+      // Step 1: Check if user exists
+      final userExistsResponse = await profileRepository.checkUserExists();
+
+      if (!mounted) return;
+
+      if (!userExistsResponse.exists) {
+        // User doesn't exist in backend - navigate to profile creation
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please complete your profile setup'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+
+        Navigator.pushReplacementNamed(
+          context,
+          '/profile-creation/name',
+        );
+        return;
+      }
+
+      // Step 2: User exists - check profile completeness
+      final publicProfile = await profileRepository.getPublicProfile(
+        userExistsResponse.userId,
+      );
+
+      if (!mounted) return;
+
+      // Check profile completeness
+      final profileStatus = _checkProfileCompleteness(publicProfile);
+
+      // Navigate based on profile status
+      _navigateBasedOnProfileStatus(profileStatus);
+    } on ProfileRepositoryException catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading profile: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  /// Check which parts of the profile are complete
+  /// Uses PublicProfileDTO from GET /users/id/{id}/public
+  ProfileCompletionStatus _checkProfileCompleteness(PublicProfileDTO profile) {
+    // Check if basic user info exists
+    final hasBasicInfo = profile.name.isNotEmpty &&
+        profile.userId.isNotEmpty;
+
+    if (!hasBasicInfo) {
+      return ProfileCompletionStatus.incomplete(
+        '/profile-creation/name',
+        'Basic profile information missing',
+      );
+    }
+
+    // Check for Q&A responses (need at least 1)
+    if (profile.profile.qas.isEmpty) {
+      return ProfileCompletionStatus.incomplete(
+        '/profile-creation/qa',
+        'Please answer at least one question',
+      );
+    }
+
+    // Check for photos (need at least 3 photos)
+    final photos = profile.profile.photos;
+    if (photos.isEmpty) {
+      return ProfileCompletionStatus.incomplete(
+        '/profile-creation/photos',
+        'Please add your photos',
+      );
+    }
+
+    if (photos.length < 3) {
+      return ProfileCompletionStatus.incomplete(
+        '/profile-creation/photos',
+        'Please add at least 3 photos (you have ${photos.length})',
+      );
+    }
+
+    // Profile is complete
+    return ProfileCompletionStatus.complete();
+  }
+
+  /// Navigate to appropriate screen based on profile status
+  void _navigateBasedOnProfileStatus(ProfileCompletionStatus status) {
+    if (status.isComplete) {
+      // Profile is complete - go to match screen
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Welcome back!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      Navigator.pushReplacementNamed(context, '/match');
+    } else {
+      // Profile is incomplete - show message and navigate to appropriate screen
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(status.message ?? 'Please complete your profile'),
+          backgroundColor: AppColors.primary,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+
+      Navigator.pushReplacementNamed(context, status.nextRoute!);
     }
   }
 
@@ -259,4 +377,19 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
       ),
     );
   }
+}
+
+/// Helper class to track profile completion status
+class ProfileCompletionStatus {
+  final bool isComplete;
+  final String? nextRoute;
+  final String? message;
+
+  ProfileCompletionStatus.complete()
+      : isComplete = true,
+        nextRoute = null,
+        message = null;
+
+  ProfileCompletionStatus.incomplete(this.nextRoute, this.message)
+      : isComplete = false;
 }

@@ -84,6 +84,7 @@ class PublicProfileDetailsDTO {
   final String? brainDescription;
   final List<String>? bodyAttribute;
   final String? bodyDescription;
+  final List<PublicQAItemDTO> qas;
 
   PublicProfileDetailsDTO({
     this.coverPhoto,
@@ -105,6 +106,7 @@ class PublicProfileDetailsDTO {
     this.brainDescription,
     this.bodyAttribute,
     this.bodyDescription,
+    required this.qas,
   });
 
   factory PublicProfileDetailsDTO.fromJson(Map<String, dynamic> json) {
@@ -138,6 +140,9 @@ class PublicProfileDetailsDTO {
           ? List<String>.from(json['bodyAttribute'] as List)
           : null,
       bodyDescription: json['bodyDescription'] as String?,
+      qas: (json['qas'] as List)
+          .map((qa) => PublicQAItemDTO.fromJson(qa as Map<String, dynamic>))
+          .toList()
     );
   }
 
@@ -162,6 +167,7 @@ class PublicProfileDetailsDTO {
       if (brainDescription != null) 'brainDescription': brainDescription,
       if (bodyAttribute != null) 'bodyAttribute': bodyAttribute,
       if (bodyDescription != null) 'bodyDescription': bodyDescription,
+      'qas': qas.map((qa) => qa.toJson()).toList(),
     };
   }
 }
@@ -220,6 +226,37 @@ class RelationshipResponse {
       if (intention != null) 'intention': intention,
       if (kidsPreference != null) 'kidsPreference': kidsPreference,
       if (relationshipType != null) 'relationshipType': relationshipType,
+    };
+  }
+}
+
+/// Lightweight Q&A DTO for public profiles
+/// Excludes sensitive fields like userId and timestamps that aren't needed
+/// when viewing another user's profile
+class PublicQAItemDTO {
+  final String question;
+  final String answer;
+  final int displayOrder;
+
+  PublicQAItemDTO({
+    required this.question,
+    required this.answer,
+    required this.displayOrder,
+  });
+
+  factory PublicQAItemDTO.fromJson(Map<String, dynamic> json) {
+    return PublicQAItemDTO(
+      question: json['question'] as String,
+      answer: json['answer'] as String,
+      displayOrder: json['displayOrder'] as int,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'question': question,
+      'answer': answer,
+      'displayOrder': displayOrder,
     };
   }
 }

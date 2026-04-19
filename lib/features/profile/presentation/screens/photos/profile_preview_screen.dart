@@ -17,32 +17,23 @@ class ProfilePreviewScreen extends ConsumerStatefulWidget {
 
 class _ProfilePreviewScreenState extends ConsumerState<ProfilePreviewScreen> {
   bool _consentChecked = false;
+  late final Future<PublicProfileDTO> _profileFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch profile once during initialization
+    final authService = ref.read(authServiceProvider);
+    try {
+      final userId = authService.getUserId();
+      _profileFuture = ref.read(profileRepositoryProvider).getPublicProfile(userId);
+    } catch (e) {
+      _profileFuture = Future.error(e);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final authService = ref.watch(authServiceProvider);
-
-    // Get user ID synchronously (throws if not authenticated)
-    String userId;
-    try {
-      userId = authService.getUserId();
-    } catch (e) {
-      return Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ),
-        body: const Center(
-          child: Text('Please sign in to preview your profile'),
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -62,7 +53,7 @@ class _ProfilePreviewScreenState extends ConsumerState<ProfilePreviewScreen> {
         ),
       ),
       body: FutureBuilder<PublicProfileDTO>(
-        future: ref.read(profileRepositoryProvider).getPublicProfile(userId),
+        future: _profileFuture,
         builder: (context, profileSnapshot) {
           if (profileSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -73,6 +64,10 @@ class _ProfilePreviewScreenState extends ConsumerState<ProfilePreviewScreen> {
           }
 
           if (profileSnapshot.hasError) {
+            final errorMessage = profileSnapshot.error.toString().contains('sign in')
+                ? 'Please sign in to preview your profile'
+                : 'Unable to load profile preview';
+
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -86,7 +81,7 @@ class _ProfilePreviewScreenState extends ConsumerState<ProfilePreviewScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Unable to load profile preview',
+                      errorMessage,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -105,11 +100,11 @@ class _ProfilePreviewScreenState extends ConsumerState<ProfilePreviewScreen> {
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: () => setState(() {}),
+                      onPressed: () => Navigator.of(context).pop(),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                       ),
-                      child: const Text('Retry'),
+                      child: const Text('Go Back'),
                     ),
                   ],
                 ),

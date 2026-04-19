@@ -112,6 +112,49 @@ class ProfileRepository {
     }
   }
 
+  /// Check if user exists
+  /// GET /users/exists
+  /// Returns whether the user has been created in the backend
+  Future<UserExistsResponse> checkUserExists() async {
+    final endpoint = '$baseUrl/users/exists';
+    _logger.i('📤 GET $endpoint');
+
+    try {
+      final token = await _authService.getIdToken();
+      final response = await http.get(
+        Uri.parse(endpoint),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      _logger.i('📥 Response status: ${response.statusCode}');
+      _logger.d('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        _logger.i('✅ User exists check: ${data['exists']}');
+        return UserExistsResponse.fromJson(data);
+      } else if (response.statusCode == 401) {
+        _logger.e('🔒 Authentication failed (401)');
+        throw ProfileRepositoryException(
+          'There was a problem verifying your identity. Please try signing in again.',
+        );
+      } else {
+        _logger.e('❌ Unexpected status code: ${response.statusCode}');
+        throw ProfileRepositoryException(
+          'We couldn\'t check your profile status. Please try again.',
+        );
+      }
+    } catch (e, stackTrace) {
+      if (e is ProfileRepositoryException) rethrow;
+      _logger.e('💥 Network error', error: e, stackTrace: stackTrace);
+      throw ProfileRepositoryException(
+        'Unable to connect to the server. Please check your internet connection and try again.',
+      );
+    }
+  }
+
   /// Get current user's profile
   /// GET /users/me
   Future<Map<String, dynamic>> getCurrentUser() async {
@@ -316,5 +359,30 @@ class ProfileValidationException implements Exception {
       return firstError.toString();
     }
     return message;
+  }
+}
+
+/// Response model for user existence check
+class UserExistsResponse {
+  final bool exists;
+  final String userId;
+
+  UserExistsResponse({
+    required this.exists,
+    required this.userId,
+  });
+
+  factory UserExistsResponse.fromJson(Map<String, dynamic> json) {
+    return UserExistsResponse(
+      exists: json['exists'] as bool,
+      userId: json['userId'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'exists': exists,
+      'userId': userId,
+    };
   }
 }
