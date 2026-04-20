@@ -112,12 +112,175 @@ Use **Riverpod** for state management throughout the app. Consider:
 - `StateProvider` for simple state
 
 #### API Integration
-- Base URL: `http://localhost:8080` (dev) or `https://api.eros.app` (prod)
-- Authentication: Firebase Authentication with ID tokens in `Authorization: Bearer <token>` header
-- All endpoints require authentication except `/` health check
-- Rate limiting: 3 batches per day, token bucket system (100 capacity, 10s refill)
+
+All API calls go through a centralized `ApiClient` (Dio-based) with automatic:
+- **Authentication**: Firebase ID tokens auto-injected via `AuthInterceptor`
+- **Retry Logic**: Automatic token refresh on 401/403, exponential backoff on 429
+- **Error Handling**: Unified `ApiException` hierarchy
+- **Logging**: Request/response logging in dev/staging environments only
+- **Environment Management**: Support for local, develop, beta, and production
+
+**Environment Configuration:**
+- Local: `http://localhost:8080`
+- Develop: `https://api-dev.muse.app`
+- Beta: `https://api-beta.muse.app`
+- Production: `https://api.muse.app`
+
+Run with specific environment:
+```bash
+flutter run --dart-define=ENV=local     # Default
+flutter run --dart-define=ENV=develop
+flutter run --dart-define=ENV=beta
+flutter run --dart-define=ENV=production
+```
+
+**Architecture:**
+```
+lib/core/network/
+├── api_client.dart           # Main Dio wrapper
+├── api_endpoints.dart        # Strongly-typed endpoint definitions
+├── api_config.dart           # Environment configuration
+├── interceptors/             # Auth, retry, logging interceptors
+└── exceptions/               # Unified exception hierarchy
+```
+
+### How to Add New API Endpoints
+
+When implementing new backend endpoints, follow this standardized pattern:
+
+#### 1. Define Endpoint in `api_endpoints.dart`
+
+Add endpoint to appropriate feature group or create new group:
+
+```dart
+class ApiEndpoints {
+  // ... existing groups
+  static final dates = _DatesEndpoints(); // New feature group
+}
+
+class _DatesEndpoints {
+  /// POST /dates - Create new date
+  String create() => '/dates';
+
+  /// GET /dates/{dateId} - Get date by ID
+  String getById(String dateId) => '/dates/$dateId';
+
+  /// PATCH /dates/{dateId}/confirm - Confirm date attendance
+  String confirm(String dateId) => '/dates/$dateId/confirm';
+}
+```
+
+**Pattern Guidelines:**
+- Use private classes (prefix with `_`) for endpoint groups
+- Methods return endpoint strings with path parameters
+- Add doc comments describing HTTP method and purpose
+- Use descriptive method names (e.g., `getCurrentUser()`, not `me()`)
+- For path parameters, accept them as method arguments
+
+#### 2. Implement Repository Method
+
+Use `ApiClient` to make the request:
+
+```dart
+class DateRepository {
+  final ApiClient _apiClient;
+  final Logger _logger = Logger();
+
+  DateRepository(this._apiClient);
+
+  /// Create new date
+  Future<Date> createDate(DateRequest request) async {
+    try {
+      _logger.d('📅 Creating date');
+
+      final response = await _apiClient.post<Map<String, dynamic>>(
+        ApiEndpoints.dates.create(),
+        data: request.toJson(),
+      );
+
+      return Date.fromJson(response);
+    } on ApiException catch (e) {
+      _logger.e('🚨 Failed to create date', error: e);
+      rethrow; // Let UI handle specific exception types
+    }
+  }
+
+  /// Get date by ID
+  Future<Date?> getDateById(String dateId) async {
+    try {
+      _logger.d('🔍 Getting date: $dateId');
+
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        ApiEndpoints.dates.getById(dateId),
+      );
+
+      return Date.fromJson(response);
+    } on NotFoundException {
+      _logger.d('ℹ️  Date not found: $dateId');
+      return null; // Return null for 404 if appropriate
+    } on ApiException catch (e) {
+      _logger.e('🚨 Failed to get date', error: e);
+      rethrow;
+    }
+  }
+}
+```
+
+**Repository Pattern Guidelines:**
+- Inject `ApiClient` via constructor
+- Use `ApiEndpoints` for all endpoint strings (never hardcode URLs)
+- Catch `ApiException` and its subclasses for specific error handling
+- Add descriptive logging with emojis for easy debugging
+- Return `null` for 404 responses when appropriate (e.g., optional resources)
+- Let exceptions bubble up to UI layer for user-facing error messages
+
+#### 3. Create Riverpod Provider
+
+```dart
+final dateRepositoryProvider = Provider<DateRepository>((ref) {
+  final apiClient = ref.watch(apiClientProvider);
+  return DateRepository(apiClient);
+});
+```
+
+#### 4. Handle Errors in UI Layer
+
+```dart
+try {
+  final date = await ref.read(dateRepositoryProvider).createDate(request);
+  showSnackbar('Date created successfully');
+} on ValidationException catch (e) {
+  // Show field-specific errors
+  if (e.fieldErrors != null) {
+    showFieldErrors(e.fieldErrors!);
+  } else {
+    showSnackbar(e.message);
+  }
+} on UnauthorizedException catch (e) {
+  // Token expired - force re-login
+  navigateToLogin();
+} on NetworkException catch (e) {
+  // No internet connection
+  showSnackbar('Connection error - check your internet');
+} on ApiException catch (e) {
+  // Generic API error
+  showSnackbar('Error: ${e.message}');
+}
+```
+
+**Available Exception Types:**
+- `ValidationException` - 400 (includes `fieldErrors` map)
+- `UnauthorizedException` - 401
+- `ForbiddenException` - 403
+- `NotFoundException` - 404
+- `ConflictException` - 409
+- `RateLimitException` - 429 (includes `retryAfter` duration)
+- `ServerException` - 500+
+- `NetworkException` - Connection issues, timeouts
+- `UnknownApiException` - Catch-all
 
 ### Key Backend Endpoints
+
 Reference `openapi/documentation.yaml` for complete API specification:
 
 **User Management**

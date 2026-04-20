@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/profile/domain/models/public_profile.dart';
-import 'package:eros_app/features/profile/presentation/providers/profile_repository_provider.dart';
+import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 
 /// Screen to preview what the user's profile will look like to others
 /// Based on screenshots/users/create-profile/6F692A85-9439-4D16-BC71-1FC49E6EB3D1_1_105_c.jpeg

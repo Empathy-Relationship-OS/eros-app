@@ -1,25 +1,27 @@
-import 'dart:convert';
 import 'dart:io';
-import 'package:http/http.dart' as http;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:eros_app/core/network/api_client.dart';
+import 'package:eros_app/core/network/api_client_provider.dart';
+import 'package:eros_app/core/network/api_endpoints.dart';
+import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/profile/domain/models/photo_models.dart';
 
 /// Repository for photo upload operations
-/// Handles the two-step S3 upload flow:
+/// Handles the three-step S3 upload flow:
 /// 1. Request presigned URL from backend
 /// 2. Upload directly to S3
 /// 3. Confirm upload with backend
 class PhotoRepository {
-  final String baseUrl;
-  final AuthService _authService;
+  final ApiClient _apiClient;
   final Logger _logger;
 
   PhotoRepository({
-    this.baseUrl = 'http://localhost:8940',
+    required ApiClient apiClient,
     required AuthService authService,
     Logger? logger,
-  })  : _authService = authService,
+  })  : _apiClient = apiClient,
         _logger = logger ??
             Logger(
               printer: PrettyPrinter(
@@ -37,55 +39,35 @@ class PhotoRepository {
   Future<PresignedUploadResponse> getPresignedUrl(
     PresignedUploadRequest request,
   ) async {
-    final endpoint = '$baseUrl/users/me/photos/presigned-url';
-    _logger.i('📤 POST $endpoint');
-
     try {
-      final token = await _authService.getIdToken();
-      final requestBody = request.toJson();
+      _logger.i('📸 Requesting presigned URL');
 
-      _logger.d('Request body: ${jsonEncode(requestBody)}');
-
-      final response = await http.post(
-        Uri.parse(endpoint),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(requestBody),
+      final response = await _apiClient.post<Map<String, dynamic>>(
+        ApiEndpoints.photos.getPresignedUrl(),
+        data: request.toJson(),
       );
 
-      _logger.i('📥 Response status: ${response.statusCode}');
-      _logger.d('Response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        _logger.i('✅ Presigned URL obtained successfully');
-        return PresignedUploadResponse.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,
-        );
-      } else if (response.statusCode == 400) {
-        final error = jsonDecode(response.body);
-        _logger.w('⚠️  Validation error: ${error['message']}');
-        throw PhotoRepositoryException(
-          error['message'] ?? 'Invalid photo metadata',
-        );
-      } else if (response.statusCode == 401) {
-        _logger.e('🔒 Authentication failed (401)');
-        throw PhotoRepositoryException(
-          'Please sign in again to upload photos',
-        );
-      } else {
-        _logger.e('❌ Unexpected status code: ${response.statusCode}');
-        throw PhotoRepositoryException(
-          'Failed to prepare photo upload. Please try again.',
-        );
-      }
-    } on PhotoRepositoryException {
-      rethrow;
-    } catch (e, stackTrace) {
-      _logger.e('💥 Network error', error: e, stackTrace: stackTrace);
+      _logger.i('✅ Presigned URL obtained successfully');
+      return PresignedUploadResponse.fromJson(response);
+    } on ValidationException catch (e) {
+      _logger.w('⚠️  Validation error: ${e.message}');
+      throw PhotoRepositoryException(
+        e.message,
+      );
+    } on UnauthorizedException {
+      _logger.e('🔒 Authentication failed (401)');
+      throw PhotoRepositoryException(
+        'Please sign in again to upload photos',
+      );
+    } on NetworkException catch (e) {
+      _logger.e('💥 Network error', error: e);
       throw PhotoRepositoryException(
         'Unable to connect to the server. Please check your internet connection.',
+      );
+    } on ApiException catch (e) {
+      _logger.e('❌ Unexpected error', error: e);
+      throw PhotoRepositoryException(
+        'Failed to prepare photo upload. Please try again.',
       );
     }
   }
@@ -97,40 +79,31 @@ class PhotoRepository {
     required File file,
     required String contentType,
   }) async {
-    _logger.i('📤 PUT to S3 (presigned URL)');
-    _logger.d('File path: ${file.path}');
-    _logger.d('Content-Type: $contentType');
-
     try {
+      _logger.i('📤 Uploading to S3');
+      _logger.d('File path: ${file.path}');
+      _logger.d('Content-Type: $contentType');
+
       final fileBytes = await file.readAsBytes();
       _logger.d('File size: ${fileBytes.length} bytes');
 
-      final response = await http.put(
-        Uri.parse(presignedUrl),
-        headers: {
-          'Content-Type': contentType,
-          'Content-Length': fileBytes.length.toString(),
-        },
-        body: fileBytes,
+      // Use ApiClient's uploadToS3 method
+      await _apiClient.uploadToS3(
+        presignedUrl: presignedUrl,
+        fileBytes: fileBytes,
+        contentType: contentType,
       );
 
-      _logger.i('📥 S3 Response status: ${response.statusCode}');
-
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        _logger.i('✅ File uploaded to S3 successfully');
-      } else {
-        _logger.e('❌ S3 upload failed: ${response.statusCode}');
-        _logger.e('S3 response: ${response.body}');
-        throw PhotoRepositoryException(
-          'Failed to upload photo to storage. Please try again.',
-        );
-      }
-    } on PhotoRepositoryException {
-      rethrow;
-    } catch (e, stackTrace) {
-      _logger.e('💥 S3 upload error', error: e, stackTrace: stackTrace);
+      _logger.i('✅ File uploaded to S3 successfully');
+    } on NetworkException catch (e) {
+      _logger.e('💥 S3 upload error', error: e);
       throw PhotoRepositoryException(
         'Failed to upload photo. Please check your internet connection.',
+      );
+    } on ApiException catch (e) {
+      _logger.e('❌ S3 upload failed', error: e);
+      throw PhotoRepositoryException(
+        'Failed to upload photo to storage. Please try again.',
       );
     }
   }
@@ -141,60 +114,40 @@ class PhotoRepository {
   Future<UserMediaItemDTO> confirmUpload(
     ConfirmUploadRequest request,
   ) async {
-    final endpoint = '$baseUrl/users/me/photos';
-    _logger.i('📤 POST $endpoint');
-
     try {
-      final token = await _authService.getIdToken();
-      final requestBody = request.toJson();
+      _logger.i('✓ Confirming upload with backend');
 
-      _logger.d('Request body: ${jsonEncode(requestBody)}');
-
-      final response = await http.post(
-        Uri.parse(endpoint),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(requestBody),
+      final response = await _apiClient.post<Map<String, dynamic>>(
+        ApiEndpoints.photos.confirmUpload(),
+        data: request.toJson(),
       );
 
-      _logger.i('📥 Response status: ${response.statusCode}');
-      _logger.d('Response body: ${response.body}');
-
-      if (response.statusCode == 201) {
-        _logger.i('✅ Upload confirmed successfully');
-        return UserMediaItemDTO.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,
-        );
-      } else if (response.statusCode == 400) {
-        final error = jsonDecode(response.body);
-        _logger.w('⚠️  Validation error: ${error['message']}');
-        throw PhotoRepositoryException(
-          error['message'] ?? 'Photo validation failed',
-        );
-      } else if (response.statusCode == 404) {
-        _logger.w('⚠️  Photo not found in S3 (404)');
-        throw PhotoRepositoryException(
-          'Photo upload verification failed. Please try uploading again.',
-        );
-      } else if (response.statusCode == 401) {
-        _logger.e('🔒 Authentication failed (401)');
-        throw PhotoRepositoryException(
-          'Please sign in again to complete photo upload',
-        );
-      } else {
-        _logger.e('❌ Unexpected status code: ${response.statusCode}');
-        throw PhotoRepositoryException(
-          'Failed to save photo. Please try again.',
-        );
-      }
-    } on PhotoRepositoryException {
-      rethrow;
-    } catch (e, stackTrace) {
-      _logger.e('💥 Network error', error: e, stackTrace: stackTrace);
+      _logger.i('✅ Upload confirmed successfully');
+      return UserMediaItemDTO.fromJson(response);
+    } on ValidationException catch (e) {
+      _logger.w('⚠️  Validation error: ${e.message}');
+      throw PhotoRepositoryException(
+        e.message,
+      );
+    } on NotFoundException {
+      _logger.w('⚠️  Photo not found in S3 (404)');
+      throw PhotoRepositoryException(
+        'Photo upload verification failed. Please try uploading again.',
+      );
+    } on UnauthorizedException {
+      _logger.e('🔒 Authentication failed (401)');
+      throw PhotoRepositoryException(
+        'Please sign in again to complete photo upload',
+      );
+    } on NetworkException catch (e) {
+      _logger.e('💥 Network error', error: e);
       throw PhotoRepositoryException(
         'Unable to connect to the server. Please check your internet connection.',
+      );
+    } on ApiException catch (e) {
+      _logger.e('❌ Unexpected error', error: e);
+      throw PhotoRepositoryException(
+        'Failed to save photo. Please try again.',
       );
     }
   }
@@ -202,40 +155,28 @@ class PhotoRepository {
   /// Delete a photo
   /// DELETE /users/me/photos/{photoId}
   Future<void> deletePhoto(int photoId) async {
-    final endpoint = '$baseUrl/users/me/photos/$photoId';
-    _logger.i('📤 DELETE $endpoint');
-
     try {
-      final token = await _authService.getIdToken();
+      _logger.i('🗑️  Deleting photo: $photoId');
 
-      final response = await http.delete(
-        Uri.parse(endpoint),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
+      await _apiClient.delete<void>(
+        ApiEndpoints.photos.delete(photoId.toString()),
       );
 
-      _logger.i('📥 Response status: ${response.statusCode}');
-
-      if (response.statusCode == 204 || response.statusCode == 200) {
-        _logger.i('✅ Photo deleted successfully');
-      } else if (response.statusCode == 404) {
-        _logger.w('⚠️  Photo not found (404)');
-        throw PhotoRepositoryException('Photo not found');
-      } else if (response.statusCode == 401) {
-        _logger.e('🔒 Authentication failed (401)');
-        throw PhotoRepositoryException('Please sign in again to delete photos');
-      } else {
-        _logger.e('❌ Unexpected status code: ${response.statusCode}');
-        throw PhotoRepositoryException('Failed to delete photo. Please try again.');
-      }
-    } on PhotoRepositoryException {
-      rethrow;
-    } catch (e, stackTrace) {
-      _logger.e('💥 Network error', error: e, stackTrace: stackTrace);
+      _logger.i('✅ Photo deleted successfully');
+    } on NotFoundException {
+      _logger.w('⚠️  Photo not found (404)');
+      throw PhotoRepositoryException('Photo not found');
+    } on UnauthorizedException {
+      _logger.e('🔒 Authentication failed (401)');
+      throw PhotoRepositoryException('Please sign in again to delete photos');
+    } on NetworkException catch (e) {
+      _logger.e('💥 Network error', error: e);
       throw PhotoRepositoryException(
         'Unable to connect to the server. Please check your internet connection.',
       );
+    } on ApiException catch (e) {
+      _logger.e('❌ Unexpected error', error: e);
+      throw PhotoRepositoryException('Failed to delete photo. Please try again.');
     }
   }
 
@@ -343,6 +284,16 @@ class PhotoRepository {
     }
   }
 }
+
+/// Riverpod provider for PhotoRepository
+final photoRepositoryProvider = Provider<PhotoRepository>((ref) {
+  final apiClient = ref.watch(apiClientProvider);
+  final authService = ref.watch(authServiceProvider);
+  return PhotoRepository(
+    apiClient: apiClient,
+    authService: authService,
+  );
+});
 
 /// Exception thrown when batch photo upload fails
 class BatchPhotoUploadException implements Exception {

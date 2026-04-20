@@ -5,13 +5,6 @@ import 'package:eros_app/features/profile/domain/models/question_dto.dart';
 import 'package:eros_app/features/profile/domain/models/qa_draft.dart';
 import 'package:eros_app/features/profile/domain/models/user_qa_item_dto.dart';
 
-/// Provider for the QA repository
-final qaRepositoryProvider = Provider<QARepository>((ref) {
-  return QARepository(
-    authService: ref.watch(authServiceProvider),
-  );
-});
-
 /// Provider for fetching all available questions
 final questionsProvider = FutureProvider<List<QuestionDTO>>((ref) async {
   final repository = ref.watch(qaRepositoryProvider);

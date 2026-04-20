@@ -2,17 +2,10 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
-import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/profile/data/repositories/photo_repository.dart';
 import 'package:eros_app/features/profile/domain/models/photo_models.dart';
 import 'package:eros_app/core/constants/media_constants.dart';
 import 'package:path/path.dart' as path;
-
-/// Provider for PhotoRepository
-final photoRepositoryProvider = Provider<PhotoRepository>((ref) {
-  final authService = ref.watch(authServiceProvider);
-  return PhotoRepository(authService: authService);
-});
 
 /// Provider for ImagePicker
 final imagePickerProvider = Provider<ImagePicker>((ref) {
