@@ -27,21 +27,24 @@ class QAMainScreen extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(4),
-          child: ProfileProgressBar(
-            currentStep: constants.ProfileCreationConstants.profileStepQA,
-            totalSteps: constants.ProfileCreationConstants.profileTotalSteps,
-            sectionLabel: 'Profile',
-          ),
-        ),
       ),
       body: SafeArea(
         child: Column(
           children: [
+            // Progress indicator with padding
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.0),
+              child: ProfileProgressBar(
+                currentStep: constants.ProfileCreationConstants.profileStepQA,
+                totalSteps: constants.ProfileCreationConstants.profileTotalSteps,
+                sectionLabel: 'Profile',
+              ),
+            ),
+            const SizedBox(height: 24),
+
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

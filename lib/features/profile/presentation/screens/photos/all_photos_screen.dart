@@ -32,12 +32,16 @@ class AllPhotosScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Progress bar
-            ProfileProgressBar(
-              currentStep: constants.ProfileCreationConstants.profileStepPhotos,
-              totalSteps: constants.ProfileCreationConstants.profileTotalSteps,
-              sectionLabel: 'Profile',
+            // Progress bar with padding
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.0),
+              child: ProfileProgressBar(
+                currentStep: constants.ProfileCreationConstants.profileStepPhotos,
+                totalSteps: constants.ProfileCreationConstants.profileTotalSteps,
+                sectionLabel: 'Profile',
+              ),
             ),
+            const SizedBox(height: 24),
 
             Expanded(
               child: SingleChildScrollView(
@@ -45,8 +49,6 @@ class AllPhotosScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 32),
-
                     // Title
                     const Text(
                       'Add your photos',
