@@ -24,7 +24,7 @@ class WelcomeOnboardingScreen extends StatelessWidget {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -112,7 +112,7 @@ class WelcomeOnboardingScreen extends StatelessWidget {
                 'Your first batch will be ready soon!',
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textSecondary.withOpacity(0.8),
+                  color: AppColors.textSecondary.withValues(alpha: 0.8),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -156,7 +156,7 @@ class _FeatureItem extends StatelessWidget {
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(

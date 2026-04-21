@@ -410,7 +410,7 @@ class _PhotoGalleryState extends State<_PhotoGallery> {
                     decoration: BoxDecoration(
                       color: index == _currentPage
                           ? Colors.white
-                          : Colors.white.withOpacity(0.4),
+                          : Colors.white.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -451,10 +451,10 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.primary.withOpacity(0.3),
+          color: AppColors.primary.withValues(alpha: 0.3),
         ),
       ),
       child: Text(
@@ -525,7 +525,7 @@ class _ConsentBottomBar extends StatelessWidget {
         color: AppColors.background,
         border: Border(
           top: BorderSide(
-            color: AppColors.textSecondary.withOpacity(0.2),
+            color: AppColors.textSecondary.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -589,7 +589,7 @@ class _ConsentBottomBar extends StatelessWidget {
                 onPressed: consentChecked ? onContinue : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  disabledBackgroundColor: AppColors.textSecondary.withOpacity(0.3),
+                  disabledBackgroundColor: AppColors.textSecondary.withValues(alpha: 0.3),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
                   ),

@@ -106,10 +106,10 @@ class AllPhotosScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppColors.primary.withOpacity(0.3),
+                            color: AppColors.primary.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Row(
@@ -145,7 +145,7 @@ class AllPhotosScreen extends ConsumerWidget {
                             : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
-                          disabledBackgroundColor: AppColors.textSecondary.withOpacity(0.3),
+                          disabledBackgroundColor: AppColors.textSecondary.withValues(alpha: 0.3),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(28),
                           ),
@@ -277,7 +277,7 @@ class _PhotoSlot extends StatelessWidget {
                         Icon(
                           Icons.add_photo_alternate_outlined,
                           size: 48,
-                          color: AppColors.textSecondary.withOpacity(0.5),
+                          color: AppColors.textSecondary.withValues(alpha: 0.5),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -285,7 +285,7 @@ class _PhotoSlot extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSecondary.withOpacity(0.7),
+                            color: AppColors.textSecondary.withValues(alpha: 0.7),
                             fontWeight: isPrimary ? FontWeight.w600 : FontWeight.normal,
                           ),
                         ),
@@ -329,7 +329,7 @@ class _PhotoSlot extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
+                    color: Colors.black.withValues(alpha: 0.6),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -350,7 +350,7 @@ class _PhotoSlot extends StatelessWidget {
                 width: 24,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: AppColors.textSecondary.withOpacity(0.2),
+                  color: AppColors.textSecondary.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -359,7 +359,7 @@ class _PhotoSlot extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary.withOpacity(0.7),
+                      color: AppColors.textSecondary.withValues(alpha: 0.7),
                     ),
                   ),
                 ),

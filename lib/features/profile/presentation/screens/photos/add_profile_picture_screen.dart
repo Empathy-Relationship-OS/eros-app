@@ -84,7 +84,7 @@ class AddProfilePictureScreen extends ConsumerWidget {
                                   Icon(
                                     Icons.image_outlined,
                                     size: 100,
-                                    color: AppColors.textSecondary.withOpacity(0.3),
+                                    color: AppColors.textSecondary.withValues(alpha: 0.3),
                                   ),
                                   Positioned(
                                     bottom: 0,

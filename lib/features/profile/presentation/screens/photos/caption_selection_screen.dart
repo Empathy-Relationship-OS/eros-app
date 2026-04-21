@@ -105,7 +105,7 @@ class _CaptionSelectionScreenState extends State<CaptionSelectionScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.primary.withOpacity(0.1)
+                        ? AppColors.primary.withValues(alpha: 0.1)
                         : AppColors.cardBackground,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(

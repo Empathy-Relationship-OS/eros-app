@@ -148,7 +148,7 @@ class _ProfileCompletionLoadingScreenState
                         width: 120,
                         height: 120,
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -188,7 +188,7 @@ class _ProfileCompletionLoadingScreenState
                     borderRadius: BorderRadius.circular(8),
                     child: LinearProgressIndicator(
                       value: _uploadProgress,
-                      backgroundColor: AppColors.textSecondary.withOpacity(0.2),
+                      backgroundColor: AppColors.textSecondary.withValues(alpha: 0.2),
                       valueColor: const AlwaysStoppedAnimation<Color>(
                         AppColors.primary,
                       ),
@@ -225,7 +225,7 @@ class _ProfileCompletionLoadingScreenState
                   'This won\'t take long...',
                   style: TextStyle(
                     fontSize: 14,
-                    color: AppColors.textSecondary.withOpacity(0.8),
+                    color: AppColors.textSecondary.withValues(alpha: 0.8),
                   ),
                   textAlign: TextAlign.center,
                 ),
