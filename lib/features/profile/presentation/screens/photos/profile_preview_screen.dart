@@ -1,13 +1,15 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/profile/domain/models/public_profile.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
+import 'package:eros_app/features/profile/presentation/providers/photo_provider.dart';
 
 /// Screen to preview what the user's profile will look like to others
-/// Based on screenshots/users/create-profile/6F692A85-9439-4D16-BC71-1FC49E6EB3D1_1_105_c.jpeg
-/// Line 656-658 in Screenshot_Catalogue.md
+/// Based on screenshots/users/public-profile/*.PNG
+/// Line 664-675 in Screenshot_Catalogue.md
 class ProfilePreviewScreen extends ConsumerStatefulWidget {
   const ProfilePreviewScreen({super.key});
 
@@ -34,6 +36,9 @@ class _ProfilePreviewScreenState extends ConsumerState<ProfilePreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Get local photos that haven't been uploaded yet
+    final localPhotoState = ref.watch(photoUploadProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -120,11 +125,20 @@ class _ProfilePreviewScreenState extends ConsumerState<ProfilePreviewScreen> {
 
           final profile = profileSnapshot.data!;
 
+          // Use local photos for preview if available, otherwise use backend photos
+          final photosToDisplay = localPhotoState.photos.isNotEmpty
+              ? localPhotoState.photos.map((p) => p.localPath).toList()
+              : profile.profile.photos;
+
           return Column(
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  child: _ProfilePreviewContent(profile: profile),
+                  child: _ProfilePreviewContent(
+                    profile: profile,
+                    photosOverride: photosToDisplay,
+                    useLocalPhotos: localPhotoState.photos.isNotEmpty,
+                  ),
                 ),
               ),
               _ConsentBottomBar(
@@ -153,58 +167,58 @@ class _ProfilePreviewScreenState extends ConsumerState<ProfilePreviewScreen> {
 /// Content widget showing the profile preview
 class _ProfilePreviewContent extends StatelessWidget {
   final PublicProfileDTO profile;
+  final List<String>? photosOverride; // Override photos with local paths
+  final bool useLocalPhotos; // Flag to indicate if photos are local files
 
-  const _ProfilePreviewContent({required this.profile});
+  const _ProfilePreviewContent({
+    required this.profile,
+    this.photosOverride,
+    this.useLocalPhotos = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final photos = photosOverride ?? profile.profile.photos;
+    final qas = profile.profile.qas;
+
+    // Split photos: first is thumbnail, rest are for interspersing
+    final thumbnailPhoto = photos.isNotEmpty ? photos.first : null;
+    final remainingPhotos = photos.length > 1 ? photos.sublist(1) : <String>[];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Photo gallery
-        _PhotoGallery(photos: profile.profile.photos),
+        // 1. Thumbnail photo (large)
+        if (thumbnailPhoto != null)
+          _ThumbnailPhoto(
+            photoPath: thumbnailPhoto,
+            isLocal: useLocalPhotos,
+          ),
 
         Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Name, Age, Height
+              const SizedBox(height: 24),
+
+              // Name
               Text(
-                '${profile.name}, ${profile.age}',
+                profile.name,
                 style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
 
-              // Location & Height
-              Row(
-                children: [
-                  const Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text(
-                    profile.city,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  const Icon(Icons.height, size: 16, color: AppColors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${profile.height} cm',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
+              // 2. Horizontal scrollable info row (basic attributes)
+              _HorizontalInfoScroll(profile: profile),
+              const SizedBox(height: 24),
 
+              // 3. Work/Education/Location/Language rows
+              _DetailedInfoSection(profile: profile),
               const SizedBox(height: 24),
 
               // Bio (if available)
@@ -219,206 +233,605 @@ class _ProfilePreviewContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
               ],
-
-              // Traits/Personality
-              if (profile.profile.traits.isNotEmpty) ...[
-                _SectionHeader('Personality'),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: profile.profile.traits.map((trait) {
-                    return _Chip(label: trait);
-                  }).toList(),
-                ),
-                const SizedBox(height: 24),
-              ],
-
-              // Hobbies/Interests
-              if (profile.profile.hobbies.isNotEmpty) ...[
-                _SectionHeader('Interests'),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: profile.profile.hobbies.map((hobby) {
-                    return _Chip(label: hobby);
-                  }).toList(),
-                ),
-                const SizedBox(height: 24),
-              ],
-
-              // Relationship Goals
-              _SectionHeader('Looking for'),
-              const SizedBox(height: 12),
-              if (profile.profile.relationshipGoals.intention != null)
-                _InfoRow(
-                  icon: Icons.favorite_outline,
-                  label: profile.profile.relationshipGoals.intention!,
-                ),
-              if (profile.profile.relationshipGoals.relationshipType != null)
-                _InfoRow(
-                  icon: Icons.people_outline,
-                  label: profile.profile.relationshipGoals.relationshipType!,
-                ),
-              if (profile.profile.relationshipGoals.kidsPreference != null)
-                _InfoRow(
-                  icon: Icons.child_care,
-                  label: profile.profile.relationshipGoals.kidsPreference!,
-                ),
-
-              const SizedBox(height: 24),
-
-              // Lifestyle/Habits
-              if (profile.profile.habits.alcoholConsumption != null ||
-                  profile.profile.habits.smokingStatus != null ||
-                  profile.profile.habits.diet != null) ...[
-                _SectionHeader('Lifestyle'),
-                const SizedBox(height: 12),
-                if (profile.profile.habits.alcoholConsumption != null)
-                  _InfoRow(
-                    icon: Icons.local_bar,
-                    label: 'Alcohol: ${profile.profile.habits.alcoholConsumption}',
-                  ),
-                if (profile.profile.habits.smokingStatus != null)
-                  _InfoRow(
-                    icon: Icons.smoking_rooms,
-                    label: 'Smoking: ${profile.profile.habits.smokingStatus}',
-                  ),
-                if (profile.profile.habits.diet != null)
-                  _InfoRow(
-                    icon: Icons.restaurant,
-                    label: 'Diet: ${profile.profile.habits.diet}',
-                  ),
-                const SizedBox(height: 24),
-              ],
-
-              // Education & Occupation
-              _SectionHeader('About'),
-              const SizedBox(height: 12),
-              _InfoRow(
-                icon: Icons.school,
-                label: profile.education,
-              ),
-              if (profile.occupation != null)
-                _InfoRow(
-                  icon: Icons.work,
-                  label: profile.occupation!,
-                ),
-              _InfoRow(
-                icon: Icons.language,
-                label: profile.language,
-              ),
-
-              const SizedBox(height: 24),
             ],
           ),
+        ),
+
+        // 4. Ordered content: Hobbies -> QA1 -> Image -> QA2 -> Image -> Personality -> Image -> QA3 -> Image -> QAs
+        _OrderedInterspersedContent(
+          hobbies: profile.profile.hobbies,
+          traits: profile.profile.traits,
+          brainAttribute: profile.profile.brainAttribute,
+          brainDescription: profile.profile.brainDescription,
+          bodyAttribute: profile.profile.bodyAttribute,
+          bodyDescription: profile.profile.bodyDescription,
+          photos: remainingPhotos,
+          isLocalPhotos: useLocalPhotos,
+          qas: qas,
         ),
       ],
     );
   }
 }
 
-/// Photo gallery widget
-class _PhotoGallery extends StatefulWidget {
-  final List<String> photos;
+/// Thumbnail photo widget (large at top)
+class _ThumbnailPhoto extends StatelessWidget {
+  final String photoPath;
+  final bool isLocal;
 
-  const _PhotoGallery({required this.photos});
-
-  @override
-  State<_PhotoGallery> createState() => _PhotoGalleryState();
-}
-
-class _PhotoGalleryState extends State<_PhotoGallery> {
-  int _currentPage = 0;
-  late PageController _pageController;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController();
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
+  const _ThumbnailPhoto({
+    required this.photoPath,
+    required this.isLocal,
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (widget.photos.isEmpty) {
-      return const SizedBox(height: 400);
+    return SizedBox(
+      height: 500,
+      width: double.infinity,
+      child: isLocal
+          ? Image.file(
+              File(photoPath),
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: AppColors.cardBackground,
+                  child: const Center(
+                    child: Icon(
+                      Icons.image_not_supported,
+                      size: 64,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                );
+              },
+            )
+          : Image.network(
+              photoPath,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: AppColors.cardBackground,
+                  child: const Center(
+                    child: Icon(
+                      Icons.image_not_supported,
+                      size: 64,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                );
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  color: AppColors.cardBackground,
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary,
+                    ),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
+/// Horizontal scrollable info row for basic attributes
+class _HorizontalInfoScroll extends StatelessWidget {
+  final PublicProfileDTO profile;
+
+  const _HorizontalInfoScroll({required this.profile});
+
+  @override
+  Widget build(BuildContext context) {
+    final List<_InfoChipData> chips = [];
+
+    // Age
+    chips.add(_InfoChipData(icon: Icons.cake, label: '${profile.age}'));
+
+    // Gender (from basic info - we don't have this field, so skip for now)
+
+    // Height
+    chips.add(_InfoChipData(icon: Icons.height, label: '${profile.height} cm'));
+
+    // Sexual Orientation
+    if (profile.profile.sexualOrientation != null &&
+        profile.profile.sexualOrientation!.isNotEmpty) {
+      chips.add(_InfoChipData(
+        icon: Icons.favorite,
+        label: profile.profile.sexualOrientation!,
+      ));
+    }
+
+    // Star Sign
+    if (profile.profile.starSign != null && profile.profile.starSign!.isNotEmpty) {
+      chips.add(_InfoChipData(
+        icon: Icons.stars,
+        label: profile.profile.starSign!,
+      ));
+    }
+
+    // Kids preference
+    if (profile.profile.relationshipGoals.kidsPreference != null) {
+      chips.add(_InfoChipData(
+        icon: Icons.child_care,
+        label: profile.profile.relationshipGoals.kidsPreference!,
+      ));
+    }
+
+    // Drinking
+    if (profile.profile.habits.alcoholConsumption != null) {
+      chips.add(_InfoChipData(
+        icon: Icons.local_bar,
+        label: profile.profile.habits.alcoholConsumption!,
+      ));
+    }
+
+    // Smoking
+    if (profile.profile.habits.smokingStatus != null) {
+      chips.add(_InfoChipData(
+        icon: Icons.smoking_rooms,
+        label: profile.profile.habits.smokingStatus!,
+      ));
+    }
+
+    // Pronouns
+    if (profile.profile.pronouns != null && profile.profile.pronouns!.isNotEmpty) {
+      chips.add(_InfoChipData(
+        icon: Icons.person,
+        label: profile.profile.pronouns!,
+      ));
     }
 
     return SizedBox(
-      height: 500,
-      child: Stack(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: chips.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          final chip = chips[index];
+          return _InfoChip(
+            icon: chip.icon,
+            label: chip.label,
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _InfoChipData {
+  final IconData icon;
+  final String label;
+
+  _InfoChipData({required this.icon, required this.label});
+}
+
+/// Individual info chip for horizontal scroll
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _InfoChip({
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: AppColors.textSecondary.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          PageView.builder(
-            controller: _pageController,
-            itemCount: widget.photos.length,
-            onPageChanged: (index) {
-              setState(() {
-                _currentPage = index;
-              });
-            },
-            itemBuilder: (context, index) {
-              return Image.network(
-                widget.photos[index],
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: AppColors.cardBackground,
-                    child: const Center(
-                      child: Icon(
-                        Icons.image_not_supported,
-                        size: 64,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  );
-                },
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    color: AppColors.cardBackground,
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
+          Icon(
+            icon,
+            size: 18,
+            color: AppColors.textSecondary,
           ),
-          // Page indicators
-          if (widget.photos.length > 1)
-            Positioned(
-              top: 16,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  widget.photos.length,
-                  (index) => Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: index == _currentPage
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-              ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w500,
             ),
+          ),
         ],
       ),
+    );
+  }
+}
+
+/// Detailed info section for work/education/location/languages
+class _DetailedInfoSection extends StatelessWidget {
+  final PublicProfileDTO profile;
+
+  const _DetailedInfoSection({required this.profile});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Occupation
+        if (profile.occupation != null && profile.occupation!.isNotEmpty)
+          _InfoRow(
+            icon: Icons.work,
+            label: profile.occupation!,
+          ),
+
+        // Education
+        _InfoRow(
+          icon: Icons.school,
+          label: profile.education,
+        ),
+
+        // Location
+        _InfoRow(
+          icon: Icons.location_on,
+          label: profile.city,
+        ),
+
+        // Primary Language
+        _InfoRow(
+          icon: Icons.language,
+          label: profile.language,
+        ),
+
+        // Spoken Languages
+        if (profile.profile.spokenLanguages != null &&
+            profile.profile.spokenLanguages!.isNotEmpty)
+          _InfoRow(
+            icon: Icons.translate,
+            label: profile.profile.spokenLanguages!.join(', '),
+          ),
+
+        // Ethnicity
+        if (profile.profile.ethnicity != null &&
+            profile.profile.ethnicity!.isNotEmpty)
+          _InfoRow(
+            icon: Icons.public,
+            label: profile.profile.ethnicity!.join(', '),
+          ),
+
+        // Religion
+        if (profile.profile.religion != null && profile.profile.religion!.isNotEmpty)
+          _InfoRow(
+            icon: Icons.church,
+            label: profile.profile.religion!,
+          ),
+
+        // Political View
+        if (profile.profile.politicalView != null &&
+            profile.profile.politicalView!.isNotEmpty)
+          _InfoRow(
+            icon: Icons.how_to_vote,
+            label: profile.profile.politicalView!,
+          ),
+      ],
+    );
+  }
+}
+
+/// Q&A card widget with distinctive styling
+class _QACard extends StatelessWidget {
+  final PublicQAItemDTO qa;
+
+  const _QACard({required this.qa});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Question as header
+          Text(
+            qa.question,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Answer in larger, distinctive font
+          Text(
+            qa.answer,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Ordered interspersed content with specific placement
+/// Order: Hobbies -> QA1 -> Image -> QA2 -> Image -> Personality -> Image -> QA3 -> Image -> QA4 -> Image -> Continue alternating
+class _OrderedInterspersedContent extends StatelessWidget {
+  final List<String> hobbies;
+  final List<String> traits;
+  final List<String>? brainAttribute;
+  final String? brainDescription;
+  final List<String>? bodyAttribute;
+  final String? bodyDescription;
+  final List<String> photos;
+  final bool isLocalPhotos;
+  final List<PublicQAItemDTO> qas;
+
+  const _OrderedInterspersedContent({
+    required this.hobbies,
+    required this.traits,
+    this.brainAttribute,
+    this.brainDescription,
+    this.bodyAttribute,
+    this.bodyDescription,
+    required this.photos,
+    required this.isLocalPhotos,
+    required this.qas,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Widget> orderedWidgets = [];
+    int photoIndex = 0;
+    int qaIndex = 0;
+
+    // Helper to add photo
+    void addPhoto() {
+      if (photoIndex < photos.length) {
+        orderedWidgets.add(_StackedPhoto(
+          photoPath: photos[photoIndex],
+          isLocal: isLocalPhotos,
+        ));
+        orderedWidgets.add(const SizedBox(height: 24));
+        photoIndex++;
+      }
+    }
+
+    // Helper to add Q&A
+    void addQA() {
+      if (qaIndex < qas.length) {
+        orderedWidgets.add(Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: _QACard(qa: qas[qaIndex]),
+        ));
+        orderedWidgets.add(const SizedBox(height: 24));
+        qaIndex++;
+      }
+    }
+
+    // 1. Hobbies/Interests section
+    if (hobbies.isNotEmpty) {
+      orderedWidgets.add(Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionHeader('Interests'),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: hobbies.map((hobby) {
+                return _Chip(label: hobby);
+              }).toList(),
+            ),
+          ],
+        ),
+      ));
+      orderedWidgets.add(const SizedBox(height: 24));
+    }
+
+    // 2. QA1 (First Q&A)
+    addQA();
+
+    // 3. Image (Photo 2)
+    addPhoto();
+
+    // 4. QA2 (Second Q&A)
+    addQA();
+
+    // 5. Image (Photo 3)
+    addPhoto();
+
+    // 6. Personality/Traits section
+    if (traits.isNotEmpty) {
+      orderedWidgets.add(Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionHeader('Personality'),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: traits.map((trait) {
+                return _Chip(label: trait);
+              }).toList(),
+            ),
+          ],
+        ),
+      ));
+      orderedWidgets.add(const SizedBox(height: 24));
+    }
+
+    // Brain attributes (if any)
+    if (brainAttribute != null && brainAttribute!.isNotEmpty) {
+      orderedWidgets.add(Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionHeader('Thinking Style'),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: brainAttribute!.map((attr) {
+                return _Chip(label: attr);
+              }).toList(),
+            ),
+            if (brainDescription != null && brainDescription!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                brainDescription!,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ));
+      orderedWidgets.add(const SizedBox(height: 24));
+    }
+
+    // Body attributes (if any)
+    if (bodyAttribute != null && bodyAttribute!.isNotEmpty) {
+      orderedWidgets.add(Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionHeader('Physical Activity'),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: bodyAttribute!.map((attr) {
+                return _Chip(label: attr);
+              }).toList(),
+            ),
+            if (bodyDescription != null && bodyDescription!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                bodyDescription!,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ));
+      orderedWidgets.add(const SizedBox(height: 24));
+    }
+
+    // 7. Image (Photo 4)
+    addPhoto();
+
+    // 8. QA3 (Third Q&A) - moved between Photo 4 and Photo 5
+    addQA();
+
+    // 9. Image (Photo 5)
+    addPhoto();
+
+    // 10. QA4 (Fourth Q&A)
+    addQA();
+
+    // 11. Image (Photo 6)
+    addPhoto();
+
+    // Continue alternating remaining photos and Q&As
+    while (photoIndex < photos.length || qaIndex < qas.length) {
+      addPhoto();
+      addQA();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: orderedWidgets,
+    );
+  }
+}
+
+/// Stacked photo widget (for photos in vertical list)
+class _StackedPhoto extends StatelessWidget {
+  final String photoPath;
+  final bool isLocal;
+
+  const _StackedPhoto({
+    required this.photoPath,
+    required this.isLocal,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 400,
+      width: double.infinity,
+      child: isLocal
+          ? Image.file(
+              File(photoPath),
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: AppColors.cardBackground,
+                  child: const Center(
+                    child: Icon(
+                      Icons.image_not_supported,
+                      size: 48,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                );
+              },
+            )
+          : Image.network(
+              photoPath,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: AppColors.cardBackground,
+                  child: const Center(
+                    child: Icon(
+                      Icons.image_not_supported,
+                      size: 48,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                );
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  color: AppColors.cardBackground,
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary,
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
