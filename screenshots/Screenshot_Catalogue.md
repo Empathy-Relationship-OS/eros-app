@@ -661,3 +661,15 @@ Screenshot catalogue:
       - When start dating occurs, we will go into the app.
       - While we create profile in backend, when start dating is pressed, if we are still creating profile, give a prompt saying give us a moment while we set up your profile and get your potential matches ready
       - Once this is complete we go into apps default look, which should be that of the Match tab.
+  - public-profile
+    - @screenshots/users/public-profile
+      - This shows the inspiration of how a public users profile will look.
+      - Photos should not be scrollable horizontally, onPress they should do nothing
+      - This encourages users to scroll vertically
+      - Photos, Questions, Hobbies/Interests are seen when scrolling.
+      - The thumbnail picture is at the Top as seen in @screenshots/users/public-profile/IMG_2511.PNG
+      - After this we should show the information:
+        - Name, Gender, Height, Sexual Orientation. These can be seen in @screenshots/users/public-profile/IMG_2512.PNG @screenshots/users/public-profile/IMG_2513.PNG @screenshots/users/public-profile/IMG_2514.PNG
+      - The rest show the scrolling order.
+      - We should place hobbies and interests near the top PublicProfileDTO is the essential mapping
+      - PublicProfileDetailsDTO is the additional jazz of the profile
