@@ -195,21 +195,46 @@ class _ProfilePreviewContent extends StatelessWidget {
             isLocal: useLocalPhotos,
           ),
 
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        Container(
+          margin: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(24.0),
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 24),
-
-              // Name
-              Text(
-                profile.name,
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+              // Name and Age
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    profile.name,
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${profile.age}',
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
 
@@ -219,10 +244,10 @@ class _ProfilePreviewContent extends StatelessWidget {
 
               // 3. Work/Education/Location/Language rows
               _DetailedInfoSection(profile: profile),
-              const SizedBox(height: 24),
 
               // Bio (if available)
               if (profile.profile.bio != null && profile.profile.bio!.isNotEmpty) ...[
+                const SizedBox(height: 24),
                 Text(
                   profile.profile.bio!,
                   style: const TextStyle(
@@ -231,7 +256,6 @@ class _ProfilePreviewContent extends StatelessWidget {
                     height: 1.5,
                   ),
                 ),
-                const SizedBox(height: 24),
               ],
             ],
           ),
@@ -327,13 +351,13 @@ class _HorizontalInfoScroll extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<_InfoChipData> chips = [];
 
-    // Age
-    chips.add(_InfoChipData(icon: Icons.cake, label: '${profile.age}'));
-
     // Gender (from basic info - we don't have this field, so skip for now)
 
-    // Height
-    chips.add(_InfoChipData(icon: Icons.height, label: '${profile.height} cm'));
+    // Height (convert cm to feet and inches)
+    final totalInches = (profile.height / 2.54).round();
+    final feet = totalInches ~/ 12;
+    final inches = totalInches % 12;
+    chips.add(_InfoChipData(icon: Icons.height, label: '$feet\'$inches"'));
 
     // Sexual Orientation
     if (profile.profile.sexualOrientation != null &&
@@ -384,19 +408,47 @@ class _HorizontalInfoScroll extends StatelessWidget {
       ));
     }
 
-    return SizedBox(
+    return Container(
       height: 48,
-      child: ListView.separated(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: AppColors.cardBackground,
+        border: Border(
+          top: BorderSide(
+            color: AppColors.divider,
+            width: 1,
+          ),
+          bottom: BorderSide(
+            color: AppColors.divider,
+            width: 1,
+          ),
+        ),
+      ),
+      child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        itemCount: chips.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          final chip = chips[index];
-          return _InfoChip(
-            icon: chip.icon,
-            label: chip.label,
-          );
-        },
+        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (int i = 0; i < chips.length; i++) ...[
+              if (i > 0)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    '|',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textSecondary.withValues(alpha: 0.3),
+                    ),
+                  ),
+                ),
+              _InfoChip(
+                icon: chips[i].icon,
+                label: chips[i].label,
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -421,34 +473,24 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: AppColors.textSecondary.withValues(alpha: 0.2),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: AppColors.textSecondary,
         ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 18,
-            color: AppColors.textSecondary,
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w500,
           ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -538,6 +580,13 @@ class _QACard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -615,7 +664,7 @@ class _OrderedInterspersedContent extends StatelessWidget {
     void addQA() {
       if (qaIndex < qas.length) {
         orderedWidgets.add(Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: _QACard(qa: qas[qaIndex]),
         ));
         orderedWidgets.add(const SizedBox(height: 24));
@@ -626,20 +675,35 @@ class _OrderedInterspersedContent extends StatelessWidget {
     // 1. Hobbies/Interests section
     if (hobbies.isNotEmpty) {
       orderedWidgets.add(Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _SectionHeader('Interests'),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: hobbies.map((hobby) {
-                return _Chip(label: hobby);
-              }).toList(),
-            ),
-          ],
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionHeader('Interests'),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: hobbies.map((hobby) {
+                  return _Chip(label: hobby);
+                }).toList(),
+              ),
+            ],
+          ),
         ),
       ));
       orderedWidgets.add(const SizedBox(height: 24));
@@ -660,20 +724,35 @@ class _OrderedInterspersedContent extends StatelessWidget {
     // 6. Personality/Traits section
     if (traits.isNotEmpty) {
       orderedWidgets.add(Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _SectionHeader('Personality'),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: traits.map((trait) {
-                return _Chip(label: trait);
-              }).toList(),
-            ),
-          ],
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionHeader('Personality'),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: traits.map((trait) {
+                  return _Chip(label: trait);
+                }).toList(),
+              ),
+            ],
+          ),
         ),
       ));
       orderedWidgets.add(const SizedBox(height: 24));
@@ -682,31 +761,46 @@ class _OrderedInterspersedContent extends StatelessWidget {
     // Brain attributes (if any)
     if (brainAttribute != null && brainAttribute!.isNotEmpty) {
       orderedWidgets.add(Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _SectionHeader('Thinking Style'),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: brainAttribute!.map((attr) {
-                return _Chip(label: attr);
-              }).toList(),
-            ),
-            if (brainDescription != null && brainDescription!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                brainDescription!,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                  height: 1.4,
-                ),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
-          ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionHeader('Thinking Style'),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: brainAttribute!.map((attr) {
+                  return _Chip(label: attr);
+                }).toList(),
+              ),
+              if (brainDescription != null && brainDescription!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  brainDescription!,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ));
       orderedWidgets.add(const SizedBox(height: 24));
@@ -715,31 +809,46 @@ class _OrderedInterspersedContent extends StatelessWidget {
     // Body attributes (if any)
     if (bodyAttribute != null && bodyAttribute!.isNotEmpty) {
       orderedWidgets.add(Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _SectionHeader('Physical Activity'),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: bodyAttribute!.map((attr) {
-                return _Chip(label: attr);
-              }).toList(),
-            ),
-            if (bodyDescription != null && bodyDescription!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                bodyDescription!,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                  height: 1.4,
-                ),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
-          ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionHeader('Physical Activity'),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: bodyAttribute!.map((attr) {
+                  return _Chip(label: attr);
+                }).toList(),
+              ),
+              if (bodyDescription != null && bodyDescription!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  bodyDescription!,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ));
       orderedWidgets.add(const SizedBox(height: 24));
@@ -785,53 +894,59 @@ class _StackedPhoto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 400,
-      width: double.infinity,
-      child: isLocal
-          ? Image.file(
-              File(photoPath),
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: AppColors.cardBackground,
-                  child: const Center(
-                    child: Icon(
-                      Icons.image_not_supported,
-                      size: 48,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                );
-              },
-            )
-          : Image.network(
-              photoPath,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: AppColors.cardBackground,
-                  child: const Center(
-                    child: Icon(
-                      Icons.image_not_supported,
-                      size: 48,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                );
-              },
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  color: AppColors.cardBackground,
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary,
-                    ),
-                  ),
-                );
-              },
-            ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          height: 400,
+          width: double.infinity,
+          child: isLocal
+              ? Image.file(
+                  File(photoPath),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: AppColors.cardBackground,
+                      child: const Center(
+                        child: Icon(
+                          Icons.image_not_supported,
+                          size: 48,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    );
+                  },
+                )
+              : Image.network(
+                  photoPath,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: AppColors.cardBackground,
+                      child: const Center(
+                        child: Icon(
+                          Icons.image_not_supported,
+                          size: 48,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: AppColors.cardBackground,
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ),
     );
   }
 }
