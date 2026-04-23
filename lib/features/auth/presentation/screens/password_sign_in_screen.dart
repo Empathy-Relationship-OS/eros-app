@@ -4,7 +4,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/validators.dart';
 import '../providers/auth_state_provider.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
-import '../../../profile/data/repositories/profile_repository.dart';
 import '../../../profile/domain/models/public_profile.dart';
 
 /// Password Sign In Screen

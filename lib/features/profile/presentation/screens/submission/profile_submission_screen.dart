@@ -7,7 +7,6 @@ import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
-import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 
 /// Profile submission screen - final step before creating user
 class ProfileSubmissionScreen extends ConsumerStatefulWidget {
