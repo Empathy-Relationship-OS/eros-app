@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/presentation/providers/photo_provider.dart';
 import 'package:eros_app/features/profile/presentation/screens/photos/photo_selection_screen.dart';
@@ -70,10 +71,23 @@ class AllPhotosScreen extends ConsumerWidget {
                       ),
                     ),
 
+                    const SizedBox(height: 8),
+
+                    // Reorder hint
+                    if (photoState.photos.length > 1)
+                      Text(
+                        'Long press and drag to reorder photos',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary.withValues(alpha: 0.7),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+
                     const SizedBox(height: 32),
 
-                    // Photo grid
-                    GridView.builder(
+                    // Photo grid with drag-to-reorder
+                    ReorderableGridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -83,10 +97,40 @@ class AllPhotosScreen extends ConsumerWidget {
                         childAspectRatio: 0.75,
                       ),
                       itemCount: MediaConstants.maxPhotos,
+                      onReorder: (oldIndex, newIndex) {
+                        // Only allow reordering of photos that exist
+                        if (oldIndex < photoState.photos.length &&
+                            newIndex < photoState.photos.length) {
+                          ref.read(photoUploadProvider.notifier).reorderPhotos(
+                                oldIndex,
+                                newIndex,
+                              );
+                        }
+                      },
+                      dragWidgetBuilder: (index, child) {
+                        // Add visual feedback during drag
+                        return Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                blurRadius: 16,
+                                spreadRadius: 4,
+                              ),
+                            ],
+                          ),
+                          child: Opacity(
+                            opacity: 0.8,
+                            child: child,
+                          ),
+                        );
+                      },
                       itemBuilder: (context, index) {
                         final hasPhoto = index < photoState.photos.length;
 
                         return _PhotoSlot(
+                          key: ValueKey('photo_slot_$index'),
                           index: index,
                           hasPhoto: hasPhoto,
                           photoPath: hasPhoto ? photoState.photos[index].localPath : null,
@@ -95,6 +139,7 @@ class AllPhotosScreen extends ConsumerWidget {
                           onRemove: hasPhoto
                               ? () => _handleRemovePhoto(ref, index)
                               : null,
+                          enableDrag: hasPhoto, // Only allow dragging if photo exists
                         );
                       },
                     ),
@@ -237,14 +282,17 @@ class _PhotoSlot extends StatelessWidget {
   final bool isPrimary;
   final VoidCallback onTap;
   final VoidCallback? onRemove;
+  final bool enableDrag;
 
   const _PhotoSlot({
+    super.key,
     required this.index,
     required this.hasPhoto,
     this.photoPath,
     required this.isPrimary,
     required this.onTap,
     this.onRemove,
+    this.enableDrag = false,
   });
 
   @override

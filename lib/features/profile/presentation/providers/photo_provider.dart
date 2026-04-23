@@ -221,6 +221,45 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
     _logger.i('Photo replaced at index $index');
   }
 
+  /// Reorder photos by moving a photo from oldIndex to newIndex
+  void reorderPhotos(int oldIndex, int newIndex) {
+    if (oldIndex < 0 || oldIndex >= state.photos.length ||
+        newIndex < 0 || newIndex >= state.photos.length) {
+      _logger.w('Invalid reorder indices: $oldIndex -> $newIndex');
+      return;
+    }
+
+    if (oldIndex == newIndex) {
+      return; // No change needed
+    }
+
+    final updatedPhotos = List<PhotoUploadDraft>.from(state.photos);
+
+    // Remove the photo from the old position
+    final photo = updatedPhotos.removeAt(oldIndex);
+
+    // Insert it at the new position
+    updatedPhotos.insert(newIndex, photo);
+
+    // Re-index all photos to update displayOrder and isPrimary
+    final reindexedPhotos = <PhotoUploadDraft>[];
+    for (var i = 0; i < updatedPhotos.length; i++) {
+      reindexedPhotos.add(
+        updatedPhotos[i].copyWith(
+          displayOrder: i + 1,
+          isPrimary: i == 0, // First photo is always primary
+        ),
+      );
+    }
+
+    state = state.copyWith(
+      photos: reindexedPhotos,
+      clearError: true,
+    );
+
+    _logger.i('Photo reordered: $oldIndex -> $newIndex');
+  }
+
   /// Upload all photos to backend
   /// This should be called when user completes profile creation
   Future<bool> uploadAllPhotos() async {
