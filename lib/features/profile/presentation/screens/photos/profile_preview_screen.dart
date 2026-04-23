@@ -931,8 +931,40 @@ class _StackedPhoto extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (caption != null && caption!.isNotEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.cardBackground,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadow,
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Text(
+                caption!,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
           ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: caption != null && caption!.isNotEmpty
+                ? const BorderRadius.only(
+                    bottomLeft: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                  )
+                : BorderRadius.circular(12),
             child: SizedBox(
               height: 400,
               width: double.infinity,
@@ -982,20 +1014,6 @@ class _StackedPhoto extends StatelessWidget {
                     ),
             ),
           ),
-          if (caption != null && caption!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(
-                caption!,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
