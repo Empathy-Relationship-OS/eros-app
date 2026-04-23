@@ -12,12 +12,14 @@ class PhotoSelectionScreen extends ConsumerStatefulWidget {
   final File imageFile;
   final bool isFirstPhoto;
   final int? existingPhotoIndex; // If editing an existing photo
+  final String? existingCaption; // Caption from existing photo
 
   const PhotoSelectionScreen({
     super.key,
     required this.imageFile,
     this.isFirstPhoto = false,
     this.existingPhotoIndex,
+    this.existingCaption,
   });
 
   @override
@@ -27,6 +29,13 @@ class PhotoSelectionScreen extends ConsumerStatefulWidget {
 
 class _PhotoSelectionScreenState extends ConsumerState<PhotoSelectionScreen> {
   String? _selectedCaption;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize with existing caption if editing
+    _selectedCaption = widget.existingCaption;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -199,6 +208,7 @@ class _PhotoSelectionScreenState extends ConsumerState<PhotoSelectionScreen> {
           imageFile: newFile,
           isFirstPhoto: widget.isFirstPhoto,
           existingPhotoIndex: widget.existingPhotoIndex,
+          existingCaption: _selectedCaption, // Preserve caption
         ),
       ),
     );

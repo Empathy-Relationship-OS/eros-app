@@ -179,26 +179,27 @@ class AllPhotosScreen extends ConsumerWidget {
     bool hasPhoto,
   ) async {
     final notifier = ref.read(photoUploadProvider.notifier);
+    final photoState = ref.read(photoUploadProvider);
 
     if (hasPhoto) {
-      // Edit existing photo - pick new image
-      final newFile = await notifier.pickImageFromGallery();
-
-      if (newFile == null) return;
+      // View/edit existing photo - navigate to selection screen
+      final existingPhoto = photoState.photos[index];
+      final existingFile = File(existingPhoto.localPath);
 
       if (!context.mounted) return;
 
-      // Navigate to photo selection screen for editing
+      // Navigate to photo selection screen for viewing/editing
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => PhotoSelectionScreen(
-            imageFile: newFile,
+            imageFile: existingFile,
             existingPhotoIndex: index,
+            existingCaption: existingPhoto.caption,
           ),
         ),
       );
     } else {
-      // Add new photo
+      // Add new photo - pick from gallery
       final file = await notifier.pickImageFromGallery();
 
       if (file == null) return;
