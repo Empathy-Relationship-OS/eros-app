@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/profile/domain/models/public_profile.dart';
+import 'package:eros_app/features/profile/domain/models/photo_models.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 import 'package:eros_app/features/profile/presentation/providers/photo_provider.dart';
 
@@ -125,19 +126,15 @@ class _ProfilePreviewScreenState extends ConsumerState<ProfilePreviewScreen> {
 
           final profile = profileSnapshot.data!;
 
-          // Use local photos for preview if available, otherwise use backend photos
-          final photosToDisplay = localPhotoState.photos.isNotEmpty
-              ? localPhotoState.photos.map((p) => p.localPath).toList()
-              : profile.profile.photos;
-
           return Column(
             children: [
               Expanded(
                 child: SingleChildScrollView(
                   child: _ProfilePreviewContent(
                     profile: profile,
-                    photosOverride: photosToDisplay,
-                    useLocalPhotos: localPhotoState.photos.isNotEmpty,
+                    localPhotos: localPhotoState.photos.isNotEmpty
+                        ? localPhotoState.photos
+                        : null,
                   ),
                 ),
               ),
@@ -167,32 +164,53 @@ class _ProfilePreviewScreenState extends ConsumerState<ProfilePreviewScreen> {
 /// Content widget showing the profile preview
 class _ProfilePreviewContent extends StatelessWidget {
   final PublicProfileDTO profile;
-  final List<String>? photosOverride; // Override photos with local paths
-  final bool useLocalPhotos; // Flag to indicate if photos are local files
+  final List<PhotoUploadDraft>? localPhotos; // Local photos with captions
 
   const _ProfilePreviewContent({
     required this.profile,
-    this.photosOverride,
-    this.useLocalPhotos = false,
+    this.localPhotos,
   });
 
   @override
   Widget build(BuildContext context) {
-    final photos = photosOverride ?? profile.profile.photos;
     final qas = profile.profile.qas;
 
-    // Split photos: first is thumbnail, rest are for interspersing
-    final thumbnailPhoto = photos.isNotEmpty ? photos.first : null;
-    final remainingPhotos = photos.length > 1 ? photos.sublist(1) : <String>[];
+    // Determine which photos to use
+    final bool useLocal = localPhotos != null && localPhotos!.isNotEmpty;
+    final String? thumbnailPath;
+    final List<_PhotoWithCaption> remainingPhotos;
+
+    if (useLocal) {
+      // Use local photos with captions
+      thumbnailPath = localPhotos!.first.localPath;
+      remainingPhotos = localPhotos!.length > 1
+          ? localPhotos!.sublist(1).map((p) => _PhotoWithCaption(
+                path: p.localPath,
+                caption: p.caption,
+                isLocal: true,
+              )).toList()
+          : [];
+    } else {
+      // Use backend photos (no captions available yet)
+      final backendPhotos = profile.profile.photos;
+      thumbnailPath = backendPhotos.isNotEmpty ? backendPhotos.first : null;
+      remainingPhotos = backendPhotos.length > 1
+          ? backendPhotos.sublist(1).map((p) => _PhotoWithCaption(
+                path: p,
+                caption: null,
+                isLocal: false,
+              )).toList()
+          : [];
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 1. Thumbnail photo (large)
-        if (thumbnailPhoto != null)
+        if (thumbnailPath != null)
           _ThumbnailPhoto(
-            photoPath: thumbnailPhoto,
-            isLocal: useLocalPhotos,
+            photoPath: thumbnailPath,
+            isLocal: useLocal,
           ),
 
         Container(
@@ -238,25 +256,25 @@ class _ProfilePreviewContent extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
+              // Bio (if available)
+              if (profile.profile.bio != null && profile.profile.bio!.isNotEmpty) ...[
+                Text(
+                  profile.profile.bio!,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textPrimary,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+
               // 2. Horizontal scrollable info row (basic attributes)
               _HorizontalInfoScroll(profile: profile),
               const SizedBox(height: 24),
 
               // 3. Work/Education/Location/Language rows
               _DetailedInfoSection(profile: profile),
-
-              // Bio (if available)
-              if (profile.profile.bio != null && profile.profile.bio!.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                Text(
-                  profile.profile.bio!,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: AppColors.textPrimary,
-                    height: 1.5,
-                  ),
-                ),
-              ],
             ],
           ),
         ),
@@ -270,7 +288,6 @@ class _ProfilePreviewContent extends StatelessWidget {
           bodyAttribute: profile.profile.bodyAttribute,
           bodyDescription: profile.profile.bodyDescription,
           photos: remainingPhotos,
-          isLocalPhotos: useLocalPhotos,
           qas: qas,
         ),
       ],
@@ -617,6 +634,19 @@ class _QACard extends StatelessWidget {
   }
 }
 
+/// Helper class to hold photo path and caption
+class _PhotoWithCaption {
+  final String path;
+  final String? caption;
+  final bool isLocal;
+
+  _PhotoWithCaption({
+    required this.path,
+    this.caption,
+    required this.isLocal,
+  });
+}
+
 /// Ordered interspersed content with specific placement
 /// Order: Hobbies -> QA1 -> Image -> QA2 -> Image -> Personality -> Image -> QA3 -> Image -> QA4 -> Image -> Continue alternating
 class _OrderedInterspersedContent extends StatelessWidget {
@@ -626,8 +656,7 @@ class _OrderedInterspersedContent extends StatelessWidget {
   final String? brainDescription;
   final List<String>? bodyAttribute;
   final String? bodyDescription;
-  final List<String> photos;
-  final bool isLocalPhotos;
+  final List<_PhotoWithCaption> photos;
   final List<PublicQAItemDTO> qas;
 
   const _OrderedInterspersedContent({
@@ -638,7 +667,6 @@ class _OrderedInterspersedContent extends StatelessWidget {
     this.bodyAttribute,
     this.bodyDescription,
     required this.photos,
-    required this.isLocalPhotos,
     required this.qas,
   });
 
@@ -651,9 +679,11 @@ class _OrderedInterspersedContent extends StatelessWidget {
     // Helper to add photo
     void addPhoto() {
       if (photoIndex < photos.length) {
+        final photo = photos[photoIndex];
         orderedWidgets.add(_StackedPhoto(
-          photoPath: photos[photoIndex],
-          isLocal: isLocalPhotos,
+          photoPath: photo.path,
+          isLocal: photo.isLocal,
+          caption: photo.caption,
         ));
         orderedWidgets.add(const SizedBox(height: 24));
         photoIndex++;
@@ -886,66 +916,87 @@ class _OrderedInterspersedContent extends StatelessWidget {
 class _StackedPhoto extends StatelessWidget {
   final String photoPath;
   final bool isLocal;
+  final String? caption;
 
   const _StackedPhoto({
     required this.photoPath,
     required this.isLocal,
+    this.caption,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: SizedBox(
-          height: 400,
-          width: double.infinity,
-          child: isLocal
-              ? Image.file(
-                  File(photoPath),
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: AppColors.cardBackground,
-                      child: const Center(
-                        child: Icon(
-                          Icons.image_not_supported,
-                          size: 48,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    );
-                  },
-                )
-              : Image.network(
-                  photoPath,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: AppColors.cardBackground,
-                      child: const Center(
-                        child: Icon(
-                          Icons.image_not_supported,
-                          size: 48,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    );
-                  },
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: AppColors.cardBackground,
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    );
-                  },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              height: 400,
+              width: double.infinity,
+              child: isLocal
+                  ? Image.file(
+                      File(photoPath),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: AppColors.cardBackground,
+                          child: const Center(
+                            child: Icon(
+                              Icons.image_not_supported,
+                              size: 48,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  : Image.network(
+                      photoPath,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: AppColors.cardBackground,
+                          child: const Center(
+                            child: Icon(
+                              Icons.image_not_supported,
+                              size: 48,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        );
+                      },
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          color: AppColors.cardBackground,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ),
+          if (caption != null && caption!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text(
+                caption!,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  fontStyle: FontStyle.italic,
                 ),
-        ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -977,7 +1028,7 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
@@ -988,7 +1039,7 @@ class _Chip extends StatelessWidget {
       child: Text(
         label,
         style: const TextStyle(
-          fontSize: 14,
+          fontSize: 12,
           color: AppColors.textPrimary,
           fontWeight: FontWeight.w500,
         ),
