@@ -36,7 +36,7 @@ import 'features/profile/presentation/screens/photos/profile_completion_loading_
 import 'features/profile/presentation/screens/photos/welcome_onboarding_screen.dart';
 import 'features/profile/presentation/providers/profile_creation_provider.dart';
 import 'features/profile/domain/models/question_dto.dart';
-import 'features/matching/presentation/screens/match_screen.dart';
+import 'features/home/presentation/screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -116,7 +116,7 @@ class ErosApp extends StatelessWidget {
         '/profile-creation/submit': (context) => const ProfileSubmissionScreen(),
 
         // Main app routes
-        '/match': (context) => const MatchScreen(),
+        '/match': (context) => const HomeScreen(),
       },
       onGenerateRoute: (settings) {
         // Handle routes with arguments
