@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/profile/domain/models/create_user_request.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
+import 'package:eros_app/features/auth/presentation/providers/marketing_consent_provider.dart';
+import 'package:eros_app/features/auth/data/repositories/marketing_preference_repository.dart';
 
 /// Profile submission screen - final step before creating user
 class ProfileSubmissionScreen extends ConsumerStatefulWidget {
@@ -158,6 +161,22 @@ class _ProfileSubmissionScreenState
       // Submit to backend
       final repository = ref.read(profileRepositoryProvider);
       await repository.createUser(request);
+
+      // After profile creation, token is refreshed with role claims
+      // Now we can send marketing preference to backend
+      try {
+        final marketingConsent = ref.read(marketingConsentProvider).acceptsMarketing;
+        final marketingRepo = ref.read(marketingPreferenceRepositoryProvider);
+        await marketingRepo.createMarketingPreference(
+          marketingConsent: marketingConsent,
+        );
+      } on ConflictException {
+        // Preference already exists - this is fine, continue
+        debugPrint('Marketing preference already exists');
+      } on ApiException catch (e) {
+        // Log but don't block user flow - marketing preference is non-critical
+        debugPrint('Warning: Failed to save marketing preference: ${e.message}');
+      }
 
       // Navigate to Q&A section (user account is now created)
       if (mounted) {

@@ -195,6 +195,13 @@ class PhotoRepository {
     try {
       // Step 1: Get presigned URL
       _logger.i('Step 1/3: Requesting presigned URL...');
+      _logger.i("""PresignedUploadRequest(
+        fileName: $fileName,
+        contentType: $contentType,
+        fileSizeBytes: $fileSizeBytes,
+        displayOrder: $displayOrder,
+        isPrimary: $isPrimary,
+      )""");
       final presignedResponse = await getPresignedUrl(
         PresignedUploadRequest(
           fileName: fileName,

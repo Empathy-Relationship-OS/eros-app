@@ -4,6 +4,7 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/constants/profile_creation.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
+import 'package:eros_app/features/auth/presentation/providers/marketing_consent_provider.dart';
 
 /// Terms & Conditions acceptance screen
 /// Matches screenshot: @screenshots/login/create-user/2B2A66BB-FECA-4ECA-B133-53CC77A34D91.png
@@ -16,9 +17,15 @@ class TermsScreen extends ConsumerStatefulWidget {
 
 class _TermsScreenState extends ConsumerState<TermsScreen> {
   bool _acceptedTerms = false;
+  bool _acceptsMarketing = false;
 
   Future<void> _continue() async {
     if (!_acceptedTerms) return;
+
+    // Store marketing consent locally
+    await ref
+        .read(marketingConsentProvider.notifier)
+        .setMarketingConsent(_acceptsMarketing);
 
     // Basic info collection is complete!
     // Navigate to profile preferences/interests section, or for now, to a completion screen
@@ -139,6 +146,18 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                       ),
                     ],
                   ),
+                ),
+                controlAffinity: ListTileControlAffinity.leading,
+                activeColor: AppColors.primary,
+                contentPadding: EdgeInsets.zero,
+              ),
+              const SizedBox(height: 12),
+              CheckboxListTile(
+                value: _acceptsMarketing,
+                onChanged: (value) => setState(() => _acceptsMarketing = value ?? false),
+                title: const Text(
+                  'I consent to receive promotional emails and updates from Muse',
+                  style: TextStyle(fontSize: 14, color: Colors.black),
                 ),
                 controlAffinity: ListTileControlAffinity.leading,
                 activeColor: AppColors.primary,

@@ -9,15 +9,15 @@ enum DateIntentions {
   String get displayName {
     switch (this) {
       case DateIntentions.casualDating:
-        return 'Casual dating';
+        return 'Casual Dating';
       case DateIntentions.seriousDating:
-        return 'Serious dating';
+        return 'Serious Dating';
       case DateIntentions.friendship:
         return 'Friendship';
       case DateIntentions.networking:
         return 'Networking';
       case DateIntentions.notSure:
-        return 'Not sure';
+        return 'Not Sure';
     }
   }
 
@@ -65,15 +65,15 @@ enum KidsPreference {
   String get displayName {
     switch (this) {
       case KidsPreference.wantKids:
-        return 'Want kids';
+        return 'Want Kids';
       case KidsPreference.dontWantKids:
-        return "Don't want kids";
+        return "Don't Want Kids";
       case KidsPreference.haveKids:
-        return 'Have kids';
+        return 'Have Kids';
       case KidsPreference.openToKids:
-        return 'Open to kids';
+        return 'Open To Kids';
       case KidsPreference.preferNotToSay:
-        return 'Prefer not to say';
+        return 'Prefer Not To Say';
     }
   }
 
@@ -126,7 +126,7 @@ enum AlcoholConsumption {
       case AlcoholConsumption.regularly:
         return 'Regularly';
       case AlcoholConsumption.preferNotToSay:
-        return 'Prefer not to say';
+        return 'Prefer Not To Say';
     }
   }
 
@@ -178,7 +178,7 @@ enum SmokingStatus {
       case SmokingStatus.quitting:
         return 'Quitting';
       case SmokingStatus.preferNotToSay:
-        return 'Prefer not to say';
+        return 'Prefer Not To Say';
     }
   }
 
@@ -231,7 +231,7 @@ enum EducationLevel {
       case EducationLevel.apprenticeship:
         return 'Apprenticeship';
       case EducationLevel.preferNotToSay:
-        return 'Prefer not to say';
+        return 'Prefer Not To Say';
     }
   }
 
@@ -275,7 +275,7 @@ enum RelationshipType {
       case RelationshipType.monogamous:
         return 'Monogamous';
       case RelationshipType.nonMonogamous:
-        return 'Non-monogamous';
+        return 'Non-Monogamous';
       case RelationshipType.open:
         return 'Open';
     }
@@ -337,7 +337,7 @@ enum SexualOrientation {
       case SexualOrientation.other:
         return 'Other';
       case SexualOrientation.preferNotToSay:
-        return 'Prefer not to say';
+        return 'Prefer Not To Say';
     }
   }
 
@@ -409,7 +409,7 @@ enum Pronouns {
       case Pronouns.other:
         return 'Other';
       case Pronouns.preferNotToSay:
-        return 'Prefer not to say';
+        return 'Prefer Not To Say';
     }
   }
 
@@ -483,7 +483,7 @@ enum Religion {
       case Religion.other:
         return 'Other';
       case Religion.preferNotToSay:
-        return 'Prefer not to say';
+        return 'Prefer Not To Say';
     }
   }
 
@@ -566,7 +566,7 @@ enum PoliticalView {
       case PoliticalView.other:
         return 'Other';
       case PoliticalView.preferNotToSay:
-        return 'Prefer not to say';
+        return 'Prefer Not To Say';
     }
   }
 
@@ -638,7 +638,7 @@ enum Diet {
       case Diet.other:
         return 'Other';
       case Diet.preferNotToSay:
-        return 'Prefer not to say';
+        return 'Prefer Not To Say';
     }
   }
 

@@ -12,6 +12,7 @@ class ApiEndpoints {
   static final qa = _QAEndpoints();
   static final match = _MatchEndpoints();
   static final dates = _DatesEndpoints();
+  static final marketing = _MarketingEndpoints();
 }
 
 // ====================
@@ -85,4 +86,18 @@ class _MatchEndpoints {
 class _DatesEndpoints {
   /// Placeholder for future date scheduling endpoints
   /// Will be populated as date features are implemented
+}
+
+// ====================
+// MARKETING ENDPOINTS
+// ====================
+class _MarketingEndpoints {
+  /// POST /marketing/preference - Create marketing preference
+  String createPreference() => '/marketing/preference';
+
+  /// PUT /marketing/preference - Update marketing preference
+  String updatePreference() => '/marketing/preference';
+
+  /// GET /marketing/preference - Get marketing preference
+  String getPreference() => '/marketing/preference';
 }
