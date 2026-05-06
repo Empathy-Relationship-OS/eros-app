@@ -138,12 +138,16 @@ enum Trait {
     }
   }
 
-  String toBackend() => name.toUpperCase();
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static Trait fromBackend(String value) {
     return Trait.values.firstWhere(
-      (e) => e.name.toUpperCase() == value.toUpperCase(),
-      orElse: () => throw ArgumentError('Invalid Trait value: $value'),
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid Trait value: $value. Expected one of: ${Trait.values.map((e) => e.displayName).join(", ")}',
+      ),
     );
   }
 }
@@ -192,12 +196,16 @@ enum StarSign {
     }
   }
 
-  String toBackend() => name.toUpperCase();
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static StarSign fromBackend(String value) {
     return StarSign.values.firstWhere(
-      (e) => e.name.toUpperCase() == value.toUpperCase(),
-      orElse: () => throw ArgumentError('Invalid StarSign value: $value'),
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid StarSign value: $value. Expected one of: ${StarSign.values.map((e) => e.displayName).join(", ")}',
+      ),
     );
   }
 }

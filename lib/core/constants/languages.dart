@@ -129,64 +129,17 @@ enum LanguageCode {
     }
   }
 
-  String toBackend() {
-    switch (this) {
-      case LanguageCode.english:
-        return 'ENGLISH';
-      case LanguageCode.spanish:
-        return 'SPANISH';
-      case LanguageCode.french:
-        return 'FRENCH';
-      case LanguageCode.german:
-        return 'GERMAN';
-      case LanguageCode.italian:
-        return 'ITALIAN';
-      case LanguageCode.portuguese:
-        return 'PORTUGUESE';
-      case LanguageCode.dutch:
-        return 'DUTCH';
-      case LanguageCode.polish:
-        return 'POLISH';
-      case LanguageCode.russian:
-        return 'RUSSIAN';
-      case LanguageCode.japanese:
-        return 'JAPANESE';
-      case LanguageCode.chinese:
-        return 'CHINESE';
-      case LanguageCode.korean:
-        return 'KOREAN';
-    }
-  }
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static LanguageCode fromBackend(String value) {
-    switch (value) {
-      case 'ENGLISH':
-        return LanguageCode.english;
-      case 'SPANISH':
-        return LanguageCode.spanish;
-      case 'FRENCH':
-        return LanguageCode.french;
-      case 'GERMAN':
-        return LanguageCode.german;
-      case 'ITALIAN':
-        return LanguageCode.italian;
-      case 'PORTUGUESE':
-        return LanguageCode.portuguese;
-      case 'DUTCH':
-        return LanguageCode.dutch;
-      case 'POLISH':
-        return LanguageCode.polish;
-      case 'RUSSIAN':
-        return LanguageCode.russian;
-      case 'JAPANESE':
-        return LanguageCode.japanese;
-      case 'CHINESE':
-        return LanguageCode.chinese;
-      case 'KOREAN':
-        return LanguageCode.korean;
-      default:
-        throw ArgumentError('Invalid LanguageCode value: $value');
-    }
+    return LanguageCode.values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid LanguageCode value: $value. Expected one of: ${LanguageCode.values.map((e) => e.displayName).join(", ")}',
+      ),
+    );
   }
 
   static LanguageCode fromCode(String code) {

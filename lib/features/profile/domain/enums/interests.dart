@@ -147,11 +147,11 @@ enum Sport {
     }
   }
 
-  String toBackend() => name.toUpperCase();
+  String toBackend() => displayName;
 
   static Sport fromBackend(String value) {
     return Sport.values.firstWhere(
-      (e) => e.name.toUpperCase() == value.toUpperCase(),
+      (e) => e.displayName == value,
       orElse: () => throw ArgumentError('Invalid Sport value: $value'),
     );
   }
@@ -249,11 +249,11 @@ enum FoodAndDrink {
     }
   }
 
-  String toBackend() => name.toUpperCase();
+  String toBackend() => displayName;
 
   static FoodAndDrink fromBackend(String value) {
     return FoodAndDrink.values.firstWhere(
-      (e) => e.name.toUpperCase() == value.toUpperCase(),
+      (e) => e.displayName == value,
       orElse: () => throw ArgumentError('Invalid FoodAndDrink value: $value'),
     );
   }
@@ -315,11 +315,11 @@ enum Creative {
     }
   }
 
-  String toBackend() => name.toUpperCase();
+  String toBackend() => displayName;
 
   static Creative fromBackend(String value) {
     return Creative.values.firstWhere(
-      (e) => e.name.toUpperCase() == value.toUpperCase(),
+      (e) => e.displayName == value,
       orElse: () => throw ArgumentError('Invalid Creative value: $value'),
     );
   }
@@ -402,11 +402,11 @@ enum Entertainment {
     }
   }
 
-  String toBackend() => name.toUpperCase();
+  String toBackend() => displayName;
 
   static Entertainment fromBackend(String value) {
     return Entertainment.values.firstWhere(
-      (e) => e.name.toUpperCase() == value.toUpperCase(),
+      (e) => e.displayName == value,
       orElse: () => throw ArgumentError('Invalid Entertainment value: $value'),
     );
   }
@@ -478,7 +478,7 @@ enum MusicGenre {
       case MusicGenre.hardstyle:
         return 'Hardstyle';
       case MusicGenre.hiphop:
-        return 'Hip Hop';
+        return 'Hip-Hop';
       case MusicGenre.house:
         return 'House';
       case MusicGenre.indieMusic:
@@ -516,11 +516,11 @@ enum MusicGenre {
     }
   }
 
-  String toBackend() => name.toUpperCase();
+  String toBackend() => displayName;
 
   static MusicGenre fromBackend(String value) {
     return MusicGenre.values.firstWhere(
-      (e) => e.name.toUpperCase() == value.toUpperCase(),
+      (e) => e.displayName == value,
       orElse: () => throw ArgumentError('Invalid MusicGenre value: $value'),
     );
   }
@@ -618,11 +618,11 @@ enum Activity {
     }
   }
 
-  String toBackend() => name.toUpperCase();
+  String toBackend() => displayName;
 
   static Activity fromBackend(String value) {
     return Activity.values.firstWhere(
-      (e) => e.name.toUpperCase() == value.toUpperCase(),
+      (e) => e.displayName == value,
       orElse: () => throw ArgumentError('Invalid Activity value: $value'),
     );
   }
@@ -720,11 +720,11 @@ enum Interest {
     }
   }
 
-  String toBackend() => name.toUpperCase();
+  String toBackend() => displayName;
 
   static Interest fromBackend(String value) {
     return Interest.values.firstWhere(
-      (e) => e.name.toUpperCase() == value.toUpperCase(),
+      (e) => e.displayName == value,
       orElse: () => throw ArgumentError('Invalid Interest value: $value'),
     );
   }

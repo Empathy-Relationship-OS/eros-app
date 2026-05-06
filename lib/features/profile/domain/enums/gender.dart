@@ -18,33 +18,16 @@ enum Gender {
     }
   }
 
-  /// Convert to backend format (SCREAMING_SNAKE_CASE)
-  String toBackend() {
-    switch (this) {
-      case Gender.male:
-        return 'MALE';
-      case Gender.female:
-        return 'FEMALE';
-      case Gender.nonBinary:
-        return 'NON_BINARY';
-      case Gender.other:
-        return 'OTHER';
-    }
-  }
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
-  /// Parse from backend format
+  /// Parse from backend format (display name)
   static Gender fromBackend(String value) {
-    switch (value) {
-      case 'MALE':
-        return Gender.male;
-      case 'FEMALE':
-        return Gender.female;
-      case 'NON_BINARY':
-        return Gender.nonBinary;
-      case 'OTHER':
-        return Gender.other;
-      default:
-        throw ArgumentError('Invalid Gender value: $value');
-    }
+    return Gender.values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid Gender value: $value. Expected one of: ${Gender.values.map((e) => e.displayName).join(", ")}',
+      ),
+    );
   }
 }

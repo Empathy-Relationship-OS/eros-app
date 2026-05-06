@@ -4,6 +4,7 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/domain/enums/personality.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
+import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 
 /// Personality traits and star sign selector
 /// Matches screenshot: @screenshots/users/create-profile/F385FEFE-708E-434A-9D6F-DCC3B230A2E2.png
@@ -94,9 +95,32 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
     await ref.read(profileCreationProvider.notifier).updateDraft(updatedDraft);
 
     if (mounted) {
-      // Navigate to profile submission to create user account first
-      // After user creation, it will navigate to Q&A section
-      Navigator.pushNamed(context, '/profile-creation/submit');
+      // Check if user already exists in backend
+      try {
+        final repository = ref.read(profileRepositoryProvider);
+        final existsResponse = await repository.checkUserExists();
+
+        if (existsResponse.exists) {
+          // User already created - skip directly to Q&A
+          debugPrint('✅ User already exists, skipping submission screen');
+          Navigator.pushReplacementNamed(context, '/profile-creation/qa');
+        } else {
+          // User not created yet - proceed to submission
+          debugPrint('ℹ️  User does not exist, proceeding to submission');
+          Navigator.pushNamed(context, '/profile-creation/submit');
+        }
+      } on ProfileRepositoryException catch (e) {
+        // Error checking user exists - show error and don't navigate
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.message),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
     }
   }
 

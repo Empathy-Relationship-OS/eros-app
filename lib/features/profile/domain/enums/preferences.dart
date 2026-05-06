@@ -21,36 +21,17 @@ enum DateIntentions {
     }
   }
 
-  String toBackend() {
-    switch (this) {
-      case DateIntentions.casualDating:
-        return 'CASUAL_DATING';
-      case DateIntentions.seriousDating:
-        return 'SERIOUS_DATING';
-      case DateIntentions.friendship:
-        return 'FRIENDSHIP';
-      case DateIntentions.networking:
-        return 'NETWORKING';
-      case DateIntentions.notSure:
-        return 'NOT_SURE';
-    }
-  }
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static DateIntentions fromBackend(String value) {
-    switch (value) {
-      case 'CASUAL_DATING':
-        return DateIntentions.casualDating;
-      case 'SERIOUS_DATING':
-        return DateIntentions.seriousDating;
-      case 'FRIENDSHIP':
-        return DateIntentions.friendship;
-      case 'NETWORKING':
-        return DateIntentions.networking;
-      case 'NOT_SURE':
-        return DateIntentions.notSure;
-      default:
-        throw ArgumentError('Invalid DateIntentions value: $value');
-    }
+    return DateIntentions.values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid DateIntentions value: $value. Expected one of: ${DateIntentions.values.map((e) => e.displayName).join(", ")}',
+      ),
+    );
   }
 }
 
@@ -71,42 +52,23 @@ enum KidsPreference {
       case KidsPreference.haveKids:
         return 'Have Kids';
       case KidsPreference.openToKids:
-        return 'Open To Kids';
+        return 'Open to Kids';
       case KidsPreference.preferNotToSay:
-        return 'Prefer Not To Say';
+        return 'Prefer not to say';
     }
   }
 
-  String toBackend() {
-    switch (this) {
-      case KidsPreference.wantKids:
-        return 'WANT_KIDS';
-      case KidsPreference.dontWantKids:
-        return 'DONT_WANT_KIDS';
-      case KidsPreference.haveKids:
-        return 'HAVE_KIDS';
-      case KidsPreference.openToKids:
-        return 'OPEN_TO_KIDS';
-      case KidsPreference.preferNotToSay:
-        return 'PREFER_NOT_TO_SAY';
-    }
-  }
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static KidsPreference fromBackend(String value) {
-    switch (value) {
-      case 'WANT_KIDS':
-        return KidsPreference.wantKids;
-      case 'DONT_WANT_KIDS':
-        return KidsPreference.dontWantKids;
-      case 'HAVE_KIDS':
-        return KidsPreference.haveKids;
-      case 'OPEN_TO_KIDS':
-        return KidsPreference.openToKids;
-      case 'PREFER_NOT_TO_SAY':
-        return KidsPreference.preferNotToSay;
-      default:
-        throw ArgumentError('Invalid KidsPreference value: $value');
-    }
+    return KidsPreference.values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid KidsPreference value: $value. Expected one of: ${KidsPreference.values.map((e) => e.displayName).join(", ")}',
+      ),
+    );
   }
 }
 
@@ -126,36 +88,21 @@ enum AlcoholConsumption {
       case AlcoholConsumption.regularly:
         return 'Regularly';
       case AlcoholConsumption.preferNotToSay:
-        return 'Prefer Not To Say';
+        return 'Prefer not to say';
     }
   }
 
-  String toBackend() {
-    switch (this) {
-      case AlcoholConsumption.never:
-        return 'NEVER';
-      case AlcoholConsumption.sometimes:
-        return 'SOMETIMES';
-      case AlcoholConsumption.regularly:
-        return 'REGULARLY';
-      case AlcoholConsumption.preferNotToSay:
-        return 'PREFER_NOT_TO_SAY';
-    }
-  }
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static AlcoholConsumption fromBackend(String value) {
-    switch (value) {
-      case 'NEVER':
-        return AlcoholConsumption.never;
-      case 'SOMETIMES':
-        return AlcoholConsumption.sometimes;
-      case 'REGULARLY':
-        return AlcoholConsumption.regularly;
-      case 'PREFER_NOT_TO_SAY':
-        return AlcoholConsumption.preferNotToSay;
-      default:
-        throw ArgumentError('Invalid AlcoholConsumption value: $value');
-    }
+    return AlcoholConsumption.values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid AlcoholConsumption value: $value. Expected one of: ${AlcoholConsumption.values.map((e) => e.displayName).join(", ")}',
+      ),
+    );
   }
 }
 
@@ -178,40 +125,21 @@ enum SmokingStatus {
       case SmokingStatus.quitting:
         return 'Quitting';
       case SmokingStatus.preferNotToSay:
-        return 'Prefer Not To Say';
+        return 'Prefer not to say';
     }
   }
 
-  String toBackend() {
-    switch (this) {
-      case SmokingStatus.never:
-        return 'NEVER';
-      case SmokingStatus.sometimes:
-        return 'SOMETIMES';
-      case SmokingStatus.regularly:
-        return 'REGULARLY';
-      case SmokingStatus.quitting:
-        return 'QUITTING';
-      case SmokingStatus.preferNotToSay:
-        return 'PREFER_NOT_TO_SAY';
-    }
-  }
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static SmokingStatus fromBackend(String value) {
-    switch (value) {
-      case 'NEVER':
-        return SmokingStatus.never;
-      case 'SOMETIMES':
-        return SmokingStatus.sometimes;
-      case 'REGULARLY':
-        return SmokingStatus.regularly;
-      case 'QUITTING':
-        return SmokingStatus.quitting;
-      case 'PREFER_NOT_TO_SAY':
-        return SmokingStatus.preferNotToSay;
-      default:
-        throw ArgumentError('Invalid SmokingStatus value: $value');
-    }
+    return SmokingStatus.values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid SmokingStatus value: $value. Expected one of: ${SmokingStatus.values.map((e) => e.displayName).join(", ")}',
+      ),
+    );
   }
 }
 
@@ -231,36 +159,21 @@ enum EducationLevel {
       case EducationLevel.apprenticeship:
         return 'Apprenticeship';
       case EducationLevel.preferNotToSay:
-        return 'Prefer Not To Say';
+        return 'Prefer not to say';
     }
   }
 
-  String toBackend() {
-    switch (this) {
-      case EducationLevel.college:
-        return 'COLLEGE';
-      case EducationLevel.university:
-        return 'UNIVERSITY';
-      case EducationLevel.apprenticeship:
-        return 'APPRENTICESHIP';
-      case EducationLevel.preferNotToSay:
-        return 'PREFER_NOT_TO_SAY';
-    }
-  }
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static EducationLevel fromBackend(String value) {
-    switch (value) {
-      case 'COLLEGE':
-        return EducationLevel.college;
-      case 'UNIVERSITY':
-        return EducationLevel.university;
-      case 'APPRENTICESHIP':
-        return EducationLevel.apprenticeship;
-      case 'PREFER_NOT_TO_SAY':
-        return EducationLevel.preferNotToSay;
-      default:
-        throw ArgumentError('Invalid EducationLevel value: $value');
-    }
+    return EducationLevel.values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid EducationLevel value: $value. Expected one of: ${EducationLevel.values.map((e) => e.displayName).join(", ")}',
+      ),
+    );
   }
 }
 
@@ -281,28 +194,17 @@ enum RelationshipType {
     }
   }
 
-  String toBackend() {
-    switch (this) {
-      case RelationshipType.monogamous:
-        return 'MONOGAMOUS';
-      case RelationshipType.nonMonogamous:
-        return 'NON_MONOGAMOUS';
-      case RelationshipType.open:
-        return 'OPEN';
-    }
-  }
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static RelationshipType fromBackend(String value) {
-    switch (value) {
-      case 'MONOGAMOUS':
-        return RelationshipType.monogamous;
-      case 'NON_MONOGAMOUS':
-        return RelationshipType.nonMonogamous;
-      case 'OPEN':
-        return RelationshipType.open;
-      default:
-        throw ArgumentError('Invalid RelationshipType value: $value');
-    }
+    return RelationshipType.values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid RelationshipType value: $value. Expected one of: ${RelationshipType.values.map((e) => e.displayName).join(", ")}',
+      ),
+    );
   }
 }
 
@@ -337,56 +239,21 @@ enum SexualOrientation {
       case SexualOrientation.other:
         return 'Other';
       case SexualOrientation.preferNotToSay:
-        return 'Prefer Not To Say';
+        return 'Prefer not to say';
     }
   }
 
-  String toBackend() {
-    switch (this) {
-      case SexualOrientation.straight:
-        return 'STRAIGHT';
-      case SexualOrientation.gay:
-        return 'GAY';
-      case SexualOrientation.lesbian:
-        return 'LESBIAN';
-      case SexualOrientation.bisexual:
-        return 'BISEXUAL';
-      case SexualOrientation.pansexual:
-        return 'PANSEXUAL';
-      case SexualOrientation.asexual:
-        return 'ASEXUAL';
-      case SexualOrientation.questioning:
-        return 'QUESTIONING';
-      case SexualOrientation.other:
-        return 'OTHER';
-      case SexualOrientation.preferNotToSay:
-        return 'PREFER_NOT_TO_SAY';
-    }
-  }
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static SexualOrientation fromBackend(String value) {
-    switch (value) {
-      case 'STRAIGHT':
-        return SexualOrientation.straight;
-      case 'GAY':
-        return SexualOrientation.gay;
-      case 'LESBIAN':
-        return SexualOrientation.lesbian;
-      case 'BISEXUAL':
-        return SexualOrientation.bisexual;
-      case 'PANSEXUAL':
-        return SexualOrientation.pansexual;
-      case 'ASEXUAL':
-        return SexualOrientation.asexual;
-      case 'QUESTIONING':
-        return SexualOrientation.questioning;
-      case 'OTHER':
-        return SexualOrientation.other;
-      case 'PREFER_NOT_TO_SAY':
-        return SexualOrientation.preferNotToSay;
-      default:
-        throw ArgumentError('Invalid SexualOrientation value: $value');
-    }
+    return SexualOrientation.values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid SexualOrientation value: $value. Expected one of: ${SexualOrientation.values.map((e) => e.displayName).join(", ")}',
+      ),
+    );
   }
 }
 
@@ -409,40 +276,21 @@ enum Pronouns {
       case Pronouns.other:
         return 'Other';
       case Pronouns.preferNotToSay:
-        return 'Prefer Not To Say';
+        return 'Prefer not to say';
     }
   }
 
-  String toBackend() {
-    switch (this) {
-      case Pronouns.heHim:
-        return 'HE_HIM';
-      case Pronouns.sheHer:
-        return 'SHE_HER';
-      case Pronouns.theyThem:
-        return 'THEY_THEM';
-      case Pronouns.other:
-        return 'OTHER';
-      case Pronouns.preferNotToSay:
-        return 'PREFER_NOT_TO_SAY';
-    }
-  }
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static Pronouns fromBackend(String value) {
-    switch (value) {
-      case 'HE_HIM':
-        return Pronouns.heHim;
-      case 'SHE_HER':
-        return Pronouns.sheHer;
-      case 'THEY_THEM':
-        return Pronouns.theyThem;
-      case 'OTHER':
-        return Pronouns.other;
-      case 'PREFER_NOT_TO_SAY':
-        return Pronouns.preferNotToSay;
-      default:
-        throw ArgumentError('Invalid Pronouns value: $value');
-    }
+    return Pronouns.values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid Pronouns value: $value. Expected one of: ${Pronouns.values.map((e) => e.displayName).join(", ")}',
+      ),
+    );
   }
 }
 
@@ -483,64 +331,21 @@ enum Religion {
       case Religion.other:
         return 'Other';
       case Religion.preferNotToSay:
-        return 'Prefer Not To Say';
+        return 'Prefer not to say';
     }
   }
 
-  String toBackend() {
-    switch (this) {
-      case Religion.christianity:
-        return 'CHRISTIANITY';
-      case Religion.islam:
-        return 'ISLAM';
-      case Religion.hinduism:
-        return 'HINDUISM';
-      case Religion.buddhism:
-        return 'BUDDHISM';
-      case Religion.judaism:
-        return 'JUDAISM';
-      case Religion.sikhism:
-        return 'SIKHISM';
-      case Religion.atheist:
-        return 'ATHEIST';
-      case Religion.agnostic:
-        return 'AGNOSTIC';
-      case Religion.spiritual:
-        return 'SPIRITUAL';
-      case Religion.other:
-        return 'OTHER';
-      case Religion.preferNotToSay:
-        return 'PREFER_NOT_TO_SAY';
-    }
-  }
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static Religion fromBackend(String value) {
-    switch (value) {
-      case 'CHRISTIANITY':
-        return Religion.christianity;
-      case 'ISLAM':
-        return Religion.islam;
-      case 'HINDUISM':
-        return Religion.hinduism;
-      case 'BUDDHISM':
-        return Religion.buddhism;
-      case 'JUDAISM':
-        return Religion.judaism;
-      case 'SIKHISM':
-        return Religion.sikhism;
-      case 'ATHEIST':
-        return Religion.atheist;
-      case 'AGNOSTIC':
-        return Religion.agnostic;
-      case 'SPIRITUAL':
-        return Religion.spiritual;
-      case 'OTHER':
-        return Religion.other;
-      case 'PREFER_NOT_TO_SAY':
-        return Religion.preferNotToSay;
-      default:
-        throw ArgumentError('Invalid Religion value: $value');
-    }
+    return Religion.values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid Religion value: $value. Expected one of: ${Religion.values.map((e) => e.displayName).join(", ")}',
+      ),
+    );
   }
 }
 
@@ -566,44 +371,21 @@ enum PoliticalView {
       case PoliticalView.other:
         return 'Other';
       case PoliticalView.preferNotToSay:
-        return 'Prefer Not To Say';
+        return 'Prefer not to say';
     }
   }
 
-  String toBackend() {
-    switch (this) {
-      case PoliticalView.liberal:
-        return 'LIBERAL';
-      case PoliticalView.moderate:
-        return 'MODERATE';
-      case PoliticalView.conservative:
-        return 'CONSERVATIVE';
-      case PoliticalView.apolitical:
-        return 'APOLITICAL';
-      case PoliticalView.other:
-        return 'OTHER';
-      case PoliticalView.preferNotToSay:
-        return 'PREFER_NOT_TO_SAY';
-    }
-  }
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static PoliticalView fromBackend(String value) {
-    switch (value) {
-      case 'LIBERAL':
-        return PoliticalView.liberal;
-      case 'MODERATE':
-        return PoliticalView.moderate;
-      case 'CONSERVATIVE':
-        return PoliticalView.conservative;
-      case 'APOLITICAL':
-        return PoliticalView.apolitical;
-      case 'OTHER':
-        return PoliticalView.other;
-      case 'PREFER_NOT_TO_SAY':
-        return PoliticalView.preferNotToSay;
-      default:
-        throw ArgumentError('Invalid PoliticalView value: $value');
-    }
+    return PoliticalView.values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid PoliticalView value: $value. Expected one of: ${PoliticalView.values.map((e) => e.displayName).join(", ")}',
+      ),
+    );
   }
 }
 
@@ -638,56 +420,21 @@ enum Diet {
       case Diet.other:
         return 'Other';
       case Diet.preferNotToSay:
-        return 'Prefer Not To Say';
+        return 'Prefer not to say';
     }
   }
 
-  String toBackend() {
-    switch (this) {
-      case Diet.omnivore:
-        return 'OMNIVORE';
-      case Diet.flexitarian:
-        return 'FLEXITARIAN';
-      case Diet.vegetarian:
-        return 'VEGETARIAN';
-      case Diet.vegan:
-        return 'VEGAN';
-      case Diet.pescatarian:
-        return 'PESCATARIAN';
-      case Diet.halal:
-        return 'HALAL';
-      case Diet.kosher:
-        return 'KOSHER';
-      case Diet.other:
-        return 'OTHER';
-      case Diet.preferNotToSay:
-        return 'PREFER_NOT_TO_SAY';
-    }
-  }
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static Diet fromBackend(String value) {
-    switch (value) {
-      case 'OMNIVORE':
-        return Diet.omnivore;
-      case 'FLEXITARIAN':
-        return Diet.flexitarian;
-      case 'VEGETARIAN':
-        return Diet.vegetarian;
-      case 'VEGAN':
-        return Diet.vegan;
-      case 'PESCATARIAN':
-        return Diet.pescatarian;
-      case 'HALAL':
-        return Diet.halal;
-      case 'KOSHER':
-        return Diet.kosher;
-      case 'OTHER':
-        return Diet.other;
-      case 'PREFER_NOT_TO_SAY':
-        return Diet.preferNotToSay;
-      default:
-        throw ArgumentError('Invalid Diet value: $value');
-    }
+    return Diet.values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid Diet value: $value. Expected one of: ${Diet.values.map((e) => e.displayName).join(", ")}',
+      ),
+    );
   }
 }
 
@@ -729,56 +476,17 @@ enum Ethnicity {
     }
   }
 
-  String toBackend() {
-    switch (this) {
-      case Ethnicity.blackAfricanDescent:
-        return 'BLACK_AFRICAN_DESCENT';
-      case Ethnicity.eastAsian:
-        return 'EAST_ASIAN';
-      case Ethnicity.hispanicLatino:
-        return 'HISPANIC_LATINO';
-      case Ethnicity.middleEastern:
-        return 'MIDDLE_EASTERN';
-      case Ethnicity.nativeAmerican:
-        return 'NATIVE_AMERICAN';
-      case Ethnicity.pacificIslander:
-        return 'PACIFIC_ISLANDER';
-      case Ethnicity.southAsian:
-        return 'SOUTH_ASIAN';
-      case Ethnicity.southeastAsian:
-        return 'SOUTHEAST_ASIAN';
-      case Ethnicity.whiteCaucasian:
-        return 'WHITE_CAUCASIAN';
-      case Ethnicity.other:
-        return 'OTHER';
-    }
-  }
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static Ethnicity fromBackend(String value) {
-    switch (value) {
-      case 'BLACK_AFRICAN_DESCENT':
-        return Ethnicity.blackAfricanDescent;
-      case 'EAST_ASIAN':
-        return Ethnicity.eastAsian;
-      case 'HISPANIC_LATINO':
-        return Ethnicity.hispanicLatino;
-      case 'MIDDLE_EASTERN':
-        return Ethnicity.middleEastern;
-      case 'NATIVE_AMERICAN':
-        return Ethnicity.nativeAmerican;
-      case 'PACIFIC_ISLANDER':
-        return Ethnicity.pacificIslander;
-      case 'SOUTH_ASIAN':
-        return Ethnicity.southAsian;
-      case 'SOUTHEAST_ASIAN':
-        return Ethnicity.southeastAsian;
-      case 'WHITE_CAUCASIAN':
-        return Ethnicity.whiteCaucasian;
-      case 'OTHER':
-        return Ethnicity.other;
-      default:
-        throw ArgumentError('Invalid Ethnicity value: $value');
-    }
+    return Ethnicity.values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid Ethnicity value: $value. Expected one of: ${Ethnicity.values.map((e) => e.displayName).join(", ")}',
+      ),
+    );
   }
 }
 
@@ -809,40 +517,17 @@ enum BrainAttribute {
     }
   }
 
-  String toBackend() {
-    switch (this) {
-      case BrainAttribute.adhd:
-        return 'ADHD';
-      case BrainAttribute.learningDisability:
-        return 'LEARNING_DISABILITY';
-      case BrainAttribute.mentalHealthChallenges:
-        return 'MENTAL_HEALTH_CHALLENGES';
-      case BrainAttribute.hsp:
-        return 'HSP';
-      case BrainAttribute.autistic:
-        return 'AUTISTIC';
-      case BrainAttribute.neurodivergent:
-        return 'NEURODIVERGENT';
-    }
-  }
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static BrainAttribute fromBackend(String value) {
-    switch (value) {
-      case 'ADHD':
-        return BrainAttribute.adhd;
-      case 'LEARNING_DISABILITY':
-        return BrainAttribute.learningDisability;
-      case 'MENTAL_HEALTH_CHALLENGES':
-        return BrainAttribute.mentalHealthChallenges;
-      case 'HSP':
-        return BrainAttribute.hsp;
-      case 'AUTISTIC':
-        return BrainAttribute.autistic;
-      case 'NEURODIVERGENT':
-        return BrainAttribute.neurodivergent;
-      default:
-        throw ArgumentError('Invalid BrainAttribute value: $value');
-    }
+    return BrainAttribute.values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid BrainAttribute value: $value. Expected one of: ${BrainAttribute.values.map((e) => e.displayName).join(", ")}',
+      ),
+    );
   }
 }
 
@@ -873,39 +558,16 @@ enum BodyAttribute {
     }
   }
 
-  String toBackend() {
-    switch (this) {
-      case BodyAttribute.chronicIllness:
-        return 'CHRONIC_ILLNESS';
-      case BodyAttribute.visualImpairment:
-        return 'VISUAL_IMPAIRMENT';
-      case BodyAttribute.deaf:
-        return 'DEAF';
-      case BodyAttribute.immunocompromised:
-        return 'IMMUNOCOMPROMISED';
-      case BodyAttribute.mobilityAid:
-        return 'MOBILITY_AID';
-      case BodyAttribute.wheelchair:
-        return 'WHEELCHAIR';
-    }
-  }
+  /// Convert to backend format (display name)
+  String toBackend() => displayName;
 
+  /// Parse from backend format (display name)
   static BodyAttribute fromBackend(String value) {
-    switch (value) {
-      case 'CHRONIC_ILLNESS':
-        return BodyAttribute.chronicIllness;
-      case 'VISUAL_IMPAIRMENT':
-        return BodyAttribute.visualImpairment;
-      case 'DEAF':
-        return BodyAttribute.deaf;
-      case 'IMMUNOCOMPROMISED':
-        return BodyAttribute.immunocompromised;
-      case 'MOBILITY_AID':
-        return BodyAttribute.mobilityAid;
-      case 'WHEELCHAIR':
-        return BodyAttribute.wheelchair;
-      default:
-        throw ArgumentError('Invalid BodyAttribute value: $value');
-    }
+    return BodyAttribute.values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => throw ArgumentError(
+        'Invalid BodyAttribute value: $value. Expected one of: ${BodyAttribute.values.map((e) => e.displayName).join(", ")}',
+      ),
+    );
   }
 }

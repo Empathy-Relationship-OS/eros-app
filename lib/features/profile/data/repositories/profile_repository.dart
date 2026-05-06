@@ -6,6 +6,7 @@ import 'package:eros_app/core/network/api_endpoints.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/profile/domain/models/create_user_request.dart';
+import 'package:eros_app/features/profile/domain/models/update_user_request.dart';
 import 'package:eros_app/features/profile/domain/models/public_profile.dart';
 
 /// Repository for profile-related API calls
@@ -150,15 +151,15 @@ class ProfileRepository {
     }
   }
 
-  /// Update user profile
+  /// Update user profile with UpdateUserRequest
   /// PATCH /users/me
-  Future<void> updateUser(Map<String, dynamic> updates) async {
+  Future<void> updateUser(UpdateUserRequest request) async {
     try {
       _logger.i('✏️  Updating user profile');
 
       await _apiClient.patch<Map<String, dynamic>>(
         ApiEndpoints.users.updateCurrentUser(),
-        data: updates,
+        data: request.toJson(),
       );
 
       _logger.i('✅ User profile updated successfully');
@@ -177,6 +178,11 @@ class ProfileRepository {
       _logger.e('🚫 Forbidden (403) - Server rejected the request');
       throw ProfileRepositoryException(
         'We couldn\'t process your request at this time. Please try again later.',
+      );
+    } on NotFoundException {
+      _logger.e('❌ User not found (404) - Fatal error');
+      throw ProfileRepositoryException(
+        'We couldn\'t find your profile. This is a critical error. Please contact support.',
       );
     } on NetworkException catch (e) {
       _logger.e('💥 Network error', error: e);

@@ -40,9 +40,12 @@ class _AlcoholScreenState extends ConsumerState<AlcoholScreen> {
       return;
     }
 
+    // If PREFER_NOT_TO_SAY is selected, always set visible to false
+    final visibility = _selected == AlcoholConsumption.preferNotToSay ? false : _isVisible;
+
     final currentDraft = ref.read(profileCreationProvider);
     final updatedDraft = currentDraft.copyWith(
-      alcoholConsumption: DisplayableField(field: _selected, visible: _isVisible),
+      alcoholConsumption: DisplayableField(field: _selected, visible: visibility),
     );
     await ref.read(profileCreationProvider.notifier).updateDraft(updatedDraft);
 
@@ -131,15 +134,18 @@ class _AlcoholScreenState extends ConsumerState<AlcoholScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              CheckboxListTile(
-                value: _isVisible,
-                onChanged: (value) => setState(() => _isVisible = value ?? true),
-                title: const Text('Show on my profile'),
-                controlAffinity: ListTileControlAffinity.leading,
-                activeColor: AppColors.primary,
-                contentPadding: EdgeInsets.zero,
-              ),
-              const SizedBox(height: 16),
+              // Only show visibility toggle if PREFER_NOT_TO_SAY is not selected
+              if (_selected != AlcoholConsumption.preferNotToSay)
+                CheckboxListTile(
+                  value: _isVisible,
+                  onChanged: (value) => setState(() => _isVisible = value ?? true),
+                  title: const Text('Show on my profile'),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  activeColor: AppColors.primary,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              if (_selected != AlcoholConsumption.preferNotToSay)
+                const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 height: 56,
