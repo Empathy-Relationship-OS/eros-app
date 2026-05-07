@@ -164,6 +164,10 @@ class ApiClient {
 
       // Handle response based on status code
       return _handleResponse<T>(response);
+    } on ApiException {
+      // Re-throw ApiException subclasses without wrapping
+      // (thrown by _handleResponse for error status codes)
+      rethrow;
     } on DioException catch (e, stackTrace) {
       _logger.e('❌ API request failed', error: e, stackTrace: stackTrace);
       throw _handleDioException(e, stackTrace);
@@ -186,14 +190,22 @@ class ApiClient {
 
     // Success responses (200-299)
     if (statusCode != null && statusCode >= 200 && statusCode < 300) {
+      // Handle 204 No Content as null response
+      if (statusCode == 204) {
+        return null as T;
+      }
       return response.data as T;
     }
 
     // Error responses - throw appropriate exceptions
-    throw _mapStatusCodeToException(statusCode, response.data);
+    throw _mapStatusCodeToException(statusCode, response.data, response);
   }
 
-  ApiException _mapStatusCodeToException(int? statusCode, dynamic responseData) {
+  ApiException _mapStatusCodeToException(
+    int? statusCode,
+    dynamic responseData,
+    Response? response,
+  ) {
     final message = _extractErrorMessage(responseData);
 
     switch (statusCode) {
@@ -234,8 +246,24 @@ class ApiClient {
         );
 
       case 429:
+        // Extract Retry-After header if present
+        Duration? retryAfter;
+        if (response != null) {
+          final retryAfterHeader = response.headers.value('retry-after');
+          if (retryAfterHeader != null) {
+            final seconds = int.tryParse(retryAfterHeader);
+            if (seconds != null) {
+              retryAfter = Duration(seconds: seconds);
+            }
+          }
+        }
+
+        _logger.d('🚨 429 Rate Limit - Response data: $responseData');
+        _logger.d('🚨 429 Rate Limit - Retry-After: $retryAfter');
+
         return RateLimitException(
           message ?? 'Too many requests',
+          retryAfter: retryAfter,
           statusCode: statusCode,
           originalError: responseData,
         );
@@ -273,6 +301,7 @@ class ApiClient {
         return _mapStatusCodeToException(
           e.response?.statusCode,
           e.response?.data,
+          e.response,
         );
 
       case DioExceptionType.connectionError:
