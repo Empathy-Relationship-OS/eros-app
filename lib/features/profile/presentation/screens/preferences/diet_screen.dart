@@ -7,28 +7,28 @@ import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 
-/// Sexual orientation preference screen
-class SexualOrientationScreen extends ConsumerStatefulWidget {
-  const SexualOrientationScreen({super.key});
+/// Diet preference screen
+/// Required field - used for restaurant coordination
+/// Displayable field - user can choose visibility (except for preferNotToSay)
+class DietScreen extends ConsumerStatefulWidget {
+  const DietScreen({super.key});
 
   @override
-  ConsumerState<SexualOrientationScreen> createState() =>
-      _SexualOrientationScreenState();
+  ConsumerState<DietScreen> createState() => _DietScreenState();
 }
 
-class _SexualOrientationScreenState
-    extends ConsumerState<SexualOrientationScreen> {
-  SexualOrientation? _selected;
+class _DietScreenState extends ConsumerState<DietScreen> {
+  Diet? _selected;
   bool _isVisible = true;
 
   @override
   void initState() {
     super.initState();
     final draft = ref.read(profileCreationProvider);
-    if (draft.sexualOrientation != null) {
+    if (draft.diet != null) {
       setState(() {
-        _selected = draft.sexualOrientation!.field;
-        _isVisible = draft.sexualOrientation!.visible;
+        _selected = draft.diet!.field;
+        _isVisible = draft.diet!.visible;
       });
     }
   }
@@ -36,22 +36,24 @@ class _SexualOrientationScreenState
   Future<void> _continue() async {
     if (_selected == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your sexual orientation')),
+        const SnackBar(
+          content: Text('Please select your dietary preference'),
+        ),
       );
       return;
     }
 
     // If PREFER_NOT_TO_SAY is selected, always set visible to false
-    final visibility = _selected == SexualOrientation.preferNotToSay ? false : _isVisible;
+    final visibility = _selected == Diet.preferNotToSay ? false : _isVisible;
 
     final currentDraft = ref.read(profileCreationProvider);
     final updatedDraft = currentDraft.copyWith(
-      sexualOrientation: DisplayableField(field: _selected!, visible: visibility),
+      diet: DisplayableField(field: _selected, visible: visibility),
     );
     await ref.read(profileCreationProvider.notifier).updateDraft(updatedDraft);
 
     if (mounted) {
-      Navigator.pushNamed(context, '/profile-creation/preferences/bio');
+      Navigator.pushNamed(context, '/profile-creation/preferences/complete');
     }
   }
 
@@ -74,13 +76,13 @@ class _SexualOrientationScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ProfileProgressBar(
-                currentStep: ProfileCreationConstants.preferencesStepSexualOrientation,
+                currentStep: ProfileCreationConstants.preferencesStepDiet,
                 totalSteps: ProfileCreationConstants.preferencesTotalSteps,
                 sectionLabel: 'Preferences',
               ),
               const SizedBox(height: 32),
               Text(
-                'Sexual orientation',
+                'What is your diet?',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
@@ -88,7 +90,7 @@ class _SexualOrientationScreenState
               ),
               const SizedBox(height: 8),
               Text(
-                'What best describes you?',
+                'This helps us find the perfect restaurant for your dates',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.grey[600],
                     ),
@@ -96,12 +98,12 @@ class _SexualOrientationScreenState
               const SizedBox(height: 32),
               Expanded(
                 child: ListView(
-                  children: SexualOrientation.values.map((orientation) {
-                    final isSelected = _selected == orientation;
+                  children: Diet.values.map((diet) {
+                    final isSelected = _selected == diet;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: InkWell(
-                        onTap: () => setState(() => _selected = orientation),
+                        onTap: () => setState(() => _selected = diet),
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           padding: const EdgeInsets.all(20),
@@ -125,7 +127,7 @@ class _SexualOrientationScreenState
                               ),
                               const SizedBox(width: 16),
                               Text(
-                                orientation.displayName,
+                                diet.displayName,
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight:
@@ -143,7 +145,7 @@ class _SexualOrientationScreenState
               ),
               const SizedBox(height: 16),
               // Only show visibility toggle if PREFER_NOT_TO_SAY is not selected
-              if (_selected != SexualOrientation.preferNotToSay)
+              if (_selected != Diet.preferNotToSay)
                 CheckboxListTile(
                   value: _isVisible,
                   onChanged: (value) => setState(() => _isVisible = value ?? true),
@@ -152,7 +154,7 @@ class _SexualOrientationScreenState
                   activeColor: AppColors.primary,
                   contentPadding: EdgeInsets.zero,
                 ),
-              if (_selected != SexualOrientation.preferNotToSay)
+              if (_selected != Diet.preferNotToSay)
                 const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
@@ -182,5 +184,4 @@ class _SexualOrientationScreenState
       ),
     );
   }
-
 }

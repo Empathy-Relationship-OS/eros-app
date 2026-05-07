@@ -23,6 +23,11 @@ import 'features/profile/presentation/screens/preferences/smoking_screen.dart';
 import 'features/profile/presentation/screens/preferences/occupation_screen.dart';
 import 'features/profile/presentation/screens/preferences/relationship_type_screen.dart';
 import 'features/profile/presentation/screens/preferences/sexual_orientation_screen.dart';
+import 'features/profile/presentation/screens/preferences/bio_screen.dart';
+import 'features/profile/presentation/screens/preferences/pronouns_screen.dart';
+import 'features/profile/presentation/screens/preferences/religion_screen.dart';
+import 'features/profile/presentation/screens/preferences/political_view_screen.dart';
+import 'features/profile/presentation/screens/preferences/diet_screen.dart';
 import 'features/profile/presentation/screens/preferences/preferences_complete_screen.dart';
 import 'features/profile/presentation/screens/interests/interests_screen.dart';
 import 'features/profile/presentation/screens/personality/personality_screen.dart';
@@ -96,6 +101,11 @@ class ErosApp extends StatelessWidget {
         '/profile-creation/preferences/occupation': (context) => const OccupationScreen(),
         '/profile-creation/preferences/relationship-type': (context) => const RelationshipTypeScreen(),
         '/profile-creation/preferences/sexual-orientation': (context) => const SexualOrientationScreen(),
+        '/profile-creation/preferences/bio': (context) => const BioScreen(),
+        '/profile-creation/preferences/pronouns': (context) => const PronounsScreen(),
+        '/profile-creation/preferences/religion': (context) => const ReligionScreen(),
+        '/profile-creation/preferences/political-view': (context) => const PoliticalViewScreen(),
+        '/profile-creation/preferences/diet': (context) => const DietScreen(),
         '/profile-creation/preferences/complete': (context) => const PreferencesCompleteScreen(),
 
         // Profile creation routes - Interests & Personality

@@ -23,7 +23,7 @@ class ProfileCreationConstants {
   // ==================== Preferences Section ====================
 
   /// Total number of steps in the preferences section
-  static const int preferencesTotalSteps = 7;
+  static const int preferencesTotalSteps = 12;
 
   /// Preference step numbers
   static const int preferencesStepDateIntentions = 1;
@@ -33,6 +33,11 @@ class ProfileCreationConstants {
   static const int preferencesStepOccupation = 5;
   static const int preferencesStepRelationshipType = 6;
   static const int preferencesStepSexualOrientation = 7;
+  static const int preferencesStepBio = 8;
+  static const int preferencesStepPronouns = 9;
+  static const int preferencesStepReligion = 10;
+  static const int preferencesStepPoliticalView = 11;
+  static const int preferencesStepDiet = 12;
 
   // ==================== Profile Section ====================
 

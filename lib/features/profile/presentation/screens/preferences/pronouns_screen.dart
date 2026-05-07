@@ -7,28 +7,27 @@ import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 
-/// Sexual orientation preference screen
-class SexualOrientationScreen extends ConsumerStatefulWidget {
-  const SexualOrientationScreen({super.key});
+/// Pronouns preference screen
+/// Displayable field - user can choose visibility
+class PronounsScreen extends ConsumerStatefulWidget {
+  const PronounsScreen({super.key});
 
   @override
-  ConsumerState<SexualOrientationScreen> createState() =>
-      _SexualOrientationScreenState();
+  ConsumerState<PronounsScreen> createState() => _PronounsScreenState();
 }
 
-class _SexualOrientationScreenState
-    extends ConsumerState<SexualOrientationScreen> {
-  SexualOrientation? _selected;
+class _PronounsScreenState extends ConsumerState<PronounsScreen> {
+  Pronouns? _selected;
   bool _isVisible = true;
 
   @override
   void initState() {
     super.initState();
     final draft = ref.read(profileCreationProvider);
-    if (draft.sexualOrientation != null) {
+    if (draft.pronouns != null) {
       setState(() {
-        _selected = draft.sexualOrientation!.field;
-        _isVisible = draft.sexualOrientation!.visible;
+        _selected = draft.pronouns!.field;
+        _isVisible = draft.pronouns!.visible;
       });
     }
   }
@@ -36,22 +35,22 @@ class _SexualOrientationScreenState
   Future<void> _continue() async {
     if (_selected == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your sexual orientation')),
+        const SnackBar(content: Text('Please select your pronouns')),
       );
       return;
     }
 
     // If PREFER_NOT_TO_SAY is selected, always set visible to false
-    final visibility = _selected == SexualOrientation.preferNotToSay ? false : _isVisible;
+    final visibility = _selected == Pronouns.preferNotToSay ? false : _isVisible;
 
     final currentDraft = ref.read(profileCreationProvider);
     final updatedDraft = currentDraft.copyWith(
-      sexualOrientation: DisplayableField(field: _selected!, visible: visibility),
+      pronouns: DisplayableField(field: _selected, visible: visibility),
     );
     await ref.read(profileCreationProvider.notifier).updateDraft(updatedDraft);
 
     if (mounted) {
-      Navigator.pushNamed(context, '/profile-creation/preferences/bio');
+      Navigator.pushNamed(context, '/profile-creation/preferences/religion');
     }
   }
 
@@ -74,34 +73,27 @@ class _SexualOrientationScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ProfileProgressBar(
-                currentStep: ProfileCreationConstants.preferencesStepSexualOrientation,
+                currentStep: ProfileCreationConstants.preferencesStepPronouns,
                 totalSteps: ProfileCreationConstants.preferencesTotalSteps,
                 sectionLabel: 'Preferences',
               ),
               const SizedBox(height: 32),
               Text(
-                'Sexual orientation',
+                'What are your pronouns?',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
                     ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'What best describes you?',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-              ),
               const SizedBox(height: 32),
               Expanded(
                 child: ListView(
-                  children: SexualOrientation.values.map((orientation) {
-                    final isSelected = _selected == orientation;
+                  children: Pronouns.values.map((pronouns) {
+                    final isSelected = _selected == pronouns;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: InkWell(
-                        onTap: () => setState(() => _selected = orientation),
+                        onTap: () => setState(() => _selected = pronouns),
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           padding: const EdgeInsets.all(20),
@@ -125,7 +117,7 @@ class _SexualOrientationScreenState
                               ),
                               const SizedBox(width: 16),
                               Text(
-                                orientation.displayName,
+                                pronouns.displayName,
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight:
@@ -143,7 +135,7 @@ class _SexualOrientationScreenState
               ),
               const SizedBox(height: 16),
               // Only show visibility toggle if PREFER_NOT_TO_SAY is not selected
-              if (_selected != SexualOrientation.preferNotToSay)
+              if (_selected != Pronouns.preferNotToSay)
                 CheckboxListTile(
                   value: _isVisible,
                   onChanged: (value) => setState(() => _isVisible = value ?? true),
@@ -152,7 +144,7 @@ class _SexualOrientationScreenState
                   activeColor: AppColors.primary,
                   contentPadding: EdgeInsets.zero,
                 ),
-              if (_selected != SexualOrientation.preferNotToSay)
+              if (_selected != Pronouns.preferNotToSay)
                 const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
@@ -182,5 +174,4 @@ class _SexualOrientationScreenState
       ),
     );
   }
-
 }
