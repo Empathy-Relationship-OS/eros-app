@@ -146,7 +146,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
 
             // Title
             Text(
-              'All Daily Batches Viewed',
+              'All Daily Potential Matches Viewed',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -155,28 +155,8 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
 
             const SizedBox(height: 16),
 
-            // Message about batches
-            Text(
-              "You've viewed all $batchesUsed of $maxBatches daily batches",
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-
-            const SizedBox(height: 8),
-
             // Message about refresh
             if (timeUntilReset != null && state.limitResetAt != null) ...[
-              Text(
-                'Batches refresh at ${_formatResetTime(state.limitResetAt!)}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-
               // Countdown card
               Container(
                 padding: const EdgeInsets.all(20),
@@ -200,7 +180,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Next batch in:',
+                          "Come back in:",
                           style:
                               Theme.of(context).textTheme.bodyLarge?.copyWith(
                                     color: AppColors.textSecondary,
@@ -222,35 +202,6 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
                 ),
               ),
             ],
-
-            const SizedBox(height: 32),
-
-            // Info text
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.cardBackground,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: AppColors.textSecondary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Come back tomorrow for fresh matches!',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
