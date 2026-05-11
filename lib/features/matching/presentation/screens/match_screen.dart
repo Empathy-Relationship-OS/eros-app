@@ -7,7 +7,6 @@ import 'package:eros_app/features/auth/presentation/providers/auth_state_provide
 import 'package:eros_app/features/matching/presentation/providers/match_provider.dart';
 import 'package:eros_app/features/matching/presentation/widgets/match_state_views.dart';
 import 'package:eros_app/features/matching/presentation/widgets/match_carousel.dart';
-import 'package:eros_app/features/matching/presentation/widgets/match_card_components.dart';
 
 /// Main matching screen showing daily batch of matches
 class MatchScreen extends ConsumerStatefulWidget {
@@ -20,7 +19,6 @@ class MatchScreen extends ConsumerStatefulWidget {
 class _MatchScreenState extends ConsumerState<MatchScreen> {
   Timer? _countdownTimer;
   late PageController _pageController;
-  int _currentPage = 0;
 
   @override
   void initState() {
@@ -65,8 +63,6 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Muse'),
-        backgroundColor: AppColors.primary,
-        elevation: 0,
         automaticallyImplyLeading: false,
         actions: [
           // DEBUG: Reset batch limit timer (only in debug mode)
@@ -165,30 +161,13 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
     MatchBatchState state,
     MatchBatchNotifier notifier,
   ) {
-    return Column(
-      children: [
-        // Carousel with center-focused layout
-        Expanded(
-          child: MatchCarousel(
-            profiles: state.profiles,
-            notifier: notifier,
-            pageController: _pageController,
-            onPageChanged: (index) {
-              setState(() {
-                _currentPage = index;
-              });
-            },
-          ),
-        ),
-
-        // Page indicator dots
-        const SizedBox(height: 16),
-        PageIndicator(
-          currentIndex: _currentPage,
-          totalCount: state.profiles.length,
-        ),
-        const SizedBox(height: 24),
-      ],
+    return MatchCarousel(
+      profiles: state.profiles,
+      notifier: notifier,
+      pageController: _pageController,
+      onPageChanged: (_) {
+        // Page changed - carousel handles visual feedback
+      },
     );
   }
 }
