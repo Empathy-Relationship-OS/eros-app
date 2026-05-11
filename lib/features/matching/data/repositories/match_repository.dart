@@ -58,4 +58,54 @@ class MatchRepository {
       rethrow;
     }
   }
+
+  /// Take action on a match (like or pass)
+  ///
+  /// Sends user's action (like/pass) on a match they've been served.
+  ///
+  /// Returns:
+  /// - [MutualMatchInfo] if both users liked each other (200)
+  /// - `null` if action recorded but no mutual match (204 No Content)
+  ///
+  /// Throws:
+  /// - [ValidationException] if invalid matchId (400)
+  /// - [UnauthorizedException] if not authenticated (401)
+  /// - [ForbiddenException] if user doesn't own this match (403)
+  /// - [ConflictException] if user already took action on this match (409)
+  /// - Other [ApiException] subclasses for other errors
+  Future<MutualMatchInfo?> takeMatchAction(int matchId, bool liked) async {
+    try {
+      _logger.d('💘 Taking action on match $matchId: ${liked ? "LIKE" : "PASS"}');
+
+      final request = MatchActionRequest(liked: liked);
+      final response = await _apiClient.patch<Map<String, dynamic>?>(
+        ApiEndpoints.match.action(matchId.toString()),
+        data: request.toJson(),
+      );
+
+      // Handle 204 No Content (action recorded, no mutual match)
+      if (response == null) {
+        _logger.d('✅ Action recorded, no mutual match');
+        return null;
+      }
+
+      // 200 OK - mutual match!
+      final mutualMatch = MutualMatchInfo.fromJson(response);
+      _logger.d('🎉 MUTUAL MATCH! matchId=${mutualMatch.matchId}');
+      return mutualMatch;
+    } on ConflictException {
+      _logger.w('⚠️  User already took action on match $matchId');
+      rethrow;
+    } on ForbiddenException {
+      _logger.e('🚫 User does not own match $matchId');
+      rethrow;
+    } on ApiException catch (e) {
+      _logger.e('🚨 Failed to take match action. Type: ${e.runtimeType}, Message: ${e.message}');
+      _logger.d('Status code: ${e.statusCode}, Original error: ${e.originalError}');
+      rethrow;
+    } catch (e, stackTrace) {
+      _logger.e('🚨 Unexpected error in takeMatchAction', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
 }

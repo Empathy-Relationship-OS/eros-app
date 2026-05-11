@@ -246,6 +246,45 @@ class MatchBatchNotifier extends StateNotifier<MatchBatchState> {
   Duration? getTimeUntilReset() {
     return _storageService.getTimeUntilReset();
   }
+
+  /// Take action on a match (like or pass)
+  /// Returns MutualMatchInfo if it's a mutual match, null otherwise
+  Future<MutualMatchInfo?> takeMatchAction(int matchId, bool liked) async {
+    try {
+      _logger.d('🎯 Taking action on match $matchId: ${liked ? "LIKE" : "PASS"}');
+
+      final mutualMatchInfo = await _repository.takeMatchAction(matchId, liked);
+
+      // Remove profile from current batch regardless of mutual match
+      removeProfile(matchId);
+
+      if (mutualMatchInfo != null) {
+        _logger.d('🎉 MUTUAL MATCH detected!');
+      }
+
+      return mutualMatchInfo;
+    } on ConflictException {
+      _logger.w('⚠️  Already took action on this match');
+      // Remove from UI since action was already taken
+      removeProfile(matchId);
+      state = state.copyWith(
+        errorMessage: 'You already took action on this match',
+      );
+      return null;
+    } on ApiException catch (e) {
+      _logger.e('🚨 Failed to take match action', error: e);
+      state = state.copyWith(
+        errorMessage: e.message,
+      );
+      return null;
+    } catch (e, stackTrace) {
+      _logger.e('🚨 Unexpected error taking match action', error: e, stackTrace: stackTrace);
+      state = state.copyWith(
+        errorMessage: 'Failed to process your action',
+      );
+      return null;
+    }
+  }
 }
 
 // ====================

@@ -158,3 +158,53 @@ class DailyBatchLimitError {
     };
   }
 }
+
+/// Request DTO for taking action on a match.
+///
+/// Sent when a user likes or passes on a match they've been served.
+class MatchActionRequest {
+  final bool liked;
+
+  MatchActionRequest({required this.liked});
+
+  Map<String, dynamic> toJson() {
+    return {
+      'liked': liked,
+    };
+  }
+}
+
+/// DTO returned when both users have liked each other, creating a mutual match.
+///
+/// This triggers the "It's a Match!" scenario and enables the dating module.
+class MutualMatchInfo {
+  final int matchId;
+  final String user1Id;
+  final String user2Id;
+  final DateTime matchedAt;
+
+  MutualMatchInfo({
+    required this.matchId,
+    required this.user1Id,
+    required this.user2Id,
+    required this.matchedAt,
+  });
+
+  factory MutualMatchInfo.fromJson(Map<String, dynamic> json) {
+    return MutualMatchInfo(
+      matchId: json['matchId'] as int,
+      user1Id: json['user1Id'] as String,
+      user2Id: json['user2Id'] as String,
+      matchedAt: DateTime.parse(json['matchedAt'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'matchId': matchId,
+      'user1Id': user1Id,
+      'user2Id': user2Id,
+      'matchedAt': matchedAt.toIso8601String(),
+    };
+  }
+}

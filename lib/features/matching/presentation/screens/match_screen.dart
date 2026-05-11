@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
@@ -70,7 +71,25 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
         title: const Text('Muse'),
         backgroundColor: AppColors.primary,
         elevation: 0,
+        automaticallyImplyLeading: false,
         actions: [
+          // DEBUG: Reset batch limit timer (only in debug mode)
+          if (kDebugMode)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Reset batch limit (DEBUG)',
+              onPressed: () async {
+                final storageService = ref.read(matchStorageServiceProvider);
+                await storageService.clearBatchLimitResetTime();
+                // Reset state
+                ref.invalidate(matchBatchProvider);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Batch limit reset cleared!')),
+                  );
+                }
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
@@ -127,8 +146,6 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
     MatchBatchNotifier notifier,
   ) {
     final timeUntilReset = notifier.getTimeUntilReset();
-    final batchesUsed = state.batchesUsed ?? 3;
-    final maxBatches = state.maxBatches ?? 3;
 
     return Center(
       child: Padding(
@@ -206,16 +223,6 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
         ),
       ),
     );
-  }
-
-  String _formatResetTime(DateTime resetAt) {
-    // Format as HH:MM AM/PM with timezone
-    final hour = resetAt.hour;
-    final minute = resetAt.minute.toString().padLeft(2, '0');
-    final period = hour >= 12 ? 'PM' : 'AM';
-    final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
-
-    return '$displayHour:$minute $period UTC';
   }
 
   Widget _buildNoMatchesView(
@@ -327,35 +334,22 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
       children: [
         // Batch info header
         Container(
-          padding: const EdgeInsets.all(16),
-          color: AppColors.cardBackground,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Batch ${state.batchNumber} of 3',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              Text(
-                '${state.profiles.length} matches',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-              ),
-            ],
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          color: AppColors.background
         ),
 
-        // Match list
+        // Horizontal scrollable match cards
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
+          child: PageView.builder(
             itemCount: state.profiles.length,
             itemBuilder: (context, index) {
               final profile = state.profiles[index];
-              return _buildMatchCard(profile, notifier);
+              return _MatchCard(
+                profile: profile,
+                notifier: notifier,
+                currentIndex: index,
+                totalCount: state.profiles.length,
+              );
             },
           ),
         ),
@@ -363,87 +357,423 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
     );
   }
 
-  Widget _buildMatchCard(
-    UserMatchProfile profile,
-    MatchBatchNotifier notifier,
-  ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
+}
+
+/// Match card widget displaying user profile in card format
+/// Based on screenshots/match/87A5473E-37BE-403B-BBE2-76B03CD76AE6_1_105_c.jpeg
+class _MatchCard extends ConsumerStatefulWidget {
+  final UserMatchProfile profile;
+  final MatchBatchNotifier notifier;
+  final int currentIndex;
+  final int totalCount;
+
+  const _MatchCard({
+    required this.profile,
+    required this.notifier,
+    required this.currentIndex,
+    required this.totalCount,
+  });
+
+  @override
+  ConsumerState<_MatchCard> createState() => _MatchCardState();
+}
+
+class _MatchCardState extends ConsumerState<_MatchCard> {
+  bool _isProcessingAction = false;
+
+  Future<void> _handleAction(bool liked) async {
+    if (_isProcessingAction) return;
+
+    setState(() {
+      _isProcessingAction = true;
+    });
+
+    try {
+      final mutualMatch = await widget.notifier.takeMatchAction(
+        widget.profile.matchId,
+        liked,
+      );
+
+      if (mutualMatch != null && mounted) {
+        // Show mutual match dialog
+        _showMutualMatchDialog(mutualMatch);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessingAction = false;
+        });
+      }
+    }
+  }
+
+  void _showMutualMatchDialog(MutualMatchInfo mutualMatch) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Profile image
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: AppColors.cardBackground,
-              backgroundImage: profile.thumbnailUrl != null
-                  ? NetworkImage(profile.thumbnailUrl!)
-                  : null,
-              child: profile.thumbnailUrl == null
-                  ? Text(
-                      profile.name[0].toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    )
-                  : null,
+            const Icon(
+              Icons.favorite,
+              color: AppColors.primary,
+              size: 80,
             ),
-
-            const SizedBox(width: 16),
-
-            // Profile info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    profile.name,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${profile.age} years old',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                  ),
-                  if (profile.badges != null && profile.badges!.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 4,
-                      children: profile.badges!.take(3).map((badge) {
-                        return Chip(
-                          label: Text(
-                            badge,
-                            style: const TextStyle(fontSize: 10),
-                          ),
-                          padding: EdgeInsets.zero,
-                          visualDensity: VisualDensity.compact,
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ],
+            const SizedBox(height: 24),
+            const Text(
+              "It's a Match!",
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
               ),
             ),
-
-            // Action button
-            IconButton(
-              icon: const Icon(Icons.arrow_forward),
-              onPressed: () {
-                // TODO: Navigate to full profile view
-                // For now, just remove from list
-                notifier.removeProfile(profile.matchId);
-              },
+            const SizedBox(height: 16),
+            Text(
+              "You and ${widget.profile.name} liked each other!",
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  // TODO: Navigate to dates/chat when implemented
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                ),
+                child: const Text(
+                  'Continue',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _navigateToPublicProfile() {
+    // Navigate to public profile view
+    Navigator.of(context).pushNamed(
+      '/profile/public',
+      arguments: widget.profile.userId,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final badges = widget.profile.badges?.take(5).toList() ?? [];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        children: [
+          // Main card
+          Expanded(
+            child: GestureDetector(
+              onTap: _navigateToPublicProfile,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppColors.cardBackground,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.shadow,
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Large profile photo
+                      Expanded(
+                        flex: 3,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            widget.profile.thumbnailUrl != null
+                                ? Image.network(
+                                    widget.profile.thumbnailUrl!,
+                                    fit: BoxFit.cover,
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Container(
+                                        color: AppColors.cardBackground,
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        color: AppColors.cardBackground,
+                                        child: Center(
+                                          child: Text(
+                                            widget.profile.name[0].toUpperCase(),
+                                            style: const TextStyle(
+                                              fontSize: 80,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.primary,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : Container(
+                                    color: AppColors.cardBackground,
+                                    child: Center(
+                                      child: Text(
+                                        widget.profile.name[0].toUpperCase(),
+                                        style: const TextStyle(
+                                          fontSize: 80,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                            // Gradient overlay at bottom for better text readability
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: Container(
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.black.withValues(alpha: 0.7),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Profile info section
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        color: Colors.white,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Name with online indicator dot
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    widget.profile.name,
+                                    style: const TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // Badges (matching traits)
+                            if (badges.isNotEmpty)
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: badges.map((badge) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: AppColors.primary.withValues(alpha: 0.3),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.check_circle,
+                                          size: 16,
+                                          color: AppColors.primary,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          badge,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Action buttons
+          Row(
+            children: [
+              // "Not for me" button
+              Expanded(
+                child: SizedBox(
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _isProcessingAction ? null : () => _handleAction(false),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.cardBackground,
+                      foregroundColor: AppColors.textPrimary,
+                      disabledBackgroundColor: AppColors.textSecondary.withValues(alpha: 0.3),
+                      side: BorderSide(
+                        color: AppColors.textSecondary.withValues(alpha: 0.3),
+                        width: 2,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: _isProcessingAction
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.textSecondary,
+                            ),
+                          )
+                        : const Text(
+                            'Not for me',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 16),
+
+              // "Go for a drink" button
+              Expanded(
+                child: SizedBox(
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _isProcessingAction ? null : () => _handleAction(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: AppColors.textSecondary.withValues(alpha: 0.3),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: _isProcessingAction
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Go for a date',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Page indicator dots
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              widget.totalCount,
+              (index) => Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: index == widget.currentIndex ? 24 : 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: index == widget.currentIndex
+                      ? AppColors.primary
+                      : AppColors.textSecondary.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
     );
   }
