@@ -17,10 +17,17 @@ class MatchScreen extends ConsumerStatefulWidget {
 
 class _MatchScreenState extends ConsumerState<MatchScreen> {
   Timer? _countdownTimer;
+  late PageController _pageController;
+  int _currentPage = 0;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(
+      viewportFraction: 0.85, // Show 85% of card width to allow side peek
+      initialPage: 0,
+    );
+
     // Fetch initial batch on mount
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(matchBatchProvider.notifier).fetchDailyBatch();
@@ -33,6 +40,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -335,20 +343,51 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
         // Batch info header
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          color: AppColors.background
+          color: AppColors.background,
         ),
 
-        // Horizontal scrollable match cards
+        // Carousel with center-focused layout
         Expanded(
           child: PageView.builder(
+            controller: _pageController,
             itemCount: state.profiles.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentPage = index;
+              });
+            },
             itemBuilder: (context, index) {
               final profile = state.profiles[index];
-              return _MatchCard(
-                profile: profile,
-                notifier: notifier,
-                currentIndex: index,
-                totalCount: state.profiles.length,
+              return AnimatedBuilder(
+                animation: _pageController,
+                builder: (context, child) {
+                  // Calculate scale and opacity based on scroll position
+                  double value = 1.0;
+                  if (_pageController.position.haveDimensions) {
+                    value = _pageController.page! - index;
+                    value = (1 - (value.abs() * 0.15)).clamp(0.85, 1.0);
+                  }
+
+                  final opacity = (1 - ((_pageController.page ?? 0) - index).abs() * 0.3)
+                      .clamp(0.7, 1.0);
+
+                  return Center(
+                    child: Transform.scale(
+                      scale: value,
+                      child: Opacity(
+                        opacity: opacity,
+                        child: child,
+                      ),
+                    ),
+                  );
+                },
+                child: _MatchCard(
+                  profile: profile,
+                  notifier: notifier,
+                  currentIndex: index,
+                  totalCount: state.profiles.length,
+                  isActive: _currentPage == index,
+                ),
               );
             },
           ),
@@ -366,12 +405,14 @@ class _MatchCard extends ConsumerStatefulWidget {
   final MatchBatchNotifier notifier;
   final int currentIndex;
   final int totalCount;
+  final bool isActive;
 
   const _MatchCard({
     required this.profile,
     required this.notifier,
     required this.currentIndex,
     required this.totalCount,
+    required this.isActive,
   });
 
   @override
@@ -486,7 +527,7 @@ class _MatchCardState extends ConsumerState<_MatchCard> {
     final badges = widget.profile.badges?.take(5).toList() ?? [];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Column(
         children: [
           // Main card
