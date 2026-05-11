@@ -40,7 +40,7 @@ class _MatchCarouselState extends State<MatchCarousel> {
             double opacity = 1.0;
 
             if (widget.pageController.position.haveDimensions) {
-              final page = widget.pageController.page ?? 0;
+              final page = widget.pageController.page ?? index.toDouble();
               final diff = (page - index).abs();
 
               // Scale: 1.0 for center, 0.85 for sides
@@ -50,11 +50,13 @@ class _MatchCarouselState extends State<MatchCarousel> {
               opacity = (1 - (diff * 0.3)).clamp(0.7, 1.0);
             }
 
-            return Center(
-              child: Transform.scale(
-                scale: scale,
-                child: Opacity(
-                  opacity: opacity,
+            return Align(
+              alignment: Alignment.center,
+              child: Opacity(
+                opacity: opacity,
+                child: Transform.scale(
+                  scale: scale,
+                  alignment: Alignment.center,
                   child: child,
                 ),
               ),
@@ -139,7 +141,7 @@ class _CarouselCardState extends ConsumerState<_CarouselCard> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: MatchCard(
         profile: widget.profile,
         isProcessing: _isProcessingAction,
@@ -170,54 +172,56 @@ class MatchCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Main card
-        Expanded(
-          child: GestureDetector(
-            onTap: onTapCard,
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Large profile photo
-                    Expanded(
-                      flex: 3,
-                      child: ProfileImageSection(profile: profile),
+    return SizedBox.expand(
+      child: Column(
+        children: [
+          // Main card
+          Expanded(
+            child: GestureDetector(
+              onTap: onTapCard,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
-
-                    // Profile info section
-                    ProfileInfoSection(profile: profile),
                   ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Large profile photo
+                      Expanded(
+                        flex: 3,
+                        child: ProfileImageSection(profile: profile),
+                      ),
+
+                      // Profile info section
+                      ProfileInfoSection(profile: profile),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
 
-        const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
-        // Action buttons
-        MatchActionButtons(
-          isProcessing: isProcessing,
-          onPass: onPass,
-          onLike: onLike,
-        ),
-      ],
+          // Action buttons
+          MatchActionButtons(
+            isProcessing: isProcessing,
+            onPass: onPass,
+            onLike: onLike,
+          ),
+        ],
+      ),
     );
   }
 }
