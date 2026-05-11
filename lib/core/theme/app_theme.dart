@@ -26,20 +26,23 @@ class AppTheme {
       // Scaffold
       scaffoldBackgroundColor: AppColors.background,
 
-      // AppBar
+      // AppBar - Orange background with white text (Muse brand theme)
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.white,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: AppColors.primaryOrange,
+        foregroundColor: AppColors.white,
         elevation: 0,
         centerTitle: true,
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        systemOverlayStyle: SystemUiOverlayStyle.light,
         titleTextStyle: TextStyle(
-          color: AppColors.textPrimary,
+          color: AppColors.white,
           fontSize: 20,
           fontWeight: FontWeight.w600,
         ),
         iconTheme: IconThemeData(
-          color: AppColors.textPrimary,
+          color: AppColors.white,
+        ),
+        actionsIconTheme: IconThemeData(
+          color: AppColors.white,
         ),
       ),
 
