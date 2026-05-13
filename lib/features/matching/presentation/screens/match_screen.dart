@@ -5,7 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/matching/presentation/providers/match_provider.dart';
 import 'package:eros_app/features/matching/presentation/widgets/match_state_views.dart';
-'../widgets/match_carousel_v2.dart' show MatchCarouselV2;
+import 'package:eros_app/features/matching/presentation/screens/last_24_hours_screen.dart';
+import '../widgets/match_carousel_v2.dart';
 
 /// Main matching screen showing daily batch of matches
 class MatchScreen extends ConsumerStatefulWidget {
