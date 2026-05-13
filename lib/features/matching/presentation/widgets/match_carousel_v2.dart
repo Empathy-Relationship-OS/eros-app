@@ -62,18 +62,15 @@ class _MatchCarouselV2State extends State<MatchCarouselV2> {
       itemExtent: screenWidth - 32, // 16px padding on each side
       shrinkExtent: screenWidth - 32, // Same as itemExtent - no shrinking effect
       elevation: 0, // Cards handle their own shadows
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 0),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       onTap: _handleTap,
       children: List.generate(
         widget.profiles.length,
-        (index) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _CarouselCardV2(
-            profile: widget.profiles[index],
-            notifier: widget.notifier,
-            index: index,
-            isActive: index == _currentIndex,
-          ),
+        (index) => _CarouselCardV2(
+          profile: widget.profiles[index],
+          notifier: widget.notifier,
+          index: index,
+          isActive: index == _currentIndex,
         ),
       ),
     );
