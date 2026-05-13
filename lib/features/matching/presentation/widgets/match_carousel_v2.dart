@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/features/matching/domain/models/match_models.dart';
 import 'package:eros_app/features/matching/presentation/providers/match_provider.dart';
 import 'package:eros_app/features/matching/presentation/widgets/match_card_components.dart';
+import 'package:eros_app/features/matching/presentation/screens/public_profile_view_screen.dart';
 
 /// Carousel view for match cards using Flutter's built-in CarouselView
 ///
@@ -46,24 +47,14 @@ class _MatchCarouselV2State extends State<MatchCarouselV2> {
     super.dispose();
   }
 
-  void _handleTap(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-    widget.onPageChanged?.call(index);
-  }
-
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
     return CarouselView(
-      controller: _carouselController,
-      itemExtent: screenWidth - 32, // 16px padding on each side
-      shrinkExtent: screenWidth - 32, // Same as itemExtent - no shrinking effect
-      elevation: 0, // Cards handle their own shadows
+      itemExtent: MediaQuery.of(context).size.width - 32,
+      shrinkExtent: MediaQuery.of(context).size.width - 32,
+      elevation: 0,
+      enableSplash: false, // Disable built-in InkWell to allow child gesture detection
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-      onTap: _handleTap,
       children: List.generate(
         widget.profiles.length,
         (index) => _CarouselCardV2(
@@ -138,54 +129,61 @@ class _CarouselCardV2State extends ConsumerState<_CarouselCardV2> {
   }
 
   void _navigateToPublicProfile() {
-    Navigator.of(context).pushNamed(
-      '/profile/public',
-      arguments: widget.profile.userId,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => PublicProfileViewScreen(
+          userId: widget.profile.userId,
+          matchId: widget.profile.matchId,
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _navigateToPublicProfile,
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Large profile photo
-              Expanded(
-                flex: 3,
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Large profile photo - tappable to open full profile
+            Expanded(
+              flex: 3,
+              child: GestureDetector(
+                onTap: _navigateToPublicProfile,
                 child: ProfileImageSection(profile: widget.profile),
               ),
+            ),
 
-              // Profile info section
-              ProfileInfoSection(profile: widget.profile),
+            // Profile info section - also tappable
+            GestureDetector(
+              onTap: _navigateToPublicProfile,
+              child: ProfileInfoSection(profile: widget.profile),
+            ),
 
-              // Action buttons inside the card
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: MatchActionButtons(
-                  isProcessing: _isProcessingAction,
-                  onPass: () => _handleAction(false),
-                  onLike: () => _handleAction(true),
-                ),
+            // Action buttons inside the card
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: MatchActionButtons(
+                isProcessing: _isProcessingAction,
+                onPass: () => _handleAction(false),
+                onLike: () => _handleAction(true),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

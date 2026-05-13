@@ -338,6 +338,56 @@ class PageIndicator extends StatelessWidget {
   }
 }
 
+/// Single action button for "Go for a date"
+/// Used in last 24 hours screen where only like action is available
+class SingleActionButton extends StatelessWidget {
+  final bool isProcessing;
+  final VoidCallback onPressed;
+
+  const SingleActionButton({
+    super.key,
+    required this.isProcessing,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: isProcessing ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor:
+              AppColors.textSecondary.withValues(alpha: 0.3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          elevation: 2,
+        ),
+        child: isProcessing
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const Text(
+                'Go for a date',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+      ),
+    );
+  }
+}
+
 /// Mutual match dialog
 class MutualMatchDialog extends StatelessWidget {
   final String partnerName;
