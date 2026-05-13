@@ -230,13 +230,13 @@ class MatchActionButtons extends StatelessWidget {
             child: ElevatedButton(
               onPressed: isProcessing ? null : onPass,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.cardBackground,
+                backgroundColor: const Color(0xFFE0E0E0), // Darker grey background
                 foregroundColor: AppColors.textPrimary,
                 disabledBackgroundColor:
                     AppColors.textSecondary.withValues(alpha: 0.3),
-                side: BorderSide(
-                  color: AppColors.textSecondary.withValues(alpha: 0.3),
-                  width: 2,
+                side: const BorderSide(
+                  color: Color(0xFFE0E0E0), // Same color as background
+                  width: 1,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(28),

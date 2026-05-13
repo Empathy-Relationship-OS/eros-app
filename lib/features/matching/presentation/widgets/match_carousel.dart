@@ -44,7 +44,7 @@ class _MatchCarouselState extends State<MatchCarousel> {
               final diff = (page - index).abs();
 
               // Scale: 1.0 for center, 0.85 for sides
-              scale = (1 - (diff * 0.15)).clamp(0.85, 1.0);
+              scale = (1 - (diff * 0.15)).clamp(0.75, 1.0);
 
               // Opacity: 1.0 for center, 0.7 for sides
               opacity = (1 - (diff * 0.3)).clamp(0.7, 1.0);
@@ -141,7 +141,7 @@ class _CarouselCardState extends ConsumerState<_CarouselCard> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 24),
       child: MatchCard(
         profile: widget.profile,
         isProcessing: _isProcessingAction,

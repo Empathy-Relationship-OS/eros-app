@@ -8,6 +8,8 @@ import 'package:eros_app/features/matching/presentation/providers/match_provider
 import 'package:eros_app/features/matching/presentation/widgets/match_state_views.dart';
 import 'package:eros_app/features/matching/presentation/widgets/match_carousel.dart';
 
+import '../widgets/match_carousel_v2.dart';
+
 /// Main matching screen showing daily batch of matches
 class MatchScreen extends ConsumerStatefulWidget {
   const MatchScreen({super.key});
@@ -161,12 +163,12 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
     MatchBatchState state,
     MatchBatchNotifier notifier,
   ) {
-    return MatchCarousel(
+    return MatchCarouselV2(
       profiles: state.profiles,
       notifier: notifier,
-      pageController: _pageController,
-      onPageChanged: (_) {
-        // Page changed - carousel handles visual feedback
+      initialIndex: 0,
+      onPageChanged: (index) {
+        // Optional: Handle page changes if needed
       },
     );
   }
