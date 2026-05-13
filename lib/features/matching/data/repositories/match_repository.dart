@@ -108,4 +108,50 @@ class MatchRepository {
       rethrow;
     }
   }
+
+  /// Fetch profiles user passed on in last 24 hours
+  ///
+  /// Returns all profiles the user said "no" to within the last 24 hours,
+  /// allowing them to reconsider their decision. This is a "second chance"
+  /// feature for accidental passes.
+  ///
+  /// The 24-hour window is calculated from the servedAt timestamp.
+  /// Users can change pass→like within this window using [takeMatchAction].
+  ///
+  /// Returns:
+  /// - List of [UserMatchProfile] if passes exist (200)
+  /// - Empty list if no passes in last 24 hours (200)
+  ///
+  /// Throws:
+  /// - [UnauthorizedException] if not authenticated (401)
+  /// - Other [ApiException] subclasses for other errors
+  Future<List<UserMatchProfile>> fetchLast24HourPasses() async {
+    try {
+      _logger.d('🔄 Fetching last 24 hour passes');
+
+      final response = await _apiClient.get<List<dynamic>>(
+        ApiEndpoints.match.getLast24Hours(),
+      );
+
+      // Handle empty list
+      if (response.isEmpty) {
+        _logger.d('ℹ️  No passes in last 24 hours');
+        return [];
+      }
+
+      final profiles = response
+          .map((json) => UserMatchProfile.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      _logger.d('✅ Fetched ${profiles.length} profiles from last 24 hours');
+      return profiles;
+    } on ApiException catch (e) {
+      _logger.e('🚨 Failed to fetch last 24 hour passes. Type: ${e.runtimeType}, Message: ${e.message}');
+      _logger.d('Status code: ${e.statusCode}, Original error: ${e.originalError}');
+      rethrow;
+    } catch (e, stackTrace) {
+      _logger.e('🚨 Unexpected error in fetchLast24HourPasses', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
 }

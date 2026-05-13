@@ -3,12 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
-import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
 import 'package:eros_app/features/matching/presentation/providers/match_provider.dart';
 import 'package:eros_app/features/matching/presentation/widgets/match_state_views.dart';
-import 'package:eros_app/features/matching/presentation/widgets/match_carousel.dart';
-
-import '../widgets/match_carousel_v2.dart';
+'../widgets/match_carousel_v2.dart' show MatchCarouselV2;
 
 /// Main matching screen showing daily batch of matches
 class MatchScreen extends ConsumerStatefulWidget {
@@ -84,18 +81,16 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
                 }
               },
             ),
+          // Last 24 hours button
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              final authNotifier = ref.read(authStateProvider.notifier);
-              await authNotifier.signOut();
-
-              if (context.mounted) {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  '/',
-                  (route) => false,
-                );
-              }
+            icon: const Icon(Icons.history),
+            tooltip: 'Last 24 Hours',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const Last24HoursScreen(),
+                ),
+              );
             },
           ),
         ],

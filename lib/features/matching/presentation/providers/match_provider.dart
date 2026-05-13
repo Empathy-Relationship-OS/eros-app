@@ -298,3 +298,133 @@ final matchBatchProvider =
   final storageService = ref.watch(matchStorageServiceProvider);
   return MatchBatchNotifier(repository, storageService);
 });
+
+// ====================
+// LAST 24 HOURS STATE
+// ====================
+
+/// State for last 24 hours passes
+class Last24HoursState {
+  final List<UserMatchProfile> profiles;
+  final bool isLoading;
+  final String? errorMessage;
+
+  const Last24HoursState({
+    this.profiles = const [],
+    this.isLoading = false,
+    this.errorMessage,
+  });
+
+  bool get hasProfiles => profiles.isNotEmpty;
+  bool get hasError => errorMessage != null;
+
+  Last24HoursState copyWith({
+    List<UserMatchProfile>? profiles,
+    bool? isLoading,
+    String? errorMessage,
+    bool clearError = false,
+  }) {
+    return Last24HoursState(
+      profiles: profiles ?? this.profiles,
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    );
+  }
+}
+
+/// StateNotifier for managing last 24 hours passes
+class Last24HoursNotifier extends StateNotifier<Last24HoursState> {
+  final MatchRepository _repository;
+  final Logger _logger = Logger();
+
+  Last24HoursNotifier(this._repository) : super(const Last24HoursState());
+
+  /// Fetch profiles user passed on in last 24 hours
+  Future<void> fetchLast24HourPasses() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      final profiles = await _repository.fetchLast24HourPasses();
+
+      state = state.copyWith(
+        isLoading: false,
+        profiles: profiles,
+        clearError: true,
+      );
+    } on ApiException catch (e) {
+      _logger.e('🚨 Failed to fetch last 24 hour passes', error: e);
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: e.message,
+      );
+    } catch (e, stackTrace) {
+      _logger.e('🚨 Unexpected error fetching last 24 hour passes',
+          error: e, stackTrace: stackTrace);
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to load profiles',
+      );
+    }
+  }
+
+  /// Remove a profile from the list (after user takes action)
+  void removeProfile(int matchId) {
+    final updatedProfiles = state.profiles
+        .where((profile) => profile.matchId != matchId)
+        .toList();
+
+    state = state.copyWith(profiles: updatedProfiles);
+  }
+
+  /// Take action on a match from last 24 hours (only like is allowed)
+  /// Returns MutualMatchInfo if it's a mutual match, null otherwise
+  Future<MutualMatchInfo?> takeMatchAction(int matchId) async {
+    try {
+      _logger.d('🎯 Taking like action on last 24 hour match $matchId');
+
+      final mutualMatchInfo = await _repository.takeMatchAction(matchId, true);
+
+      // Remove profile from list regardless of mutual match
+      removeProfile(matchId);
+
+      if (mutualMatchInfo != null) {
+        _logger.d('🎉 MUTUAL MATCH detected!');
+      }
+
+      return mutualMatchInfo;
+    } on ConflictException {
+      _logger.w('⚠️  Already took action on this match');
+      // Remove from UI since action was already taken
+      removeProfile(matchId);
+      state = state.copyWith(
+        errorMessage: 'You already took action on this match',
+      );
+      return null;
+    } on ApiException catch (e) {
+      _logger.e('🚨 Failed to take match action', error: e);
+      state = state.copyWith(
+        errorMessage: e.message,
+      );
+      return null;
+    } catch (e, stackTrace) {
+      _logger.e('🚨 Unexpected error taking match action',
+          error: e, stackTrace: stackTrace);
+      state = state.copyWith(
+        errorMessage: 'Failed to process your action',
+      );
+      return null;
+    }
+  }
+
+  /// Clear error message
+  void clearError() {
+    state = state.copyWith(clearError: true);
+  }
+}
+
+/// Provider for Last24HoursNotifier
+final last24HoursProvider =
+    StateNotifierProvider<Last24HoursNotifier, Last24HoursState>((ref) {
+  final repository = ref.watch(matchRepositoryProvider);
+  return Last24HoursNotifier(repository);
+});
