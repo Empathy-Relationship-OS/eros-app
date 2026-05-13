@@ -223,6 +223,7 @@ class _Last24HourCardState extends ConsumerState<_Last24HourCard> {
         builder: (context) => PublicProfileViewScreen(
           userId: widget.profile.userId,
           matchId: widget.profile.matchId,
+          isFromLast24Hours: true,
         ),
       ),
     );

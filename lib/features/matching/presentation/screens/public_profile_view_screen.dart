@@ -13,10 +13,15 @@ class PublicProfileViewScreen extends ConsumerStatefulWidget {
   final String userId;
   final int matchId;
 
+  /// If true, only show "Go for a date" button (used for Last 24 Hours)
+  /// If false, show both "Not for me" and "Go for a date" buttons
+  final bool isFromLast24Hours;
+
   const PublicProfileViewScreen({
     super.key,
     required this.userId,
     required this.matchId,
+    this.isFromLast24Hours = false,
   });
 
   @override
@@ -62,11 +67,21 @@ class _PublicProfileViewScreenState
     });
 
     try {
-      final matchNotifier = ref.read(matchBatchProvider.notifier);
-      final mutualMatch = await matchNotifier.takeMatchAction(
-        widget.matchId,
-        liked,
-      );
+      final MutualMatchInfo? mutualMatch;
+
+      if (widget.isFromLast24Hours) {
+        // Use Last24HoursNotifier for profiles from Last 24 Hours screen
+        // Note: Last 24 Hours only supports "like" action, not "pass"
+        final last24Notifier = ref.read(last24HoursProvider.notifier);
+        mutualMatch = await last24Notifier.takeMatchAction(widget.matchId);
+      } else {
+        // Use MatchBatchNotifier for regular match profiles
+        final matchNotifier = ref.read(matchBatchProvider.notifier);
+        mutualMatch = await matchNotifier.takeMatchAction(
+          widget.matchId,
+          liked,
+        );
+      }
 
       if (mutualMatch != null && mounted) {
         // Show mutual match dialog
@@ -208,11 +223,16 @@ class _PublicProfileViewScreenState
                     ),
                     child: SafeArea(
                       top: false,
-                      child: MatchActionButtons(
-                        isProcessing: _isProcessingAction,
-                        onPass: () => _handleAction(false),
-                        onLike: () => _handleAction(true),
-                      ),
+                      child: widget.isFromLast24Hours
+                          ? SingleActionButton(
+                              isProcessing: _isProcessingAction,
+                              onPressed: () => _handleAction(true),
+                            )
+                          : MatchActionButtons(
+                              isProcessing: _isProcessingAction,
+                              onPass: () => _handleAction(false),
+                              onLike: () => _handleAction(true),
+                            ),
                     ),
                   ),
                 ),
