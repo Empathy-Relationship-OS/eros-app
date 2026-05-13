@@ -6,6 +6,7 @@ import 'package:eros_app/features/profile/data/repositories/profile_repository.d
 import 'package:eros_app/features/profile/presentation/widgets/profile_display_components.dart';
 import 'package:eros_app/features/matching/presentation/providers/match_provider.dart';
 import 'package:eros_app/features/matching/domain/models/match_models.dart';
+import 'package:eros_app/features/matching/presentation/widgets/match_card_components.dart';
 
 /// Screen to view a match's public profile with floating action buttons
 class PublicProfileViewScreen extends ConsumerStatefulWidget {
@@ -192,10 +193,27 @@ class _PublicProfileViewScreenState
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  child: _FloatingActionButtons(
-                    isProcessing: _isProcessingAction,
-                    onPass: () => _handleAction(false),
-                    onLike: () => _handleAction(true),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AppColors.background.withValues(alpha: 0.0),
+                          AppColors.background.withValues(alpha: 0.95),
+                          AppColors.background,
+                        ],
+                      ),
+                    ),
+                    child: SafeArea(
+                      top: false,
+                      child: MatchActionButtons(
+                        isProcessing: _isProcessingAction,
+                        onPass: () => _handleAction(false),
+                        onLike: () => _handleAction(true),
+                      ),
+                    ),
                   ),
                 ),
             ],
@@ -219,16 +237,16 @@ class _ProfileContent extends StatelessWidget {
 
     // Use backend photos (no local photos in this context)
     final String? thumbnailPath =
-        backendPhotos.isNotEmpty ? backendPhotos.first : null;
+    backendPhotos.isNotEmpty ? backendPhotos.first : null;
     final List<PhotoWithCaption> remainingPhotos = backendPhotos.length > 1
         ? backendPhotos
-            .sublist(1)
-            .map((p) => PhotoWithCaption(
-                  path: p,
-                  caption: null,
-                  isLocal: false,
-                ))
-            .toList()
+        .sublist(1)
+        .map((p) => PhotoWithCaption(
+      path: p,
+      caption: null,
+      isLocal: false,
+    ))
+        .toList()
         : [];
 
     return Column(
@@ -323,135 +341,6 @@ class _ProfileContent extends StatelessWidget {
         // Add padding at bottom for floating buttons
         const SizedBox(height: 120),
       ],
-    );
-  }
-}
-
-/// Floating action buttons at bottom of screen
-class _FloatingActionButtons extends StatelessWidget {
-  final bool isProcessing;
-  final VoidCallback onPass;
-  final VoidCallback onLike;
-
-  const _FloatingActionButtons({
-    required this.isProcessing,
-    required this.onPass,
-    required this.onLike,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppColors.background.withValues(alpha: 0.0),
-            AppColors.background.withValues(alpha: 0.95),
-            AppColors.background,
-          ],
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            // Pass button
-            Expanded(
-              child: SizedBox(
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: isProcessing ? null : onPass,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    disabledBackgroundColor:
-                        AppColors.textSecondary.withValues(alpha: 0.3),
-                    foregroundColor: AppColors.textPrimary,
-                    elevation: 4,
-                    shadowColor: AppColors.shadow,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                      side: BorderSide(
-                        color: AppColors.textSecondary.withValues(alpha: 0.2),
-                        width: 1,
-                      ),
-                    ),
-                  ),
-                  child: isProcessing
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.textSecondary,
-                          ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.close, size: 24),
-                            SizedBox(width: 8),
-                            Text(
-                              'Pass',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            // Like button
-            Expanded(
-              child: SizedBox(
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: isProcessing ? null : onLike,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    disabledBackgroundColor:
-                        AppColors.textSecondary.withValues(alpha: 0.3),
-                    elevation: 4,
-                    shadowColor: AppColors.shadow,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
-                  child: isProcessing
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.favorite, color: Colors.white, size: 24),
-                            SizedBox(width: 8),
-                            Text(
-                              'Like',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
