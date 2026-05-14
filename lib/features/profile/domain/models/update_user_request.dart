@@ -1,4 +1,3 @@
-import 'package:eros_app/features/profile/domain/enums/gender.dart';
 import 'package:eros_app/features/profile/domain/enums/personality.dart';
 import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
