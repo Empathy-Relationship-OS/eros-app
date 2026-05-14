@@ -102,19 +102,31 @@ class ProfileInfoSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Name with online indicator dot
+          // Name and age with online indicator dot
           Row(
             children: [
               Expanded(
-                child: Text(
-                  profile.name,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+                child: RichText(
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  text: TextSpan(
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                    children: [
+                      TextSpan(text: profile.name),
+                      const TextSpan(
+                        text: ' • ',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      TextSpan(text: '${profile.age}'),
+                    ],
+                  ),
                 ),
               ),
               Container(
