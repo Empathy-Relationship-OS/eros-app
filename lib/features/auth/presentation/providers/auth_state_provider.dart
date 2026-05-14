@@ -29,8 +29,10 @@ class AuthState {
 class AuthStateNotifier extends StateNotifier<AuthState> {
   final AuthRepository _authRepository;
 
-  AuthStateNotifier(this._authRepository) : super(const AuthState()) {
-    // Listen to auth state changes
+  AuthStateNotifier(this._authRepository)
+      : super(AuthState(user: _authRepository.currentUser)) {
+    // Initialize with current user (if any) for immediate auth state availability
+    // Then listen to auth state changes for updates
     _authRepository.authStateChanges.listen((user) {
       state = AuthState(user: user);
     });

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
+import 'features/auth/presentation/screens/auth_loading_screen.dart';
 import 'features/auth/presentation/screens/welcome_screen.dart';
 import 'features/profile/presentation/screens/name_input_screen.dart';
 import 'features/profile/presentation/screens/location_input_screen.dart';
@@ -78,8 +79,10 @@ class ErosApp extends StatelessWidget {
       title: 'Muse',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const WelcomeScreen(),
+      home: const AuthLoadingScreen(),
       routes: {
+        // Auth routes
+        '/welcome': (context) => const WelcomeScreen(),
         // Profile creation routes - Basic Info Section
         '/profile-creation/name': (context) => const NameInputScreen(),
         '/profile-creation/location': (context) => const LocationInputScreen(),
