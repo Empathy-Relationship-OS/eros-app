@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
-import 'package:eros_app/core/auth/auth_service.dart';
+import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 import 'package:logger/logger.dart';
 
@@ -11,6 +11,9 @@ import 'package:logger/logger.dart';
 /// 1. Firebase authentication state
 /// 2. Whether user has a backend profile
 /// 3. Routes to appropriate screen based on state
+///
+/// Uses Riverpod's ref.watch to reactively listen to Firebase auth state,
+/// ensuring we wait for Firebase to fully restore the session before routing.
 class AuthLoadingScreen extends ConsumerStatefulWidget {
   const AuthLoadingScreen({super.key});
 
@@ -30,25 +33,15 @@ class _AuthLoadingScreenState extends ConsumerState<AuthLoadingScreen> {
     ),
   );
 
-  @override
-  void initState() {
-    super.initState();
-    // Delay to allow Firebase to initialize and restore auth state
-    Future.delayed(const Duration(milliseconds: 800), () {
-      _determineInitialRoute();
-    });
-  }
+  bool _hasNavigated = false;
 
-  Future<void> _determineInitialRoute() async {
-    if (!mounted) return;
+  Future<void> _determineInitialRoute(bool isAuthenticated) async {
+    // Prevent multiple navigations
+    if (_hasNavigated || !mounted) return;
+    _hasNavigated = true;
 
     try {
       _logger.i('🔍 Determining initial route...');
-
-      // Check Firebase auth directly (not from provider which may not be initialized)
-      final authService = ref.read(authServiceProvider);
-      final isAuthenticated = authService.isAuthenticated();
-
       _logger.i('🔐 Firebase authenticated: $isAuthenticated');
 
       if (!isAuthenticated) {
@@ -89,6 +82,25 @@ class _AuthLoadingScreenState extends ConsumerState<AuthLoadingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch auth state changes from Firebase - this will rebuild when auth state changes
+    final authState = ref.watch(authStateProvider);
+
+    // Once we have auth state (user logged in OR confirmed no user), determine route
+    // The AuthStateNotifier now initializes with currentUser, so this should be immediate
+    ref.listen<AuthState>(authStateProvider, (previous, next) {
+      // Only navigate once we have a definitive auth state
+      if (!_hasNavigated) {
+        _determineInitialRoute(next.isAuthenticated);
+      }
+    });
+
+    // Also check immediately in case state is already available
+    if (!_hasNavigated && !authState.isLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _determineInitialRoute(authState.isAuthenticated);
+      });
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
