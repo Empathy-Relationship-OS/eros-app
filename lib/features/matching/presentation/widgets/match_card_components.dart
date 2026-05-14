@@ -2,6 +2,49 @@ import 'package:flutter/material.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/matching/domain/models/match_models.dart';
 
+/// Reusable name and age display with bullet separator
+/// Used consistently across match cards and profile views
+class NameAndAgeDisplay extends StatelessWidget {
+  final String name;
+  final int age;
+  final double fontSize;
+  final FontWeight fontWeight;
+
+  const NameAndAgeDisplay({
+    super.key,
+    required this.name,
+    required this.age,
+    this.fontSize = 28,
+    this.fontWeight = FontWeight.bold,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return RichText(
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          color: AppColors.textPrimary,
+        ),
+        children: [
+          TextSpan(text: name),
+          const TextSpan(
+            text: ' • ',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+          TextSpan(text: '$age'),
+        ],
+      ),
+    );
+  }
+}
+
 /// Profile image section with gradient overlay
 class ProfileImageSection extends StatelessWidget {
   final UserMatchProfile profile;
@@ -106,27 +149,9 @@ class ProfileInfoSection extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: RichText(
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  text: TextSpan(
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                    children: [
-                      TextSpan(text: profile.name),
-                      const TextSpan(
-                        text: ' • ',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                      TextSpan(text: '${profile.age}'),
-                    ],
-                  ),
+                child: NameAndAgeDisplay(
+                  name: profile.name,
+                  age: profile.age,
                 ),
               ),
               Container(
