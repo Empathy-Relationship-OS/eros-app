@@ -12,6 +12,7 @@ class DatesScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Dates'),
+        automaticallyImplyLeading: false,
         backgroundColor: AppColors.primary,
         elevation: 0,
       ),

@@ -17,6 +17,7 @@ class ProfileScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Profile'),
+        automaticallyImplyLeading: false,
         backgroundColor: AppColors.primary,
         elevation: 0,
       ),
