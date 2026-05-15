@@ -35,13 +35,29 @@ class _AuthLoadingScreenState extends ConsumerState<AuthLoadingScreen> {
 
   bool _hasNavigated = false;
 
-  Future<void> _determineInitialRoute(bool isAuthenticated) async {
+  @override
+  void initState() {
+    super.initState();
+    // Defer route determination to after the first frame is built
+    // This ensures providers are initialized and context is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _determineInitialRoute();
+    });
+  }
+
+  Future<void> _determineInitialRoute() async {
     // Prevent multiple navigations
     if (_hasNavigated || !mounted) return;
     _hasNavigated = true;
 
     try {
       _logger.i('🔍 Determining initial route...');
+
+      // Read auth state once - don't listen for changes
+      // We only care about the initial auth state when the app launches
+      final authState = ref.read(authStateProvider);
+      final isAuthenticated = authState.isAuthenticated;
+
       _logger.i('🔐 Firebase authenticated: $isAuthenticated');
 
       if (!isAuthenticated) {
@@ -82,24 +98,8 @@ class _AuthLoadingScreenState extends ConsumerState<AuthLoadingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch auth state changes from Firebase - this will rebuild when auth state changes
-    final authState = ref.watch(authStateProvider);
-
-    // Once we have auth state (user logged in OR confirmed no user), determine route
-    // The AuthStateNotifier now initializes with currentUser, so this should be immediate
-    ref.listen<AuthState>(authStateProvider, (previous, next) {
-      // Only navigate once we have a definitive auth state
-      if (!_hasNavigated) {
-        _determineInitialRoute(next.isAuthenticated);
-      }
-    });
-
-    // Also check immediately in case state is already available
-    if (!_hasNavigated && !authState.isLoading) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _determineInitialRoute(authState.isAuthenticated);
-      });
-    }
+    // Don't watch auth state - we only check it once in initState
+    // Watching would cause unnecessary rebuilds on token refresh, etc.
 
     return Scaffold(
       backgroundColor: Colors.white,
