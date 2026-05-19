@@ -673,3 +673,12 @@ Screenshot catalogue:
       - The rest show the scrolling order.
       - We should place hobbies and interests near the top PublicProfileDTO is the essential mapping
       - PublicProfileDetailsDTO is the additional jazz of the profile
+- Profile:
+  - main-screen:
+    - @screenshots/profile/main-screen/IMG_3046.PNG
+      - Shows the top of the profile page. The image shown is the users primary/thumbnail photo. Which will often correlate to a users first in list.
+      - It is a slightly different view, but its the same info that is shown on a full users public profile 
+      - Ignore the Growing Profile + It's time box's this info is not needed.
+    - @screenshots/profile/main-screen/IMG_3045.PNG
+      - All the settings in the box are what we should show.
+      - For now each one will have its own seperate screen when we press on them

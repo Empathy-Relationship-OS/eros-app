@@ -2,122 +2,408 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
+import 'package:eros_app/features/profile/presentation/providers/user_profile_provider.dart';
 
-/// Placeholder Profile Screen - Shows user profile and settings
-/// This will be replaced with the actual profile management functionality
+/// Profile Screen - Displays user profile and settings
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authStateProvider);
-    final currentUser = authState.user;
+    final profileState = ref.watch(userProfileProvider);
+    final profile = profileState.profile;
+    final isLoading = profileState.isLoading;
+    final errorMessage = profileState.errorMessage;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Profile'),
-        automaticallyImplyLeading: false,
-        backgroundColor: AppColors.primary,
-        elevation: 0,
-      ),
-      body: SafeArea(
-        child: Center(
+    // Show loading state
+    if (isLoading && profile == null) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Show error state
+    if (errorMessage != null && profile == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Profile icon
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: const BoxDecoration(
-                    color: AppColors.cardBackground,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.person,
-                    size: 60,
-                    color: AppColors.primary,
-                  ),
+                const Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: AppColors.error,
                 ),
-
-                const SizedBox(height: 32),
-
-                // User info
-                if (currentUser?.email != null)
-                  Text(
-                    currentUser!.email!,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-
                 const SizedBox(height: 16),
-
-                // Placeholder text
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      const Icon(
-                        Icons.info_outline,
-                        color: AppColors.textSecondary,
-                        size: 32,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Profile & Settings Coming Soon',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'This is where you\'ll manage your profile, photos, preferences, and settings.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
+                Text(
+                  'Failed to load profile',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  textAlign: TextAlign.center,
                 ),
-
+                const SizedBox(height: 8),
+                Text(
+                  errorMessage,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 24),
-
-                // Sign out button
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final authNotifier = ref.read(authStateProvider.notifier);
-                    await authNotifier.signOut();
-
-                    if (context.mounted) {
-                      Navigator.of(context).pushNamedAndRemoveUntil(
-                        '/',
-                        (route) => false,
-                      );
-                    }
+                ElevatedButton(
+                  onPressed: () {
+                    ref.read(userProfileProvider.notifier).refresh();
                   },
-                  icon: const Icon(Icons.logout),
-                  label: const Text('Sign Out'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                  ),
+                  child: const Text('Retry'),
                 ),
               ],
             ),
           ),
+        ),
+      );
+    }
+
+    // Extract display information
+    final displayName = profile?.name ?? 'User';
+    final primaryPhoto = profile?.profile.photos.isNotEmpty == true
+        ? profile!.profile.photos.first
+        : null;
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            // Profile Header
+            SliverToBoxAdapter(
+              child: _ProfileHeader(
+                displayName: displayName,
+                photoUrl: primaryPhoto,
+                onRefresh: () {
+                  ref.read(userProfileProvider.notifier).refresh();
+                },
+              ),
+            ),
+
+            // Settings List
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              sliver: SliverToBoxAdapter(
+                child: _SettingsCard(
+                  children: [
+                    _SettingsTile(
+                      icon: Icons.edit_outlined,
+                      title: 'Edit profile',
+                      onTap: () {
+                        // TODO: Navigate to edit profile screen
+                        _showComingSoon(context, 'Edit Profile');
+                      },
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    _SettingsTile(
+                      icon: Icons.auto_awesome_outlined,
+                      title: 'Date preferences',
+                      onTap: () {
+                        // TODO: Navigate to date preferences screen
+                        _showComingSoon(context, 'Date Preferences');
+                      },
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    _SettingsTile(
+                      icon: Icons.account_balance_wallet_outlined,
+                      title: 'Date wallet',
+                      onTap: () {
+                        // TODO: Navigate to date wallet screen
+                        _showComingSoon(context, 'Date Wallet');
+                      },
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    _SettingsTile(
+                      icon: Icons.person_outline,
+                      title: 'Account settings',
+                      onTap: () {
+                        // TODO: Navigate to account settings screen
+                        _showComingSoon(context, 'Account Settings');
+                      },
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    _SettingsTile(
+                      icon: Icons.settings_outlined,
+                      title: 'App settings',
+                      onTap: () {
+                        // TODO: Navigate to app settings screen
+                        _showComingSoon(context, 'App Settings');
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Sign Out Button
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverToBoxAdapter(
+                child: OutlinedButton(
+                  onPressed: () => _handleSignOut(context, ref),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    side: const BorderSide(color: AppColors.error, width: 1.5),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text('Sign Out'),
+                ),
+              ),
+            ),
+
+            // Bottom spacing
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 32),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showComingSoon(BuildContext context, String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature coming soon'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _handleSignOut(BuildContext context, WidgetRef ref) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign Out'),
+        content: const Text('Are you sure you want to sign out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final authNotifier = ref.read(authStateProvider.notifier);
+      await authNotifier.signOut();
+
+      if (context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/',
+          (route) => false,
+        );
+      }
+    }
+  }
+}
+
+/// Profile header widget showing user photo and name
+class _ProfileHeader extends StatelessWidget {
+  final String displayName;
+  final String? photoUrl;
+  final VoidCallback onRefresh;
+
+  const _ProfileHeader({
+    required this.displayName,
+    this.photoUrl,
+    required this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: AppColors.primary,
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 16),
+
+          // Action icons row (help and notifications - placeholders for now)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.help_outline, color: AppColors.white),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Help coming soon'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.notifications_outlined,
+                      color: AppColors.white),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Notifications coming soon'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          // Profile photo
+          Container(
+            width: 120,
+            height: 180,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: AppColors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: photoUrl != null
+                  ? Image.network(
+                      photoUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          _buildPlaceholderPhoto(),
+                    )
+                  : _buildPlaceholderPhoto(),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // User name
+          Text(
+            displayName,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderPhoto() {
+    return Container(
+      color: AppColors.primaryOrangeLight,
+      child: const Center(
+        child: Icon(
+          Icons.person,
+          size: 60,
+          color: AppColors.white,
+        ),
+      ),
+    );
+  }
+}
+
+/// Settings card container
+class _SettingsCard extends StatelessWidget {
+  final List<Widget> children;
+
+  const _SettingsCard({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: children,
+      ),
+    );
+  }
+}
+
+/// Individual settings tile
+class _SettingsTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Row(
+          children: [
+            // Icon
+            Icon(
+              icon,
+              size: 24,
+              color: AppColors.textPrimary,
+            ),
+
+            const SizedBox(width: 16),
+
+            // Title
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+            ),
+
+            // Chevron
+            const Icon(
+              Icons.chevron_right,
+              size: 24,
+              color: AppColors.textSecondary,
+            ),
+          ],
         ),
       ),
     );
