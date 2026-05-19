@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
@@ -76,10 +77,15 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+        ),
         child: CustomScrollView(
           slivers: [
-            // Profile Header
+            // Profile Header (with status bar padding)
             SliverToBoxAdapter(
               child: _ProfileHeader(
                 displayName: displayName,
@@ -145,25 +151,30 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
 
-            // Sign Out Button
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverToBoxAdapter(
-                child: OutlinedButton(
-                  onPressed: () => _handleSignOut(context, ref),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    side: const BorderSide(color: AppColors.error, width: 1.5),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+            // Spacer to push sign out button to bottom
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Column(
+                children: [
+                  const Spacer(),
+                  // Sign Out Button
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () => _handleSignOut(context, ref),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.error,
+                          side: const BorderSide(color: AppColors.error, width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: const Text('Sign Out'),
+                      ),
+                    ),
                   ),
-                  child: const Text('Sign Out'),
-                ),
+                ],
               ),
-            ),
-
-            // Bottom spacing
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 32),
             ),
           ],
         ),
@@ -229,88 +240,117 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+
+    return SizedBox(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
-      ),
-      child: Column(
+      height: 300, // Banner height
+      child: Stack(
         children: [
-          const SizedBox(height: 16),
+          // Banner image background
+          Positioned.fill(
+            child: photoUrl != null
+                ? Image.network(
+                    photoUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        _buildPlaceholderPhoto(),
+                  )
+                : _buildPlaceholderPhoto(),
+          ),
 
-          // Action icons row (help and notifications - placeholders for now)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.help_outline, color: AppColors.white),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Help coming soon'),
-                        behavior: SnackBarBehavior.floating,
+          // Gradient overlay for better text visibility
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.3),
+                    Colors.black.withValues(alpha: 0.1),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Semi-transparent app bar with name
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: statusBarHeight + 4,
+                left: 16,
+                right: 8,
+                bottom: 16,
+              ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.5),
+                    Colors.black.withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // User name
+                  Expanded(
+                    child: Text(
+                      displayName,
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                offset: const Offset(0, 2),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                    ),
+                  ),
+
+                  // Action icons row
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.help_outline, color: AppColors.white),
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Help coming soon'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.notifications_outlined,
-                      color: AppColors.white),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Notifications coming soon'),
-                        behavior: SnackBarBehavior.floating,
+                      IconButton(
+                        icon: const Icon(Icons.notifications_outlined,
+                            color: AppColors.white),
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Notifications coming soon'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-
-          // Profile photo
-          Container(
-            width: 120,
-            height: 180,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: AppColors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: photoUrl != null
-                  ? Image.network(
-                      photoUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          _buildPlaceholderPhoto(),
-                    )
-                  : _buildPlaceholderPhoto(),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // User name
-          Text(
-            displayName,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-
-          const SizedBox(height: 24),
         ],
       ),
     );
