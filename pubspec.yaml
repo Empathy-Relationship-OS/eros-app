@@ -76,6 +76,9 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+  # App Icon Generator
+  flutter_launcher_icons: ^0.14.2
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -117,3 +120,14 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# App Icon Configuration
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "screenshots/logo/eros_discord_icon.jpg"
+  # Remove alpha channel from iOS icons
+  remove_alpha_ios: true
+  # Adaptive icons for Android (API 26+)
+  adaptive_icon_background: "#FF9B6B"  # Warm orange from logo
+  adaptive_icon_foreground: "screenshots/logo/eros_discord_icon.jpg"
