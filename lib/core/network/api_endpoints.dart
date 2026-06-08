@@ -13,6 +13,7 @@ class ApiEndpoints {
   static final match = _MatchEndpoints();
   static final dates = _DatesEndpoints();
   static final marketing = _MarketingEndpoints();
+  static final wallet = _WalletEndpoints();
 }
 
 // ====================
@@ -100,4 +101,36 @@ class _MarketingEndpoints {
 
   /// GET /marketing/preference - Get marketing preference
   String getPreference() => '/marketing/preference';
+}
+
+// ====================
+// WALLET ENDPOINTS
+// ====================
+class _WalletEndpoints {
+  /// GET /wallet/balance - Get wallet balance
+  String getBalance() => '/wallet/balance';
+
+  /// GET /wallet/transactions - Get transaction history (paginated)
+  String getTransactions({
+    required int limit,
+    required int offset,
+    String? type,
+  }) {
+    final params = <String, String>{
+      'limit': limit.toString(),
+      'offset': offset.toString(),
+      if (type != null) 'type': type,
+    };
+    final query = Uri(queryParameters: params).query;
+    return '/wallet/transactions?$query';
+  }
+
+  /// POST /wallet/purchase - Purchase tokens
+  String purchase() => '/wallet/purchase';
+
+  /// POST /wallet/spend - Spend tokens on a date
+  String spend() => '/wallet/spend';
+
+  /// POST /wallet/refund - Request refund
+  String refund() => '/wallet/refund';
 }

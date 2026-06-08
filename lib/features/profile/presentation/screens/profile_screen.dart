@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
 import 'package:eros_app/features/profile/presentation/providers/user_profile_provider.dart';
+import 'package:eros_app/features/wallet/presentation/screens/wallet_screen.dart';
 
 /// Profile Screen - Displays user profile and settings
 class ProfileScreen extends ConsumerWidget {
@@ -124,8 +125,11 @@ class ProfileScreen extends ConsumerWidget {
                       icon: Icons.account_balance_wallet_outlined,
                       title: 'Date wallet',
                       onTap: () {
-                        // TODO: Navigate to date wallet screen
-                        _showComingSoon(context, 'Date Wallet');
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const WalletScreen(),
+                          ),
+                        );
                       },
                     ),
                     const Divider(height: 1, indent: 56),

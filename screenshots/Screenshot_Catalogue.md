@@ -682,3 +682,13 @@ Screenshot catalogue:
     - @screenshots/profile/main-screen/IMG_3045.PNG
       - All the settings in the box are what we should show.
       - For now each one will have its own seperate screen when we press on them
+  - wallet:
+    - @screenshots/profile/wallet/IMG_3177.PNG
+      - Shows the wallet page. The top is the current number of tokens a user owns.
+      - Within the box of how many tokens we have, we should have a button = add more tokens
+      - We should have a request refund tokens button
+      - Beneath shows the wallet history. We get this information from: GET "/wallet/transactions"
+      - We should alter from the screenshot via breaking down this into a long list that has the date of each transaction in a smaller lighter font beneath the main text
+    - @screenshots/profile/wallet/IMG_3178.PNG and @screenshots/profile/wallet/IMG_3179.PNG 
+      - Shows the page that is displayed when info button is pressed. Explains how tokens work, are purchased etc
+      - It also gives context to not just user but ourselves of how tokens and transactions work.
