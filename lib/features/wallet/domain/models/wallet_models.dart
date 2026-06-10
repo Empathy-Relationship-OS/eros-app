@@ -290,7 +290,7 @@ class TransactionHistory {
 class PurchaseResponse {
   final String clientSecret;
   final String paymentIntentId;
-  final int amount; // In pence
+  final double amount; // In pence
   final String currency;
   final double tokenAmount;
   final String status;
@@ -314,16 +314,29 @@ class PurchaseResponse {
     return PurchaseResponse(
       clientSecret: json['clientSecret'] as String,
       paymentIntentId: json['paymentIntentId'] as String,
-      amount: json['amount'] as int,
+      // Backend sends BigDecimal as string, convert to double
+      amount: _parseNumericValue(json['amount']),
       currency: json['currency'] as String,
-      tokenAmount: (json['tokenAmount'] as num).toDouble(),
+      // Backend sends BigDecimal as string, convert to double
+      tokenAmount: _parseNumericValue(json['tokenAmount']),
       status: json['status'] as String,
       newBalance: json['newBalance'] != null
-          ? (json['newBalance'] as num).toDouble()
+          ? _parseNumericValue(json['newBalance'])
           : null,
       transactionId: json['transactionId'] as int?,
       acceptedTerms: json['acceptedTerms'] as bool?,
     );
+  }
+
+  /// Helper method to parse numeric values that may come as num or String
+  static double _parseNumericValue(dynamic value) {
+    if (value is num) {
+      return value.toDouble();
+    } else if (value is String) {
+      return double.parse(value);
+    } else {
+      throw FormatException('Cannot parse numeric value from $value');
+    }
   }
 
   Map<String, dynamic> toJson() {
