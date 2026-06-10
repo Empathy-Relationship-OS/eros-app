@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/wallet/presentation/providers/wallet_provider.dart';
 import 'package:eros_app/features/wallet/presentation/screens/wallet_info_screen.dart';
+import 'package:eros_app/features/wallet/presentation/screens/purchase_tokens_screen.dart';
 import 'package:eros_app/features/wallet/domain/models/wallet_models.dart';
 import 'package:intl/intl.dart';
 
@@ -265,28 +266,22 @@ class _BalanceCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          // TODO: Add "Add more tokens" and "Request refund" buttons when purchase/refund flows are implemented
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _OutlinedButton(
                 onPressed: () {
-                  _showComingSoon(context, 'Purchase tokens');
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const PurchaseTokensScreen(),
+                    ),
+                  );
                 },
                 child: const Text('Add more tokens'),
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature coming soon'),
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }
