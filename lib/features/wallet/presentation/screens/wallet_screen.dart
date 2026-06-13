@@ -89,6 +89,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         },
         child: CustomScrollView(
           controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             // Balance Card
             SliverToBoxAdapter(
