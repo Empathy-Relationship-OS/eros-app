@@ -73,12 +73,13 @@ class StripeService {
 
       // Validate client secret format
       if (!_isValidClientSecret(clientSecret)) {
-        _logger.e('🚨 Invalid client secret format: $clientSecret');
+        final redacted = _redactClientSecret(clientSecret);
+        _logger.e('🚨 Invalid client secret format: $redacted');
         throw StripeException(
           error: LocalizedErrorMessage(
             code: FailureCode.Failed,
             localizedMessage: 'Invalid payment configuration',
-            message: 'Backend returned invalid client secret. Expected format: pi_xxxxx_secret_yyyy, got: $clientSecret',
+            message: 'Backend returned invalid client secret. Expected format: pi_xxxxx_secret_yyyy, got: $redacted',
           ),
         );
       }
@@ -173,5 +174,21 @@ class StripeService {
     // Format: pi_xxxxx_secret_yyyy or setup intent format
     return clientSecret.contains('_secret_') &&
         (clientSecret.startsWith('pi_') || clientSecret.startsWith('seti_'));
+  }
+
+  /// Redact client secret for safe logging
+  ///
+  /// Shows only the prefix (e.g., "pi_xxxx") and masks the secret portion.
+  /// Example: "pi_1234567890_secret_abcdef" -> "pi_1234567890_secret_REDACTED"
+  String _redactClientSecret(String clientSecret) {
+    final secretIndex = clientSecret.indexOf('_secret_');
+    if (secretIndex == -1) {
+      // Invalid format - redact everything except first 3 chars
+      return clientSecret.length > 3
+          ? '${clientSecret.substring(0, 3)}<REDACTED>'
+          : '<REDACTED>';
+    }
+    // Show prefix + "_secret_" but hide the actual secret value
+    return '${clientSecret.substring(0, secretIndex + 8)}<REDACTED>';
   }
 }
