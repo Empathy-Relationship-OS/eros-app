@@ -122,17 +122,17 @@ class _WalletEndpoints {
     List<String>? statuses,
   }) {
     final queryParts = <String>[];
-    queryParts.add('limit=$limit');
-    queryParts.add('offset=$offset');
+    queryParts.add('limit=${Uri.encodeQueryComponent(limit.toString())}');
+    queryParts.add('offset=${Uri.encodeQueryComponent(offset.toString())}');
 
     if (type != null) {
-      queryParts.add('type=$type');
+      queryParts.add('type=${Uri.encodeQueryComponent(type)}');
     }
 
     // Add multiple status parameters
     if (statuses != null && statuses.isNotEmpty) {
       for (final status in statuses) {
-        queryParts.add('status=$status');
+        queryParts.add('status=${Uri.encodeQueryComponent(status)}');
       }
     }
 
