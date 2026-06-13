@@ -151,6 +151,10 @@ class TransactionHistoryNotifier
 
   static const int _pageSize = 20;
 
+  // Persist active filters for pagination consistency
+  String? _activeFilterType;
+  List<TransactionStatus>? _activeFilterStatuses;
+
   TransactionHistoryNotifier(this._repository)
       : super(const TransactionHistoryState());
 
@@ -167,18 +171,25 @@ class TransactionHistoryNotifier
     state = const TransactionHistoryState(isLoading: true);
 
     try {
-      // Default to showing only completed and refunded transactions
-      final statuses = filterStatuses ??
-          [
-            TransactionStatus.completed,
-            TransactionStatus.refunded,
-          ];
+      // Update active filters if explicitly provided
+      if (filterType != null) {
+        _activeFilterType = filterType;
+      }
+      if (filterStatuses != null) {
+        _activeFilterStatuses = filterStatuses;
+      }
+
+      // Set defaults for first call if still null
+      _activeFilterStatuses ??= [
+        TransactionStatus.completed,
+        TransactionStatus.refunded,
+      ];
 
       final history = await _repository.getTransactions(
         limit: _pageSize,
         offset: 0,
-        type: filterType,
-        statuses: statuses,
+        type: _activeFilterType,
+        statuses: _activeFilterStatuses!,
       );
 
       state = TransactionHistoryState(
@@ -204,6 +215,9 @@ class TransactionHistoryNotifier
   }
 
   /// Load more transactions (pagination)
+  ///
+  /// Uses persisted filter criteria from the last fetchTransactions call.
+  /// Can optionally override filters by providing explicit parameters.
   Future<void> loadMore({
     String? filterType,
     List<TransactionStatus>? filterStatuses,
@@ -213,18 +227,24 @@ class TransactionHistoryNotifier
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     try {
-      // Default to showing only completed and refunded transactions
-      final statuses = filterStatuses ??
-          [
-            TransactionStatus.completed,
-            TransactionStatus.refunded,
-          ];
+      // Update active filters if explicitly provided, otherwise use stored values
+      if (filterType != null) {
+        _activeFilterType = filterType;
+      }
 
+      if (filterStatuses != null) {
+        _activeFilterStatuses = filterStatuses;
+      }
+
+      // Use persisted active filters (should always be set by fetchTransactions)
       final history = await _repository.getTransactions(
         limit: _pageSize,
         offset: state.currentOffset,
-        type: filterType,
-        statuses: statuses,
+        type: _activeFilterType,
+        statuses: _activeFilterStatuses ?? [
+          TransactionStatus.completed,
+          TransactionStatus.refunded,
+        ],
       );
 
       state = state.copyWith(
