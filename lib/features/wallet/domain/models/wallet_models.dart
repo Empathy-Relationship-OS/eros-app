@@ -132,12 +132,23 @@ class WalletBalance {
 
   factory WalletBalance.fromJson(Map<String, dynamic> json) {
     return WalletBalance(
-      balance: (json['balance'] as num).toDouble(),
-      pendingBalance: (json['pendingBalance'] as num).toDouble(),
-      lifetimeSpent: (json['lifetimeSpent'] as num).toDouble(),
-      lifetimePurchased: (json['lifetimePurchased'] as num).toDouble(),
+      balance: _parseNumericValue(json['balance']),
+      pendingBalance: _parseNumericValue(json['pendingBalance']),
+      lifetimeSpent: _parseNumericValue(json['lifetimeSpent']),
+      lifetimePurchased: _parseNumericValue(json['lifetimePurchased']),
       currency: json['currency'] as String,
     );
+  }
+
+  /// Helper method to parse numeric values that may come as num or String
+  static double _parseNumericValue(dynamic value) {
+    if (value is num) {
+      return value.toDouble();
+    } else if (value is String) {
+      return double.parse(value);
+    } else {
+      throw FormatException('Cannot parse numeric value from $value');
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -196,18 +207,31 @@ class Transaction {
     return Transaction(
       transactionId: json['transactionId'] as int,
       type: TransactionType.fromApiValue(json['type'] as String),
-      amount: (json['amount'] as num).toDouble(),
-      balanceAfter: (json['balanceAfter'] as num).toDouble(),
+      amount: _parseNumericValue(json['amount']),
+      balanceAfter: _parseNumericValue(json['balanceAfter']),
       description: json['description'] as String,
       relatedDateId: json['relatedDateId'] as int?,
       stripePaymentIntentId: json['stripePaymentIntentId'] as String?,
-      amountPaid: json['amountPaid'] as int?,
+      amountPaid: json['amountPaid'] != null
+          ? _parseNumericValue(json['amountPaid']).toInt()
+          : null,
       paymentCurrency: json['paymentCurrency'] as String?,
       acceptedTerms: json['acceptedTerms'] as bool?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       status: TransactionStatus.fromApiValue(json['status'] as String),
     );
+  }
+
+  /// Helper method to parse numeric values that may come as num or String
+  static double _parseNumericValue(dynamic value) {
+    if (value is num) {
+      return value.toDouble();
+    } else if (value is String) {
+      return double.parse(value);
+    } else {
+      throw FormatException('Cannot parse numeric value from $value');
+    }
   }
 
   Map<String, dynamic> toJson() {

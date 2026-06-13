@@ -155,16 +155,30 @@ class TransactionHistoryNotifier
       : super(const TransactionHistoryState());
 
   /// Fetch initial page of transactions
-  Future<void> fetchTransactions({String? filterType}) async {
+  ///
+  /// By default, filters to COMPLETED and REFUNDED transactions only
+  /// (excludes PENDING, FAILED, CANCELLED, REFUND_FAILED)
+  Future<void> fetchTransactions({
+    String? filterType,
+    List<TransactionStatus>? filterStatuses,
+  }) async {
     if (state.isLoading) return;
 
     state = const TransactionHistoryState(isLoading: true);
 
     try {
+      // Default to showing only completed and refunded transactions
+      final statuses = filterStatuses ??
+          [
+            TransactionStatus.completed,
+            TransactionStatus.refunded,
+          ];
+
       final history = await _repository.getTransactions(
         limit: _pageSize,
         offset: 0,
         type: filterType,
+        statuses: statuses,
       );
 
       state = TransactionHistoryState(
@@ -190,16 +204,27 @@ class TransactionHistoryNotifier
   }
 
   /// Load more transactions (pagination)
-  Future<void> loadMore({String? filterType}) async {
+  Future<void> loadMore({
+    String? filterType,
+    List<TransactionStatus>? filterStatuses,
+  }) async {
     if (!state.hasMore || state.isLoadingMore) return;
 
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     try {
+      // Default to showing only completed and refunded transactions
+      final statuses = filterStatuses ??
+          [
+            TransactionStatus.completed,
+            TransactionStatus.refunded,
+          ];
+
       final history = await _repository.getTransactions(
         limit: _pageSize,
         offset: state.currentOffset,
         type: filterType,
+        statuses: statuses,
       );
 
       state = state.copyWith(
@@ -225,8 +250,14 @@ class TransactionHistoryNotifier
   }
 
   /// Refresh transactions (force reload)
-  Future<void> refresh({String? filterType}) async {
-    await fetchTransactions(filterType: filterType);
+  Future<void> refresh({
+    String? filterType,
+    List<TransactionStatus>? filterStatuses,
+  }) async {
+    await fetchTransactions(
+      filterType: filterType,
+      filterStatuses: filterStatuses,
+    );
   }
 
   /// Clear error message
