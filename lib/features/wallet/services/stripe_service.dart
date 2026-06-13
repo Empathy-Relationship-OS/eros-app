@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:logger/logger.dart';
 import 'package:eros_app/core/config/stripe_config.dart';
@@ -17,8 +18,13 @@ class StripeService {
       // Set publishable key
       Stripe.publishableKey = StripeConfig.publishableKey;
 
-      // Set merchant display name
-      Stripe.merchantIdentifier = StripeConfig.merchantDisplayName;
+      // Set Apple Pay merchant identifier (iOS only)
+      // Note: Stripe.merchantIdentifier is for Apple Pay's merchant ID only.
+      // Google Pay (Android) uses a separate Google Merchant ID configured via GooglePayConfiguration.
+      if (Platform.isIOS) {
+        Stripe.merchantIdentifier = StripeConfig.applePayMerchantId;
+        _logger.d('🍎 Apple Pay merchant identifier set');
+      }
 
       _logger.d('✅ Stripe SDK initialized successfully');
     } catch (e, stackTrace) {

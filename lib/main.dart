@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -57,7 +58,11 @@ void main() async {
 
   // Initialize Stripe
   Stripe.publishableKey = StripeConfig.publishableKey;
-  Stripe.merchantIdentifier = StripeConfig.merchantDisplayName;
+  // Set Apple Pay merchant identifier (iOS only)
+  // Google Pay merchant ID is configured separately via GooglePayConfiguration
+  if (Platform.isIOS) {
+    Stripe.merchantIdentifier = StripeConfig.applePayMerchantId;
+  }
 
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
