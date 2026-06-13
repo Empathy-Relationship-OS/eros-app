@@ -178,11 +178,10 @@ class PurchaseNotifier extends StateNotifier<PurchaseState> {
       );
 
       // Step 4: Handle result
-      if (paymentStatus == PaymentIntentsStatus.Succeeded ||
-          paymentStatus == PaymentIntentsStatus.Processing) {
-        _logger.d('✅ Payment ${paymentStatus == PaymentIntentsStatus.Succeeded ? 'succeeded' : 'processing'}!');
+      if (paymentStatus == PaymentIntentsStatus.Succeeded) {
+        _logger.d('✅ Payment succeeded!');
 
-        // Clear idempotency key
+        // Clear idempotency key only on success
         await _idempotencyManager.clearCurrentPurchaseKey();
 
         // Refresh balance
@@ -194,6 +193,17 @@ class PurchaseNotifier extends StateNotifier<PurchaseState> {
         state = state.copyWith(
           isProcessing: false,
           step: PurchaseFlowStep.completed,
+        );
+      } else if (paymentStatus == PaymentIntentsStatus.Processing) {
+        _logger.d('⏳ Payment is processing (async payment method)');
+
+        // Keep processing state - DO NOT clear idempotency key
+        // The payment is still being processed and may succeed or fail later
+        // User should check back or we should implement polling/webhooks
+        state = state.copyWith(
+          isProcessing: true,
+          step: PurchaseFlowStep.processing,
+          errorMessage: 'Payment is being processed. Please check back shortly.',
         );
       } else {
         _logger.w('⚠️  Payment not succeeded: $paymentStatus');
