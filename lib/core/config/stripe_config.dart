@@ -6,14 +6,27 @@ class StripeConfig {
 
     switch (env) {
       case 'production':
-        // TODO: Replace with production key when ready
-        return 'pk_test_51T9EaKFLd1WxoaURw3vL1lbq32KcFGcErm1lkvRV2yHQPFhNggyO5wHQR1cyA7o1a7kS4TJNc4DTMjHzvNMFzcgK00BT066K9r';
+        const key = String.fromEnvironment('STRIPE_PUBLISHABLE_KEY_PROD');
+        if (key.isEmpty) {
+          throw AssertionError(
+            'STRIPE_PUBLISHABLE_KEY_PROD must be provided for production builds. '
+            'Run: flutter run --dart-define=ENV=production --dart-define=STRIPE_PUBLISHABLE_KEY_PROD=pk_live_...',
+          );
+        }
+        return key;
       case 'beta':
-        // TODO: Replace with beta key when ready
-        return 'pk_test_51T9EaKFLd1WxoaURw3vL1lbq32KcFGcErm1lkvRV2yHQPFhNggyO5wHQR1cyA7o1a7kS4TJNc4DTMjHzvNMFzcgK00BT066K9r';
+        const key = String.fromEnvironment('STRIPE_PUBLISHABLE_KEY_BETA');
+        if (key.isEmpty) {
+          throw AssertionError(
+            'STRIPE_PUBLISHABLE_KEY_BETA must be provided for beta builds. '
+            'Run: flutter run --dart-define=ENV=beta --dart-define=STRIPE_PUBLISHABLE_KEY_BETA=pk_test_...',
+          );
+        }
+        return key;
       case 'develop':
       case 'local':
       default:
+        // Test key for development only
         return 'pk_test_51T9EaKFLd1WxoaURw3vL1lbq32KcFGcErm1lkvRV2yHQPFhNggyO5wHQR1cyA7o1a7kS4TJNc4DTMjHzvNMFzcgK00BT066K9r';
     }
   }
