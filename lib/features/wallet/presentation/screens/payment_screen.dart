@@ -310,6 +310,9 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   }
 
   void _showSuccessDialog() {
+    final purchaseResponse = ref.read(purchaseProvider).purchaseResponse;
+    final tokensAdded = purchaseResponse?.tokenAmount.toInt() ?? 0;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -323,7 +326,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           ],
         ),
         content: Text(
-          'Your tokens have been added to your wallet. You now have ${ref.read(purchaseProvider).purchaseResponse?.newBalance?.toInt() ?? 0} tokens.',
+          'Successfully added $tokensAdded ${tokensAdded == 1 ? 'token' : 'tokens'} to your wallet!',
         ),
         actions: [
           TextButton(
