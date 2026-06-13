@@ -208,7 +208,23 @@ class PurchaseTokensScreen extends ConsumerWidget {
     // Initialize purchase (generates idempotency key)
     await ref.read(purchaseProvider.notifier).initializePurchase();
 
-    // Navigate to payment screen
+    // Check if initialization succeeded before navigating
+    final purchaseState = ref.read(purchaseProvider);
+      if (purchaseState.errorMessage != null || purchaseState.idempotencyKey == null) {
+        // Initialization failed - show error to user
+        if (context.mounted && purchaseState.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(purchaseState.errorMessage!),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+    }
+
+    // Navigate to payment screen only if initialization succeeded
     if (context.mounted) {
       Navigator.of(context).push(
         MaterialPageRoute(
