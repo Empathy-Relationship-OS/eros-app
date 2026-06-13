@@ -1,6 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:logger/logger.dart';
+import 'package:eros_app/features/wallet/domain/models/wallet_models.dart';
 
 /// Manages idempotency keys for wallet operations
 ///
@@ -8,7 +9,7 @@ import 'package:logger/logger.dart';
 /// The same key should be used for retries of the same purchase attempt.
 class IdempotencyManager {
   static const String _keyPrefix = 'idempotency_';
-  static const String _currentPurchaseKey = 'current_purchase_idempotency';
+  static const String _currentPurchaseKeyPrefix = 'current_purchase_idempotency';
 
   final Logger _logger = Logger();
   final Uuid _uuid = const Uuid();
@@ -17,21 +18,27 @@ class IdempotencyManager {
   ///
   /// This key persists across app restarts to handle network failures.
   /// Returns the same key if called multiple times for the same purchase attempt.
-  Future<String> getCurrentPurchaseKey() async {
+  ///
+  /// The key is scoped to the specific package being purchased to prevent
+  /// key leakage across different purchase attempts.
+  Future<String> getCurrentPurchaseKey(TokenPackageType package) async {
     final prefs = await SharedPreferences.getInstance();
 
+    // Build namespaced key: current_purchase_idempotency:starter
+    final storageKey = '$_currentPurchaseKeyPrefix:${package.name}';
+
     // Check if we have an existing key
-    final existingKey = prefs.getString(_currentPurchaseKey);
+    final existingKey = prefs.getString(storageKey);
 
     if (existingKey != null) {
-      _logger.d('♻️  Reusing existing purchase idempotency key');
+      _logger.d('♻️  Reusing existing purchase idempotency key for ${package.name}');
       return existingKey;
     }
 
     // Generate new key
     final newKey = _uuid.v4();
-    await prefs.setString(_currentPurchaseKey, newKey);
-    _logger.d('🔑 Generated new purchase idempotency key');
+    await prefs.setString(storageKey, newKey);
+    _logger.d('🔑 Generated new purchase idempotency key for ${package.name}');
 
     return newKey;
   }
@@ -39,10 +46,13 @@ class IdempotencyManager {
   /// Clear the current purchase idempotency key after successful completion
   ///
   /// Call this after a successful purchase to allow new purchases.
-  Future<void> clearCurrentPurchaseKey() async {
+  ///
+  /// The package parameter ensures we clear the correct namespaced key.
+  Future<void> clearCurrentPurchaseKey(TokenPackageType package) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_currentPurchaseKey);
-    _logger.d('🗑️  Cleared purchase idempotency key');
+    final storageKey = '$_currentPurchaseKeyPrefix:${package.name}';
+    await prefs.remove(storageKey);
+    _logger.d('🗑️  Cleared purchase idempotency key for ${package.name}');
   }
 
   /// Generate a new idempotency key for a specific operation
@@ -95,7 +105,7 @@ class IdempotencyManager {
     final keys = prefs.getKeys();
 
     for (final key in keys) {
-      if (key.startsWith(_keyPrefix) || key == _currentPurchaseKey) {
+      if (key.startsWith(_keyPrefix) || key.startsWith(_currentPurchaseKeyPrefix)) {
         await prefs.remove(key);
       }
     }

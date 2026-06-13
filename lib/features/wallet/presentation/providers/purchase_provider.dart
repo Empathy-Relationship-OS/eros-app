@@ -113,9 +113,17 @@ class PurchaseNotifier extends StateNotifier<PurchaseState> {
 
   /// Initialize purchase flow
   Future<void> initializePurchase() async {
+    if (state.selectedPackage == null) {
+      _logger.e('🚨 Cannot initialize purchase - no package selected');
+      state = state.copyWith(
+        errorMessage: 'Please select a package first',
+      );
+      return;
+    }
+
     try {
-      // Get or create idempotency key
-      final key = await _idempotencyManager.getCurrentPurchaseKey();
+      // Get or create idempotency key scoped to this package
+      final key = await _idempotencyManager.getCurrentPurchaseKey(state.selectedPackage!);
       state = state.copyWith(
         idempotencyKey: key,
         step: PurchaseFlowStep.enterPayment,
@@ -182,7 +190,7 @@ class PurchaseNotifier extends StateNotifier<PurchaseState> {
         _logger.d('✅ Payment succeeded!');
 
         // Clear idempotency key only on success
-        await _idempotencyManager.clearCurrentPurchaseKey();
+        await _idempotencyManager.clearCurrentPurchaseKey(state.selectedPackage!);
 
         // Refresh balance
         await _ref.read(walletBalanceProvider.notifier).refresh();
@@ -271,8 +279,10 @@ class PurchaseNotifier extends StateNotifier<PurchaseState> {
   ///
   /// Call this when user cancels or wants to start over.
   Future<void> reset() async {
-    // Clear idempotency key
-    await _idempotencyManager.clearCurrentPurchaseKey();
+    // Clear idempotency key for the current package (if any)
+    if (state.selectedPackage != null) {
+      await _idempotencyManager.clearCurrentPurchaseKey(state.selectedPackage!);
+    }
 
     state = const PurchaseState();
   }
