@@ -151,20 +151,45 @@ class TransactionHistoryNotifier
 
   static const int _pageSize = 20;
 
+  // Persist active filters for pagination consistency
+  String? _activeFilterType;
+  List<TransactionStatus>? _activeFilterStatuses;
+
   TransactionHistoryNotifier(this._repository)
       : super(const TransactionHistoryState());
 
   /// Fetch initial page of transactions
-  Future<void> fetchTransactions({String? filterType}) async {
+  ///
+  /// By default, filters to COMPLETED and REFUNDED transactions only
+  /// (excludes PENDING, FAILED, CANCELLED, REFUND_FAILED)
+  Future<void> fetchTransactions({
+    String? filterType,
+    List<TransactionStatus>? filterStatuses,
+  }) async {
     if (state.isLoading) return;
 
     state = const TransactionHistoryState(isLoading: true);
 
     try {
+      // Update active filters if explicitly provided
+      if (filterType != null) {
+        _activeFilterType = filterType;
+      }
+      if (filterStatuses != null) {
+        _activeFilterStatuses = filterStatuses;
+      }
+
+      // Set defaults for first call if still null
+      _activeFilterStatuses ??= [
+        TransactionStatus.completed,
+        TransactionStatus.refunded,
+      ];
+
       final history = await _repository.getTransactions(
         limit: _pageSize,
         offset: 0,
-        type: filterType,
+        type: _activeFilterType,
+        statuses: _activeFilterStatuses!,
       );
 
       state = TransactionHistoryState(
@@ -190,16 +215,36 @@ class TransactionHistoryNotifier
   }
 
   /// Load more transactions (pagination)
-  Future<void> loadMore({String? filterType}) async {
+  ///
+  /// Uses persisted filter criteria from the last fetchTransactions call.
+  /// Can optionally override filters by providing explicit parameters.
+  Future<void> loadMore({
+    String? filterType,
+    List<TransactionStatus>? filterStatuses,
+  }) async {
     if (!state.hasMore || state.isLoadingMore) return;
 
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     try {
+      // Update active filters if explicitly provided, otherwise use stored values
+      if (filterType != null) {
+        _activeFilterType = filterType;
+      }
+
+      if (filterStatuses != null) {
+        _activeFilterStatuses = filterStatuses;
+      }
+
+      // Use persisted active filters (should always be set by fetchTransactions)
       final history = await _repository.getTransactions(
         limit: _pageSize,
         offset: state.currentOffset,
-        type: filterType,
+        type: _activeFilterType,
+        statuses: _activeFilterStatuses ?? [
+          TransactionStatus.completed,
+          TransactionStatus.refunded,
+        ],
       );
 
       state = state.copyWith(
@@ -225,8 +270,14 @@ class TransactionHistoryNotifier
   }
 
   /// Refresh transactions (force reload)
-  Future<void> refresh({String? filterType}) async {
-    await fetchTransactions(filterType: filterType);
+  Future<void> refresh({
+    String? filterType,
+    List<TransactionStatus>? filterStatuses,
+  }) async {
+    await fetchTransactions(
+      filterType: filterType,
+      filterStatuses: filterStatuses,
+    );
   }
 
   /// Clear error message

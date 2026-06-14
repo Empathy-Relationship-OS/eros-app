@@ -50,6 +50,7 @@ class WalletRepository {
   /// - [limit]: Number of transactions to fetch (1-100)
   /// - [offset]: Pagination offset
   /// - [type]: Optional filter by transaction type (PURCHASE, SPEND, REFUND, ADJUSTMENT)
+  /// - [statuses]: Optional filter by status (PENDING, COMPLETED, FAILED, CANCELLED, REFUNDED, REFUND_FAILED)
   ///
   /// Returns:
   /// - [TransactionHistory] on success (200)
@@ -62,15 +63,18 @@ class WalletRepository {
     required int limit,
     required int offset,
     String? type,
+    List<TransactionStatus>? statuses,
   }) async {
     try {
-      _logger.d('📜 Fetching transactions (limit=$limit, offset=$offset, type=$type)');
+      final statusStrings = statuses?.map((s) => s.apiValue).toList();
+      _logger.d('📜 Fetching transactions (limit=$limit, offset=$offset, type=$type, statuses=$statusStrings)');
 
       final response = await _apiClient.get<Map<String, dynamic>>(
         ApiEndpoints.wallet.getTransactions(
           limit: limit,
           offset: offset,
           type: type,
+          statuses: statusStrings,
         ),
       );
 

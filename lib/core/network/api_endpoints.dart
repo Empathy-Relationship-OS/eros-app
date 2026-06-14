@@ -111,18 +111,32 @@ class _WalletEndpoints {
   String getBalance() => '/wallet/balance';
 
   /// GET /wallet/transactions - Get transaction history (paginated)
+  ///
+  /// Supports filtering by type and multiple statuses:
+  /// - type: PURCHASE, SPEND, REFUND, ADJUSTMENT
+  /// - statuses: PENDING, COMPLETED, FAILED, CANCELLED, REFUNDED, REFUND_FAILED
   String getTransactions({
     required int limit,
     required int offset,
     String? type,
+    List<String>? statuses,
   }) {
-    final params = <String, String>{
-      'limit': limit.toString(),
-      'offset': offset.toString(),
-      if (type != null) 'type': type,
-    };
-    final query = Uri(queryParameters: params).query;
-    return '/wallet/transactions?$query';
+    final queryParts = <String>[];
+    queryParts.add('limit=${Uri.encodeQueryComponent(limit.toString())}');
+    queryParts.add('offset=${Uri.encodeQueryComponent(offset.toString())}');
+
+    if (type != null) {
+      queryParts.add('type=${Uri.encodeQueryComponent(type)}');
+    }
+
+    // Add multiple status parameters
+    if (statuses != null && statuses.isNotEmpty) {
+      for (final status in statuses) {
+        queryParts.add('status=${Uri.encodeQueryComponent(status)}');
+      }
+    }
+
+    return '/wallet/transactions?${queryParts.join('&')}';
   }
 
   /// POST /wallet/purchase - Purchase tokens

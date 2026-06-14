@@ -1,9 +1,12 @@
+import 'dart:io' show Platform;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'core/theme/app_theme.dart';
+import 'core/config/stripe_config.dart';
 import 'features/auth/presentation/screens/auth_loading_screen.dart';
 import 'features/auth/presentation/screens/welcome_screen.dart';
 import 'features/profile/presentation/screens/name_input_screen.dart';
@@ -52,6 +55,14 @@ void main() async {
 
   // Initialize SharedPreferences
   final sharedPreferences = await SharedPreferences.getInstance();
+
+  // Initialize Stripe
+  Stripe.publishableKey = StripeConfig.publishableKey;
+  // Set Apple Pay merchant identifier (iOS only)
+  // Google Pay merchant ID is configured separately via GooglePayConfiguration
+  if (Platform.isIOS) {
+    Stripe.merchantIdentifier = StripeConfig.applePayMerchantId;
+  }
 
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([

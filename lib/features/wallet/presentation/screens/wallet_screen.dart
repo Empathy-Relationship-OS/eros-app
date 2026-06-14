@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/wallet/presentation/providers/wallet_provider.dart';
 import 'package:eros_app/features/wallet/presentation/screens/wallet_info_screen.dart';
+import 'package:eros_app/features/wallet/presentation/screens/purchase_tokens_screen.dart';
 import 'package:eros_app/features/wallet/domain/models/wallet_models.dart';
 import 'package:intl/intl.dart';
 
@@ -88,6 +89,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         },
         child: CustomScrollView(
           controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             // Balance Card
             SliverToBoxAdapter(
@@ -264,29 +266,40 @@ class _BalanceCard extends StatelessWidget {
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 24),
-          // TODO: Add "Add more tokens" and "Request refund" buttons when purchase/refund flows are implemented
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _OutlinedButton(
-                onPressed: () {
-                  _showComingSoon(context, 'Purchase tokens');
-                },
-                child: const Text('Add more tokens'),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const PurchaseTokensScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add_circle_outline, size: 20),
+              label: const Text(
+                'Add more tokens',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ],
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature coming soon'),
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -402,29 +415,3 @@ class _TransactionTile extends StatelessWidget {
   }
 }
 
-/// Custom outlined button
-class _OutlinedButton extends StatelessWidget {
-  final VoidCallback? onPressed;
-  final Widget child;
-
-  const _OutlinedButton({
-    this.onPressed,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.primary,
-        side: const BorderSide(color: AppColors.primary),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-      child: child,
-    );
-  }
-}
