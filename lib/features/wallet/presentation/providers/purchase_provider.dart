@@ -127,10 +127,12 @@ class PurchaseNotifier extends StateNotifier<PurchaseState> {
       state = state.copyWith(
         idempotencyKey: key,
         step: PurchaseFlowStep.enterPayment,
+        clearError: true,
       );
     } catch (e) {
       _logger.e('Failed to initialize purchase', error: e);
       state = state.copyWith(
+        idempotencyKey: null,
         errorMessage: 'Failed to initialize payment',
       );
     }
