@@ -4,7 +4,6 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_status_pill.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_facts.dart';
-import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 
 /// Card widget for displaying a date in list view
 ///

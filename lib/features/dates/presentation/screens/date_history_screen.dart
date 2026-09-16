@@ -4,7 +4,6 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_list_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
-import 'package:eros_app/features/dates/presentation/widgets/date_status_pill.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_formats.dart';
 
 /// Date history screen with two segments: Past and Cancelled
@@ -184,12 +183,9 @@ class _DateHistoryScreenState extends ConsumerState<DateHistoryScreen>
           date: date,
           onTap: () {
             // Navigate to date detail
-            // TODO: Implement navigation to date detail screen
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Date detail for ${date.partnerName}'),
-                behavior: SnackBarBehavior.floating,
-              ),
+            Navigator.of(context).pushNamed(
+              '/dates/detail',
+              arguments: date.dateId,
             );
           },
         );

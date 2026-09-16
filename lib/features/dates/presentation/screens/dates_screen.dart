@@ -136,12 +136,9 @@ class DatesScreen extends ConsumerWidget {
                 currentUserId: currentUid,
                 onTap: () {
                   // Navigate to date detail
-                  // TODO: Implement navigation to date detail screen (UI-4)
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Date detail for ${date.partnerName}'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
+                  Navigator.of(context).pushNamed(
+                    '/dates/detail',
+                    arguments: date.dateId,
                   );
                 },
               );
