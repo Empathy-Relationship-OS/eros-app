@@ -91,10 +91,25 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
     try {
       final profileRepository = ref.read(profileRepositoryProvider);
 
+      // Get the current Firebase user ID (CRITICAL: use current auth user, not cached backend response)
+      final currentUser = ref.read(currentUserProvider);
+      if (currentUser == null) {
+        throw Exception('No authenticated user found');
+      }
+      final currentUserId = currentUser.uid;
+
       // Step 1: Check if user exists
       final userExistsResponse = await profileRepository.checkUserExists();
 
       if (!mounted) return;
+
+      // Validate that backend userId matches current Firebase user
+      if (userExistsResponse.userId != currentUserId) {
+        // ignore: avoid_print
+        print('⚠️  WARNING: Backend userId (${userExistsResponse.userId}) does not match Firebase UID ($currentUserId)');
+        // ignore: avoid_print
+        print('⚠️  This may indicate stale backend data. Using Firebase UID as source of truth.');
+      }
 
       if (!userExistsResponse.exists) {
         // User doesn't exist in backend - navigate to profile creation
@@ -113,8 +128,10 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
       }
 
       // Step 2: User exists - check profile completeness
+      // IMPORTANT: Use currentUserId from Firebase, NOT userExistsResponse.userId
+      // This prevents accessing the wrong user's profile if backend returns stale data
       final publicProfile = await profileRepository.getPublicProfile(
-        userExistsResponse.userId,
+        currentUserId,
       );
 
       if (!mounted) return;
