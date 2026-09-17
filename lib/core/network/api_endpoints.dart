@@ -84,11 +84,19 @@ class _MatchEndpoints {
 // ====================
 // DATES ENDPOINTS
 // ====================
+
+/// Filter for dates list endpoint
+enum DateListFilter {
+  active,
+  past,
+  cancelled,
+}
+
 class _DatesEndpoints {
   /// GET /dates?filter=active|past|cancelled - Get dates list
-  String getList({String? filter}) {
+  String getList({DateListFilter? filter}) {
     if (filter != null) {
-      return '/dates?filter=$filter';
+      return '/dates?filter=${Uri.encodeQueryComponent(filter.name)}';
     }
     return '/dates';
   }

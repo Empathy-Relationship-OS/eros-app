@@ -13,7 +13,7 @@ class DatesRepository {
 
   /// Fetch dates list with optional filter
   ///
-  /// Filter options: 'active', 'past', 'cancelled'
+  /// Filter options: DateListFilter.active, DateListFilter.past, DateListFilter.cancelled
   /// - active: non-terminal states
   /// - past: COMPLETED
   /// - cancelled: CANCELLED and EXPIRED
@@ -23,7 +23,7 @@ class DatesRepository {
   /// Throws:
   /// - [UnauthorizedException] if not authenticated (401)
   /// - Other [ApiException] subclasses for other errors
-  Future<List<DateSummary>> fetchDates({String? filter}) async {
+  Future<List<DateSummary>> fetchDates({DateListFilter? filter}) async {
     try {
       _logger.d('📅 Fetching dates (filter: ${filter ?? 'all'})');
 

@@ -138,7 +138,7 @@ class DatesScreen extends ConsumerWidget {
                   // Navigate to date detail
                   Navigator.of(context).pushNamed(
                     '/dates/detail',
-                    arguments: date.dateId,
+                    arguments: date.dateId.toString(),
                   );
                 },
               );
