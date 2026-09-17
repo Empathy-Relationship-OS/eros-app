@@ -31,9 +31,17 @@ class TokenAmount extends StatelessWidget {
   /// - "1.00" -> "1 token"
   /// - "2.50" -> "2.5 tokens"
   /// - "0.00" -> "0 tokens"
+  /// - "invalid" -> "Invalid amount"
+  /// - "NaN" -> "Invalid amount"
+  /// - "Infinity" -> "Invalid amount"
   static String formatTokenAmount(String decimalString) {
     // Parse to double
-    final value = double.tryParse(decimalString) ?? 0.0;
+    final value = double.tryParse(decimalString);
+
+    // Validate input
+    if (value == null || value.isNaN || value.isInfinite || value < 0) {
+      return 'Invalid amount';
+    }
 
     // Format without trailing .00
     String formatted;

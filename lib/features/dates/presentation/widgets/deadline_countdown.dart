@@ -30,7 +30,20 @@ class _DeadlineCountdownState extends State<DeadlineCountdown> {
   @override
   void initState() {
     super.initState();
-    _updateDisplay();
+    // Compute initial display text directly without setState
+    if (widget.deadline != null) {
+      _displayText = DateFormats.formatTimeRemaining(widget.deadline!);
+      final expired = widget.deadline!.isBefore(DateTime.now());
+      if (expired) {
+        _hasExpired = true;
+        // Schedule expired callback after current frame
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            widget.onExpired?.call();
+          }
+        });
+      }
+    }
     _startTimer();
   }
 
@@ -75,13 +88,17 @@ class _DeadlineCountdownState extends State<DeadlineCountdown> {
 
     setState(() {
       _displayText = text;
-
-      // Trigger onExpired callback only once
-      if (expired && !_hasExpired) {
-        _hasExpired = true;
-        widget.onExpired?.call();
-      }
     });
+
+    // Trigger onExpired callback after setState completes
+    if (expired && !_hasExpired) {
+      _hasExpired = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onExpired?.call();
+        }
+      });
+    }
   }
 
   @override
