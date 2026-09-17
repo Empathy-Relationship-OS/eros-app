@@ -82,11 +82,48 @@ class _MatchEndpoints {
 }
 
 // ====================
-// DATES ENDPOINTS (Future)
+// DATES ENDPOINTS
 // ====================
+
+/// Filter for dates list endpoint
+enum DateListFilter {
+  active,
+  past,
+  cancelled,
+}
+
 class _DatesEndpoints {
-  /// Placeholder for future date scheduling endpoints
-  /// Will be populated as date features are implemented
+  /// GET /dates?filter=active|past|cancelled - Get dates list
+  String getList({DateListFilter? filter}) {
+    if (filter != null) {
+      return '/dates?filter=${Uri.encodeQueryComponent(filter.name)}';
+    }
+    return '/dates';
+  }
+
+  /// GET /dates/{dateId} - Get date detail
+  String getById(String dateId) => '/dates/$dateId';
+
+  /// GET /dates/{dateId}/availability - Get availability for date
+  String getAvailability(String dateId) => '/dates/$dateId/availability';
+
+  /// POST /dates/{dateId}/availability - Submit availability slots
+  String submitAvailability(String dateId) => '/dates/$dateId/availability';
+
+  /// POST /dates/{dateId}/deposit - Pay deposit
+  String payDeposit(String dateId) => '/dates/$dateId/deposit';
+
+  /// GET /dates/{dateId}/venue-options - Get venue options
+  String getVenueOptions(String dateId) => '/dates/$dateId/venue-options';
+
+  /// POST /dates/{dateId}/venue-rankings - Submit venue rankings
+  String submitVenueRankings(String dateId) => '/dates/$dateId/venue-rankings';
+
+  /// POST /dates/{dateId}/confirm-presence - Confirm presence
+  String confirmPresence(String dateId) => '/dates/$dateId/confirm-presence';
+
+  /// POST /dates/{dateId}/cancel - Cancel date
+  String cancel(String dateId) => '/dates/$dateId/cancel';
 }
 
 // ====================

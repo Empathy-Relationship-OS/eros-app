@@ -46,6 +46,7 @@ import 'features/profile/presentation/screens/photos/welcome_onboarding_screen.d
 import 'features/profile/presentation/providers/profile_creation_provider.dart';
 import 'features/profile/domain/models/question_dto.dart';
 import 'features/home/presentation/screens/home_screen.dart';
+import 'features/dates/presentation/screens/date_detail_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -150,6 +151,15 @@ class ErosApp extends StatelessWidget {
             builder: (context) => AnswerInputScreen(question: question),
           );
         }
+
+        // Dates detail route
+        if (settings.name == '/dates/detail') {
+          final dateId = settings.arguments as String;
+          return MaterialPageRoute(
+            builder: (context) => DateDetailScreen(dateId: dateId),
+          );
+        }
+
         return null;
       },
     );
