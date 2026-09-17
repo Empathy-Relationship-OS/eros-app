@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/data/repositories/dates_repository.dart';
-import 'package:eros_app/core/network/api_client.dart';
+import 'package:eros_app/core/network/api_client_provider.dart';
 
 /// Provider for availability view (UI-5)
 ///

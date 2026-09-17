@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/data/repositories/dates_repository.dart';
-import 'package:eros_app/core/network/api_client.dart';
+import 'package:eros_app/core/network/api_client_provider.dart';
 
 /// Provider for venue options (UI-7)
 ///
@@ -39,7 +39,7 @@ class VenueRankingNotifier {
   /// - Other [ApiException] subclasses for other errors
   Future<RankingSubmissionResponse> submitRankings(
       SubmitRankingsRequest request) async {
-    return _repository.submitRankings(_dateId, request);
+    return _repository.submitVenueRankings(_dateId, request);
   }
 }
 

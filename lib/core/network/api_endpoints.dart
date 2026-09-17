@@ -119,6 +119,9 @@ class _DatesEndpoints {
   /// POST /dates/{dateId}/venue-rankings - Submit venue rankings
   String submitVenueRankings(String dateId) => '/dates/$dateId/venue-rankings';
 
+  /// GET /dates/{dateId}/presence-status - Get presence confirmation status
+  String getPresenceStatus(String dateId) => '/dates/$dateId/presence-status';
+
   /// POST /dates/{dateId}/confirm-presence - Confirm presence
   String confirmPresence(String dateId) => '/dates/$dateId/confirm-presence';
 

@@ -1,0 +1,30 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "eros-81081",
+          "appId": "1:785930119954:android:a2232ab50adbb7c3c3e1cb",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "eros-81081",
+          "appId": "1:785930119954:ios:691fdd574eb5fd4ac3e1cb",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "eros-81081",
+          "configurations": {
+            "android": "1:785930119954:android:a2232ab50adbb7c3c3e1cb",
+            "ios": "1:785930119954:ios:691fdd574eb5fd4ac3e1cb"
+          }
+        }
+      }
+    }
+  }
+}

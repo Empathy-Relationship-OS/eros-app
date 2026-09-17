@@ -66,5 +66,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSUserNotificationUsageDescription</key>
+	<string>We need your permission to send you notifications about new matches, date reminders, and important updates.</string>
 </dict>
 </plist>

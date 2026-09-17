@@ -394,7 +394,7 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
 
     try {
       final response = await ref
-          .read(venueRankingProvider(widget.dateId).notifier)
+          .read(venueRankingProvider(widget.dateId))
           .submitRankings(request);
 
       if (!mounted) return;

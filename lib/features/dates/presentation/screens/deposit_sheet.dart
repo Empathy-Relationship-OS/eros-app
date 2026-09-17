@@ -7,7 +7,7 @@ import 'package:eros_app/features/dates/presentation/providers/deposit_provider.
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/token_amount.dart';
 import 'package:eros_app/features/dates/presentation/widgets/deadline_countdown.dart';
-import 'package:eros_app/features/wallet/presentation/providers/wallet_balance_provider.dart';
+import 'package:eros_app/features/wallet/presentation/providers/wallet_provider.dart';
 import 'package:eros_app/features/wallet/presentation/screens/payment_screen.dart';
 
 /// UI-6: Deposit sheet (modal bottom sheet)
@@ -41,8 +41,8 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
   @override
   Widget build(BuildContext context) {
     final walletState = ref.watch(walletBalanceProvider);
-    final balance = walletState.balance?.availableBalance ?? '0.00';
-    final balanceNum = double.tryParse(balance) ?? 0.0;
+    final balance = walletState.balance?.balance.toString() ?? '0.00';
+    final balanceNum = walletState.balance?.balance ?? 0.0;
     final costNum = double.tryParse(widget.dateDetail.tokenCost) ?? 0.0;
     final hasSufficientBalance = balanceNum >= costNum;
 
@@ -109,7 +109,7 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
                 child: Column(
                   children: [
                     TokenAmount(
-                      amount: widget.dateDetail.tokenCost,
+                      tokenCost: widget.dateDetail.tokenCost,
                       style: const TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.w700,
@@ -270,7 +270,7 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
 
     try {
       final response = await ref
-          .read(depositProvider(widget.dateDetail.dateId.toString()).notifier)
+          .read(depositProvider(widget.dateDetail.dateId.toString()))
           .payDeposit();
 
       if (!mounted) return;

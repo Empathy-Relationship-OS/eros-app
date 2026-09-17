@@ -347,9 +347,6 @@ class DateDetail {
   // TODO(backend): partnerName should be provided by the backend API
   // For now, using placeholder value
   String partnerName(String myUid) => 'Partner'; // Placeholder
-
-  // Legacy getter for backward compatibility
-  String get partnerName => 'Partner'; // Placeholder
   String? get partnerThumbnailUrl => null; // Placeholder
   List<int> get myRankings => []; // Placeholder - should come from backend
   bool get partnerRanked => false; // Placeholder - should come from backend

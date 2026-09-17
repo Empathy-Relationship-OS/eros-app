@@ -5,6 +5,7 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
 import 'package:eros_app/features/profile/presentation/providers/user_profile_provider.dart';
 import 'package:eros_app/features/wallet/presentation/screens/wallet_screen.dart';
+import 'package:eros_app/features/settings/presentation/screens/app_settings_screen.dart';
 
 /// Profile Screen - Displays user profile and settings
 class ProfileScreen extends ConsumerWidget {
@@ -146,8 +147,11 @@ class ProfileScreen extends ConsumerWidget {
                       icon: Icons.settings_outlined,
                       title: 'App settings',
                       onTap: () {
-                        // TODO: Navigate to app settings screen
-                        _showComingSoon(context, 'App Settings');
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const AppSettingsScreen(),
+                          ),
+                        );
                       },
                     ),
                   ],

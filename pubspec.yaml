@@ -69,6 +69,15 @@ dependencies:
   # Payments
   flutter_stripe: ^11.1.0
 
+  # Permissions
+  permission_handler: ^11.3.1
+
+  # URL Launcher
+  url_launcher: ^6.3.1
+
+  # Calendar
+  add_2_calendar: ^3.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
