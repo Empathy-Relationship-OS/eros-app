@@ -159,19 +159,49 @@ Container(
 - 20px top border radius
 - White background, elevation 4
 
-### Components to Create ❌
+### Components Created ✅
 
-**Pill/Chip** - Need to create `DateStatusPill` widget
-- Example structure: outline pill with trailing info icon
+**DateStatusPill** - Status pill widget ✅
+- Outline pill with trailing info icon
 - Multiple tones: action (orange), waiting (grey), success (green), neutral, muted
+- Location: `lib/features/dates/presentation/widgets/date_status_pill.dart`
 
-**Avatar** - Need to create `PartnerHeader` widget with avatar
-- Square with large radius (like screenshot 2)
+**PartnerHeader** - Partner avatar widget ✅
+- Square with large radius (16px)
 - Initial-letter fallback when photo URL is null
+- Location: `lib/features/dates/presentation/widgets/partner_header.dart`
 
-**EmptyState** - Need to create for dates tab
-- Icon + heading + body text + optional button
+**DatesEmptyState** - Empty state for dates tab ✅
+- Icon + heading + stepper + "How Muse works" button
 - Used for "What happens after you match?" (UI-2)
+- Location: `lib/features/dates/presentation/widgets/dates_empty_state.dart`
+
+**Other Shared Widgets Created:**
+- `DateStepper` - Timeline stepper (full & compact variants)
+- `DateFacts` - Icon rows for time, venue, activity
+- `DateFormats` - Date/time formatting utilities
+- `DeadlineCountdown` - Live countdown widget
+- `TokenAmount` - Token amount formatting
+- `DatesCopy` - Centralized UI strings
+
+### Screens Implemented ✅
+
+**UI-0 through UI-4 Complete:**
+- ✅ Discovery & documentation (README.md)
+- ✅ Shared widgets (9 widgets created)
+- ✅ Empty state (DatesEmptyState)
+- ✅ Active dates list & history (DatesScreen, DateHistoryScreen)
+- ✅ Date detail screen (DateDetailScreen)
+
+**Pending (UI-5 through UI-12):**
+- ❌ Availability picker (UI-5)
+- ❌ Deposit sheet (UI-6)
+- ❌ Venue ranking (UI-7)
+- ❌ Booking card and presence confirmation (UI-8)
+- ❌ Cancel flow (UI-9)
+- ❌ Terminal panels (UI-10)
+- ❌ Match to date handoff (UI-11)
+- ❌ Polish pass (UI-12)
 
 ## 6. Wallet
 
