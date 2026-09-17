@@ -50,7 +50,7 @@ class DatesScreen extends ConsumerWidget {
           onRefresh: () async {
             await ref.read(activeDatesProvider.notifier).refresh();
           },
-          child: _buildBody(context, activeDatesState, authService),
+          child: _buildBody(context, activeDatesState, authService, ref),
         ),
       ),
     );
@@ -60,51 +60,55 @@ class DatesScreen extends ConsumerWidget {
     BuildContext context,
     DatesListState state,
     AuthService authService,
+    WidgetRef ref,
   ) {
     // Loading state
     if (state.isLoading && state.dates.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(),
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          SizedBox(height: 200),
+          Center(child: CircularProgressIndicator()),
+        ],
       );
     }
 
     // Error state
     if (state.hasError && state.dates.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: AppColors.error,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Failed to load dates',
-                style: Theme.of(context).textTheme.headlineSmall,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                state.errorMessage ?? 'Unknown error',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  // Retry fetch via provider
-                },
-                child: const Text('Retry'),
-              ),
-            ],
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24.0),
+        children: [
+          const SizedBox(height: 100),
+          const Icon(
+            Icons.error_outline,
+            size: 64,
+            color: AppColors.error,
           ),
-        ),
+          const SizedBox(height: 16),
+          Text(
+            'Failed to load dates',
+            style: Theme.of(context).textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            state.errorMessage ?? 'Unknown error',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          Center(
+            child: ElevatedButton(
+              onPressed: () {
+                ref.read(activeDatesProvider.notifier).refresh();
+              },
+              child: const Text('Retry'),
+            ),
+          ),
+        ],
       );
     }
 

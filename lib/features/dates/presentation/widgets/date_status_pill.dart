@@ -44,12 +44,20 @@ class DateStatusPill extends StatelessWidget {
             ),
           ),
           if (explanationText != null || onInfoTap != null)
-            GestureDetector(
-              onTap: onInfoTap ?? () => _showExplanation(context),
-              child: Icon(
-                Icons.info_outline,
-                size: 20,
-                color: colors.iconColor,
+            Semantics(
+              label: 'More information',
+              button: true,
+              child: InkWell(
+                onTap: onInfoTap ?? () => _showExplanation(context),
+                borderRadius: BorderRadius.circular(22),
+                child: Container(
+                  padding: const EdgeInsets.all(12), // 44x44 touch target
+                  child: Icon(
+                    Icons.info_outline,
+                    size: 20,
+                    color: colors.iconColor,
+                  ),
+                ),
               ),
             ),
         ],
@@ -124,7 +132,7 @@ class DateStatusPill extends StatelessWidget {
     switch (tone) {
       case 'action':
         return _PillColors(
-          backgroundColor: AppColors.primary.withOpacity(0.1),
+          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
           borderColor: AppColors.primary,
           textColor: AppColors.primary,
           iconColor: AppColors.primary,
@@ -132,7 +140,7 @@ class DateStatusPill extends StatelessWidget {
 
       case 'waiting':
         return _PillColors(
-          backgroundColor: AppColors.textTertiary.withOpacity(0.1),
+          backgroundColor: AppColors.textTertiary.withValues(alpha: 0.1),
           borderColor: AppColors.textSecondary,
           textColor: AppColors.textSecondary,
           iconColor: AppColors.textSecondary,
@@ -140,7 +148,7 @@ class DateStatusPill extends StatelessWidget {
 
       case 'success':
         return _PillColors(
-          backgroundColor: AppColors.success.withOpacity(0.1),
+          backgroundColor: AppColors.success.withValues(alpha: 0.1),
           borderColor: AppColors.success,
           textColor: AppColors.success,
           iconColor: AppColors.success,

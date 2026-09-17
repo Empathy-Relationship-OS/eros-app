@@ -117,7 +117,9 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: DateFacts(
                   startTime: dateDetail.scheduledStart,
+                  endTime: dateDetail.scheduledEnd,
                   venueName: dateDetail.venueName,
+                  venueAddress: dateDetail.venueAddress,
                   activityName: dateDetail.activityName,
                 ),
               ),
@@ -238,7 +240,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
         color: AppColors.white,
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadow.withOpacity(0.1),
+            color: AppColors.shadow.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -567,12 +569,18 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
   }
 
   bool _shouldShowOverflowMenu(DateDetail dateDetail) {
-    // Show overflow menu if date is cancellable and not past scheduled end
+    // Don't show if not cancellable
+    if (!dateDetail.cancellable) {
+      return false;
+    }
+
+    // Don't show if past scheduled end
     if (dateDetail.scheduledEnd != null &&
         dateDetail.scheduledEnd!.isBefore(DateTime.now())) {
       return false;
     }
 
+    // Don't show for terminal states
     return !dateDetail.state.isTerminal;
   }
 
@@ -589,12 +597,15 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
     final participants = dateDetail.participants;
     if (participants.isEmpty) return false;
 
-    final userParticipant = participants.firstWhere(
-      (p) => p.userId == currentUid,
-      orElse: () => participants.first,
-    );
-
-    return userParticipant.depositStatus == ParticipantDepositStatus.paid;
+    try {
+      final userParticipant = participants.firstWhere(
+        (p) => p.userId == currentUid,
+      );
+      return userParticipant.depositStatus == ParticipantDepositStatus.paid;
+    } catch (e) {
+      // User not found in participants list
+      return false;
+    }
   }
 
   bool _hasUserConfirmed(DateDetail dateDetail, String currentUid) {

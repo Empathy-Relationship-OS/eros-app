@@ -45,7 +45,7 @@ class _DateHistoryScreenState extends ConsumerState<DateHistoryScreen>
           controller: _tabController,
           indicatorColor: AppColors.white,
           labelColor: AppColors.white,
-          unselectedLabelColor: AppColors.white.withOpacity(0.7),
+          unselectedLabelColor: AppColors.white.withValues(alpha: 0.7),
           tabs: const [
             Tab(text: DatesCopy.historyTabPast),
             Tab(text: DatesCopy.historyTabCancelled),
@@ -96,85 +96,86 @@ class _DateHistoryScreenState extends ConsumerState<DateHistoryScreen>
   }) {
     // Loading state
     if (state.isLoading && state.dates.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(),
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          SizedBox(height: 200),
+          Center(child: CircularProgressIndicator()),
+        ],
       );
     }
 
     // Error state
     if (state.hasError && state.dates.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: AppColors.error,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Failed to load dates',
-                style: Theme.of(context).textTheme.headlineSmall,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                state.errorMessage ?? 'Unknown error',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  // Retry based on which tab we're on
-                  if (_tabController.index == 0) {
-                    ref.read(pastDatesProvider.notifier).refresh();
-                  } else {
-                    ref.read(cancelledDatesProvider.notifier).refresh();
-                  }
-                },
-                child: const Text('Retry'),
-              ),
-            ],
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24.0),
+        children: [
+          const SizedBox(height: 100),
+          const Icon(
+            Icons.error_outline,
+            size: 64,
+            color: AppColors.error,
           ),
-        ),
+          const SizedBox(height: 16),
+          Text(
+            'Failed to load dates',
+            style: Theme.of(context).textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            state.errorMessage ?? 'Unknown error',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          Center(
+            child: ElevatedButton(
+              onPressed: () {
+                // Retry based on which tab we're on
+                if (_tabController.index == 0) {
+                  ref.read(pastDatesProvider.notifier).refresh();
+                } else {
+                  ref.read(cancelledDatesProvider.notifier).refresh();
+                }
+              },
+              child: const Text('Retry'),
+            ),
+          ),
+        ],
       );
     }
 
     // Empty state
     if (state.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.history,
-                size: 64,
-                color: AppColors.textTertiary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                emptyMessage,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24.0),
+        children: [
+          const SizedBox(height: 100),
+          Icon(
+            Icons.history,
+            size: 64,
+            color: AppColors.textTertiary,
           ),
-        ),
+          const SizedBox(height: 16),
+          Text(
+            emptyMessage,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       );
     }
 
     // List of dates (compact rows)
     return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: state.dates.length,
       itemBuilder: (context, index) {
@@ -271,7 +272,7 @@ class _HistoryDateRow extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: _getToneColor(tone), width: 1),
-        color: _getToneColor(tone).withOpacity(0.1),
+        color: _getToneColor(tone).withValues(alpha: 0.1),
       ),
       child: Text(
         pillText,

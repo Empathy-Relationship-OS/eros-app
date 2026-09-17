@@ -53,7 +53,7 @@ class DateStepper extends StatelessWidget {
             Container(
               width: 16,
               height: 1,
-              color: _getStepColor(timeline[i].status).withOpacity(0.3),
+              color: _getStepColor(timeline[i].status).withValues(alpha: 0.3),
             ),
         ],
       ],
@@ -77,7 +77,7 @@ class DateStepper extends StatelessWidget {
                 Expanded(
                   child: Container(
                     width: 2,
-                    color: color.withOpacity(0.3),
+                    color: color.withValues(alpha: 0.3),
                     margin: const EdgeInsets.symmetric(vertical: 4),
                   ),
                 ),
