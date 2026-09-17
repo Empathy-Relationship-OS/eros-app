@@ -28,15 +28,16 @@ class VenueRankingNotifier {
 
   /// Submit venue rankings
   ///
-  /// Returns [SubmitRankingsResponse] with:
+  /// Returns [RankingSubmissionResponse] with:
+  /// - bothSubmitted: true if both participants have ranked
   /// - venueAssigned: true if a venue was assigned
-  /// - assignedVenueName: name of assigned venue (null if not assigned)
+  /// - assignedVenueId: ID of assigned venue (null if not assigned)
   ///
   /// Throws:
   /// - [ValidationException] if rankings invalid (400)
   /// - [ConflictException] if wrong state or already ranked (409)
   /// - Other [ApiException] subclasses for other errors
-  Future<SubmitRankingsResponse> submitRankings(
+  Future<RankingSubmissionResponse> submitRankings(
       SubmitRankingsRequest request) async {
     return _repository.submitRankings(_dateId, request);
   }

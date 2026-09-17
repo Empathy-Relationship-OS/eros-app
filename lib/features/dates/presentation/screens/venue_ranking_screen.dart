@@ -399,9 +399,14 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
 
       if (!mounted) return;
 
-      if (response.venueAssigned) {
+      if (response.venueAssigned && response.assignedVenueId != null) {
         // Venue assigned! Show result screen
-        _showVenueAssignedScreen(response.assignedVenueName!);
+        // Note: We need to find the venue name from our local list
+        final assignedVenue = _orderedVenues.firstWhere(
+          (v) => v.venueId == response.assignedVenueId,
+          orElse: () => _orderedVenues.first,
+        );
+        _showVenueAssignedScreen(assignedVenue.name);
       } else {
         // Ranking sent, waiting for partner
         Navigator.of(context).pop();
