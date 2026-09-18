@@ -108,10 +108,17 @@ class _PublicProfileViewScreenState
       barrierDismissible: false,
       builder: (context) => _MutualMatchDialog(
         partnerName: profile.name,
+        dateId: mutualMatch.dateId,
         onContinue: () {
           Navigator.of(context).pop(); // Close dialog
           Navigator.of(context).pop(); // Go back to matches
-          // TODO: Navigate to dates/chat when implemented
+          // UI-11: Navigate to date detail if dateId present
+          if (mutualMatch.dateId != null) {
+            Navigator.of(context).pushNamed(
+              '/dates/detail',
+              arguments: mutualMatch.dateId.toString(),
+            );
+          }
         },
       ),
     );
@@ -350,10 +357,12 @@ class _ProfileContent extends StatelessWidget {
 /// Mutual match dialog
 class _MutualMatchDialog extends StatelessWidget {
   final String partnerName;
+  final int? dateId;
   final VoidCallback onContinue;
 
   const _MutualMatchDialog({
     required this.partnerName,
+    this.dateId,
     required this.onContinue,
   });
 
@@ -406,6 +415,18 @@ class _MutualMatchDialog extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
+            // Date planning message (UI-11)
+            if (dateId != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Your date with $partnerName is ready to plan',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
             const SizedBox(height: 32),
 
             // Continue button
@@ -420,9 +441,9 @@ class _MutualMatchDialog extends StatelessWidget {
                     borderRadius: BorderRadius.circular(28),
                   ),
                 ),
-                child: const Text(
-                  'Continue',
-                  style: TextStyle(
+                child: Text(
+                  dateId != null ? 'Plan the date' : 'Continue',
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,

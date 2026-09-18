@@ -177,17 +177,20 @@ class MatchActionRequest {
 /// DTO returned when both users have liked each other, creating a mutual match.
 ///
 /// This triggers the "It's a Match!" scenario and enables the dating module.
+/// Per dates-frontend-integration.md §3, includes dateId for immediate navigation.
 class MutualMatchInfo {
   final int matchId;
   final String user1Id;
   final String user2Id;
   final DateTime matchedAt;
+  final int? dateId; // Created automatically on mutual match
 
   MutualMatchInfo({
     required this.matchId,
     required this.user1Id,
     required this.user2Id,
     required this.matchedAt,
+    this.dateId,
   });
 
   factory MutualMatchInfo.fromJson(Map<String, dynamic> json) {
@@ -196,6 +199,7 @@ class MutualMatchInfo {
       user1Id: json['user1Id'] as String,
       user2Id: json['user2Id'] as String,
       matchedAt: DateTime.parse(json['matchedAt'] as String),
+      dateId: json['dateId'] as int?,
     );
   }
 
@@ -205,6 +209,7 @@ class MutualMatchInfo {
       'user1Id': user1Id,
       'user2Id': user2Id,
       'matchedAt': matchedAt.toIso8601String(),
+      if (dateId != null) 'dateId': dateId,
     };
   }
 }
