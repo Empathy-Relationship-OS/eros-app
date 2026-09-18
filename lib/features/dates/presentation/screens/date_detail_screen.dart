@@ -259,7 +259,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
         return _buildDepositCTA(context, dateDetail, currentUid);
 
       case DateState.awaitingVenueRanking:
-        return _buildVenueRankingCTA(context, dateDetail);
+        return _buildVenueRankingCTA(context, dateDetail, currentUid);
 
       case DateState.venueAssigned:
       case DateState.venueConfirmationPending:
@@ -331,7 +331,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
             ),
           const SizedBox(height: 12),
           Text(
-            'You\'ve committed. Waiting for ${dateDetail.partnerName}.',
+            'You\'ve committed. Waiting for ${dateDetail.partnerName(currentUid)}.',
             style: const TextStyle(
               fontSize: 15,
               color: AppColors.textSecondary,
@@ -372,7 +372,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
     );
   }
 
-  Widget _buildVenueRankingCTA(BuildContext context, DateDetail dateDetail) {
+  Widget _buildVenueRankingCTA(BuildContext context, DateDetail dateDetail, String currentUid) {
     final hasRanked = dateDetail.myRankings.isNotEmpty;
 
     return Column(
@@ -390,7 +390,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
         ],
         if (hasRanked) ...[
           Text(
-            'Waiting for ${dateDetail.partnerName}\'s picks',
+            'Waiting for ${dateDetail.partnerName(currentUid)}\'s picks',
             style: const TextStyle(
               fontSize: 15,
               color: AppColors.textSecondary,
@@ -420,7 +420,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
 
     if (youConfirmed) {
       return Text(
-        'Waiting for ${dateDetail.partnerName} to confirm',
+        'Waiting for ${dateDetail.partnerName(currentUid)} to confirm',
         style: const TextStyle(
           fontSize: 15,
           color: AppColors.textSecondary,

@@ -46,63 +46,90 @@ class SignOutService {
   /// Perform complete sign-out and cleanup
   ///
   /// This method:
-  /// 1. Clears all user-specific SharedPreferences data
-  /// 2. Signs out from Firebase Authentication
+  /// 1. Attempts to clear all user-specific SharedPreferences data (best-effort)
+  /// 2. Always signs out from Firebase Authentication
   /// 3. Logs the cleanup process for debugging
+  ///
+  /// Local cleanup failures are logged but do not prevent Firebase sign-out.
+  /// Only Firebase sign-out failures will throw exceptions.
   ///
   /// Note: Riverpod providers will automatically reset when Firebase auth state changes
   Future<void> signOut() async {
+    _logger.i('🚪 Starting complete sign-out process...');
+
+    // Step 1: Best-effort clear user-specific SharedPreferences data
+    // Failures are logged but don't prevent Firebase sign-out
+    final cleanupResult = await _clearUserData();
+
+    if (cleanupResult.hasFailures) {
+      _logger.w('⚠️  Local cleanup incomplete: ${cleanupResult.failedKeys.length} keys failed to clear');
+      for (final key in cleanupResult.failedKeys) {
+        _logger.w('  - Failed to clear: $key');
+      }
+    }
+
+    // Step 2: Sign out from Firebase (always attempted, failure throws)
     try {
-      _logger.i('🚪 Starting complete sign-out process...');
-
-      // Step 1: Clear user-specific SharedPreferences data
-      await _clearUserData();
-
-      // Step 2: Sign out from Firebase
       await _firebaseAuth.signOut();
       _logger.i('✅ Firebase sign-out successful');
 
-      _logger.i('🎉 Complete sign-out successful');
-    } catch (e, stackTrace) {
-      _logger.e('❌ Error during sign-out', error: e, stackTrace: stackTrace);
-      // Still attempt Firebase sign-out even if clearing data fails
-      try {
-        await _firebaseAuth.signOut();
-      } catch (authError) {
-        _logger.e('❌ Firebase sign-out also failed', error: authError);
+      if (cleanupResult.hasFailures) {
+        _logger.w('⚠️  Sign-out complete but local cleanup was incomplete');
+      } else {
+        _logger.i('🎉 Complete sign-out successful');
       }
+    } catch (e, stackTrace) {
+      _logger.e('❌ Firebase sign-out failed', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
 
   /// Clear all user-specific data from SharedPreferences
-  Future<void> _clearUserData() async {
-    try {
-      _logger.d('🗑️  Clearing user-specific SharedPreferences data...');
+  ///
+  /// Returns a [_CleanupResult] indicating success/failure for each key.
+  /// Continues processing all keys even if some fail.
+  Future<_CleanupResult> _clearUserData() async {
+    _logger.d('🗑️  Clearing user-specific SharedPreferences data...');
 
-      // Get all keys
-      final allKeys = _sharedPrefs.getKeys();
-      int clearedCount = 0;
-      int preservedCount = 0;
+    final allKeys = _sharedPrefs.getKeys();
+    int clearedCount = 0;
+    int preservedCount = 0;
+    final List<String> failedKeys = [];
 
-      // Clear all keys except preserved ones
-      for (final key in allKeys) {
-        if (_shouldPreserveKey(key)) {
-          _logger.d('📌 Preserving key: $key');
-          preservedCount++;
-          continue;
-        }
-
-        await _sharedPrefs.remove(key);
-        _logger.d('🗑️  Cleared key: $key');
-        clearedCount++;
+    // Clear all keys except preserved ones, continue even if some fail
+    for (final key in allKeys) {
+      if (_shouldPreserveKey(key)) {
+        _logger.d('📌 Preserving key: $key');
+        preservedCount++;
+        continue;
       }
 
-      _logger.i('✅ Cleared $clearedCount keys, preserved $preservedCount keys');
-    } catch (e) {
-      _logger.e('❌ Error clearing SharedPreferences', error: e);
-      rethrow;
+      try {
+        final removed = await _sharedPrefs.remove(key);
+        if (!removed) {
+          _logger.w('⚠️  Failed to remove preference: $key');
+          failedKeys.add(key);
+        } else {
+          _logger.d('🗑️  Cleared key: $key');
+          clearedCount++;
+        }
+      } catch (e) {
+        _logger.w('⚠️  Exception removing preference: $key', error: e);
+        failedKeys.add(key);
+      }
     }
+
+    if (failedKeys.isEmpty) {
+      _logger.i('✅ Cleared $clearedCount keys, preserved $preservedCount keys');
+    } else {
+      _logger.w('⚠️  Cleared $clearedCount keys, preserved $preservedCount keys, failed ${failedKeys.length} keys');
+    }
+
+    return _CleanupResult(
+      clearedCount: clearedCount,
+      preservedCount: preservedCount,
+      failedKeys: failedKeys,
+    );
   }
 
   /// Check if a key should be preserved during sign-out
@@ -115,7 +142,10 @@ class SignOutService {
   Future<void> clearAllData() async {
     try {
       _logger.w('⚠️  Clearing ALL SharedPreferences data (including app settings)...');
-      await _sharedPrefs.clear();
+      final cleared = await _sharedPrefs.clear();
+      if (!cleared) {
+        throw SignOutException('Failed to clear SharedPreferences');
+      }
       await _firebaseAuth.signOut();
       _logger.i('✅ All data cleared');
     } catch (e, stackTrace) {
@@ -134,4 +164,19 @@ class SignOutException implements Exception {
 
   @override
   String toString() => 'SignOutException: $message';
+}
+
+/// Result of SharedPreferences cleanup operation
+class _CleanupResult {
+  final int clearedCount;
+  final int preservedCount;
+  final List<String> failedKeys;
+
+  _CleanupResult({
+    required this.clearedCount,
+    required this.preservedCount,
+    required this.failedKeys,
+  });
+
+  bool get hasFailures => failedKeys.isNotEmpty;
 }

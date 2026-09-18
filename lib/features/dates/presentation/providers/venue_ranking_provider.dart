@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/data/repositories/dates_repository.dart';
-import 'package:eros_app/core/network/api_client_provider.dart';
+import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
 
 /// Provider for venue options (UI-7)
 ///
@@ -42,9 +42,3 @@ class VenueRankingNotifier {
     return _repository.submitVenueRankings(_dateId, request);
   }
 }
-
-/// Repository provider (reuse from existing dates module)
-final datesRepositoryProvider = Provider<DatesRepository>((ref) {
-  final apiClient = ref.watch(apiClientProvider);
-  return DatesRepository(apiClient);
-});
