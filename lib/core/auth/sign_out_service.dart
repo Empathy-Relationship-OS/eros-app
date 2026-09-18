@@ -93,7 +93,10 @@ class SignOutService {
           continue;
         }
 
-        await _sharedPrefs.remove(key);
+        final removed = await _sharedPrefs.remove(key);
+        if (!removed) {
+          throw SignOutException('Failed to remove preference: $key');
+        }
         _logger.d('🗑️  Cleared key: $key');
         clearedCount++;
       }
@@ -115,7 +118,10 @@ class SignOutService {
   Future<void> clearAllData() async {
     try {
       _logger.w('⚠️  Clearing ALL SharedPreferences data (including app settings)...');
-      await _sharedPrefs.clear();
+      final cleared = await _sharedPrefs.clear();
+      if (!cleared) {
+        throw SignOutException('Failed to clear SharedPreferences');
+      }
       await _firebaseAuth.signOut();
       _logger.i('✅ All data cleared');
     } catch (e, stackTrace) {

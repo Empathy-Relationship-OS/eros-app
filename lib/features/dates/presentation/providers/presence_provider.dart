@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/data/repositories/dates_repository.dart';
-import 'package:eros_app/core/network/api_client_provider.dart';
+import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
+import 'package:eros_app/core/network/exceptions/api_exception.dart';
 
 /// Provider for presence confirmation (UI-8)
 ///
@@ -12,10 +13,14 @@ final presenceProvider = FutureProvider.autoDispose
   final repository = ref.watch(datesRepositoryProvider);
   try {
     return await repository.getPresenceStatus(dateId);
-  } catch (e) {
-    // Return null if not available yet
+  } on ConflictException {
+    // Date is not in AWAITING_PRESENCE_CONFIRMATION yet
+    return null;
+  } on NotFoundException {
+    // Presence status not found
     return null;
   }
+  // Let other exceptions (UnauthorizedException, network errors, etc.) propagate
 });
 
 /// Notifier for presence confirmation mutations
@@ -44,9 +49,3 @@ class PresenceNotifier {
     return _repository.confirmPresence(_dateId);
   }
 }
-
-/// Repository provider (reuse from existing dates module)
-final datesRepositoryProvider = Provider<DatesRepository>((ref) {
-  final apiClient = ref.watch(apiClientProvider);
-  return DatesRepository(apiClient);
-});

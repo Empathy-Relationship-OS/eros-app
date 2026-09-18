@@ -2,18 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
-import 'package:eros_app/features/dates/data/repositories/dates_repository.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_formats.dart';
 import 'package:eros_app/features/dates/presentation/providers/presence_provider.dart';
-import 'package:eros_app/core/network/api_client_provider.dart';
+import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:add_2_calendar/add_2_calendar.dart' as calendar;
-
-final datesRepositoryProvider = Provider<DatesRepository>((ref) {
-  final apiClient = ref.watch(apiClientProvider);
-  return DatesRepository(apiClient);
-});
 
 /// UI-8: Booking card and presence confirmation widget
 ///
