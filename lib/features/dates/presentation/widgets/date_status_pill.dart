@@ -23,7 +23,10 @@ class DateStatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = _getToneColors(tone);
 
-    return Container(
+    // UI-12: Accessibility - announce status to screen readers
+    return Semantics(
+      label: 'Date status: $text',
+      child: Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -61,6 +64,7 @@ class DateStatusPill extends StatelessWidget {
               ),
             ),
         ],
+      ),
       ),
     );
   }

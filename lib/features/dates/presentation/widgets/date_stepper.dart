@@ -65,8 +65,14 @@ class DateStepper extends StatelessWidget {
     final color = _getStepColor(step.status);
     final isStrikethrough = step.status == StepStatus.skipped;
 
-    return IntrinsicHeight(
-      child: Row(
+    // UI-12: Accessibility - semantic label for screen readers
+    final stepIndex = timeline.indexOf(step) + 1;
+    final semanticLabel = 'step $stepIndex of ${timeline.length}, ${step.label}, ${_statusToSemanticString(step.status)}';
+
+    return Semantics(
+      label: semanticLabel,
+      child: IntrinsicHeight(
+        child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Left rail: icon + connector
@@ -119,6 +125,7 @@ class DateStepper extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -199,6 +206,20 @@ class DateStepper extends StatelessWidget {
         return AppColors.textTertiary;
       case StepStatus.skipped:
         return AppColors.textTertiary;
+    }
+  }
+
+  /// UI-12: Convert status to screen reader-friendly string
+  String _statusToSemanticString(StepStatus status) {
+    switch (status) {
+      case StepStatus.complete:
+        return 'complete';
+      case StepStatus.current:
+        return 'current';
+      case StepStatus.pending:
+        return 'pending';
+      case StepStatus.skipped:
+        return 'skipped';
     }
   }
 
