@@ -11,6 +11,7 @@ import 'package:eros_app/features/dates/presentation/widgets/date_stepper.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/deadline_countdown.dart';
 import 'package:eros_app/features/dates/presentation/widgets/token_amount.dart';
+import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
 
 /// Date detail screen showing full date info, stepper, and CTA panel
 ///
@@ -559,11 +560,13 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
   }
 
   void _showCancelDialog(BuildContext context, DateDetail dateDetail, String currentUid) {
-    // TODO: Implement cancel flow (UI-9)
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Cancel flow coming soon'),
-        behavior: SnackBarBehavior.floating,
+    showDialog(
+      context: context,
+      builder: (context) => CancelDateDialog(
+        dateId: widget.dateId,
+        dateDetail: dateDetail,
+        partnerName: dateDetail.partnerName(currentUid),
+        currentUid: currentUid,
       ),
     );
   }

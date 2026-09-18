@@ -6,6 +6,9 @@ import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/venue_ranking_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/deadline_countdown.dart';
+import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
+import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
+import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// UI-7: Venue ranking screen
@@ -196,6 +199,25 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
                     ),
                   ),
                 ),
+                // Cancel button (only show if not read-only)
+                if (!isReadOnly)
+                  Container(
+                    padding: const EdgeInsets.only(top: 8, bottom: 16),
+                    child: Center(
+                      child: TextButton(
+                        onPressed: _isSubmitting ? null : () => _showCancelDialog(context),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.textSecondary,
+                        ),
+                        child: const Text(
+                          'Cancel this date',
+                          style: TextStyle(
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
             ],
           );
         },
@@ -376,6 +398,24 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
       final item = _orderedVenues.removeAt(oldIndex);
       _orderedVenues.insert(newIndex, item);
     });
+  }
+
+  void _showCancelDialog(BuildContext context) async {
+    // Get date detail for cancel dialog
+    final dateDetail = await ref.read(datesRepositoryProvider).getDateDetail(widget.dateId);
+    if (dateDetail == null || !mounted) return;
+
+    final currentUid = ref.read(authServiceProvider).currentUser?.uid ?? '';
+
+    showDialog(
+      context: context,
+      builder: (context) => CancelDateDialog(
+        dateId: widget.dateId,
+        dateDetail: dateDetail,
+        partnerName: dateDetail.partnerName(currentUid),
+        currentUid: currentUid,
+      ),
+    );
   }
 
   Future<void> _handleSubmit() async {

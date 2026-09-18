@@ -5,6 +5,9 @@ import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/availability_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
+import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
+import 'package:eros_app/features/dates/presentation/providers/date_detail_provider.dart';
+import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:intl/intl.dart';
 
 /// UI-5: Availability picker screen
@@ -456,8 +459,42 @@ class _AvailabilityPickerScreenState
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+            // Cancel button
+            Center(
+              child: TextButton(
+                onPressed: () => _showCancelDialog(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                ),
+                child: const Text(
+                  'Cancel this date',
+                  style: TextStyle(
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showCancelDialog(BuildContext context) async {
+    // Get date detail for cancel dialog
+    final dateDetail = await ref.read(datesRepositoryProvider).getDateDetail(widget.dateId);
+    if (dateDetail == null || !mounted) return;
+
+    final currentUid = ref.read(authServiceProvider).currentUser?.uid ?? '';
+
+    showDialog(
+      context: context,
+      builder: (context) => CancelDateDialog(
+        dateId: widget.dateId,
+        dateDetail: dateDetail,
+        partnerName: dateDetail.partnerName(currentUid),
+        currentUid: currentUid,
       ),
     );
   }
