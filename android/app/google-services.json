@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "785930119954",
+    "project_id": "eros-81081",
+    "storage_bucket": "eros-81081.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:785930119954:android:a2232ab50adbb7c3c3e1cb",
+        "android_client_info": {
+          "package_name": "com.eros.eros_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "785930119954-4bngqiu2rav7uc4fijh5cogpmprlr53l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDHcAZOqTp9eBPjB2vGBAz27XU9Mno6CWg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "785930119954-4bngqiu2rav7uc4fijh5cogpmprlr53l.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

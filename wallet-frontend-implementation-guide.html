@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet Module - Frontend Implementation Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-left: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        h3 {
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            color: #666;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .endpoint {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+
+        .endpoint-header {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .method {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 0.85em;
+            margin-right: 10px;
+        }
+
+        .method.post {
+            background: #27ae60;
+            color: white;
+        }
+
+        .method.get {
+            background: #3498db;
+            color: white;
+        }
+
+        code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #e74c3c;
+        }
+
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        pre code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        .info-box {
+            background: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #34495e;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        .flutter-example {
+            background: #f0f7ff;
+            border-left: 4px solid #0175c2;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .flutter-example h4 {
+            color: #0175c2;
+            margin-top: 0;
+        }
+
+        .toc {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 30px 0;
+        }
+
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .toc li {
+            margin: 8px 0;
+        }
+
+        .toc a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🪙 Wallet Module - Frontend Implementation Guide</h1>
+
+        <div class="info-box">
+            <strong>Overview:</strong> This document outlines the frontend implementation requirements for integrating with the Eros Backend Wallet module. The wallet handles internal token management and external Stripe payments for token purchases.
+        </div>
+
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#authentication">Authentication Requirements</a></li>
+                <li><a href="#packages">Token Packages</a></li>
+                <li><a href="#purchase">1. Token Purchase Flow</a></li>
+                <li><a href="#balance">2. Balance Display</a></li>
+                <li><a href="#history">3. Transaction History</a></li>
+                <li><a href="#spend">4. Token Spending</a></li>
+                <li><a href="#refund">5. Refunds</a></li>
+                <li><a href="#considerations">Key Considerations</a></li>
+                <li><a href="#flutter">Flutter Implementation Examples</a></li>
+            </ul>
+        </div>
+
+        <h2 id="authentication">🔐 Authentication Requirements</h2>
+        <div class="warning-box">
+            <strong>All endpoints require Firebase authentication:</strong><br>
+            Include Firebase ID token in the <code>Authorization</code> header: <code>Bearer &lt;firebase-id-token&gt;</code>
+        </div>
+
+        <h2 id="packages">💎 Token Packages</h2>
+        <p>The following token packages are available for purchase (prices in GBP):</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Package</th>
+                    <th>Tokens</th>
+                    <th>Price (GBP)</th>
+                    <th>Price Per Token</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>STARTER</strong></td>
+                    <td>1 token</td>
+                    <td>£7.00</td>
+                    <td>£7.00</td>
+                </tr>
+                <tr>
+                    <td><strong>POPULAR</strong></td>
+                    <td>3 tokens</td>
+                    <td>£20.00</td>
+                    <td>£6.67</td>
+                </tr>
+                <tr>
+                    <td><strong>PREMIUM</strong></td>
+                    <td>5 tokens</td>
+                    <td>£32.50</td>
+                    <td>£6.50</td>
+                </tr>
+                <tr>
+                    <td><strong>MEGA</strong></td>
+                    <td>10 tokens</td>
+                    <td>£45.00</td>
+                    <td>£4.50</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <strong>Note:</strong> Prices are stored in pence (smallest currency unit). All amounts in API responses are in pence.
+        </div>
+
+        <!-- TOKEN PURCHASE FLOW -->
+        <h2 id="purchase">1. Token Purchase Flow</h2>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method post">POST</span>
+                <code>/wallet/purchase</code>
+            </div>
+            <p>Purchase a token package using Stripe payment</p>
+        </div>
+
+        <h3>Request Payload</h3>
+        <pre><code>{
+  "packageType": "STARTER" | "POPULAR" | "PREMIUM" | "MEGA",
+  "paymentMethodId": "pm_xxxxxxxxxxxxx",  // From Stripe Elements
+  "idempotencyKey": "uuid-v4-string",     // Client-generated
+  "acceptedTerms": true                    // Must be true
+}</code></pre>
+
+        <h3>Response</h3>
+        <pre><code>{
+  "clientSecret": "pi_xxx_secret_xxx",     // Use with Stripe to confirm
+  "paymentIntentId": "pi_xxxxxxxxxxxxx",   // Stripe payment intent ID
+  "amount": 700,                           // Amount in pence
+  "currency": "gbp",
+  "tokenAmount": 1.0,                      // Tokens being purchased
+  "status": "PENDING",                     // PENDING | COMPLETED | FAILED
+  "newBalance": 6.0,                       // Optional: if completed
+  "transactionId": 123,                    // Optional: if completed
+  "acceptedTerms": true
+}</code></pre>
+
+        <h3>Implementation Steps</h3>
+        <ol>
+            <li><strong>Setup Stripe SDK</strong> - Initialize with your publishable key</li>
+            <li><strong>Display Token Packages</strong> - Show available packages with pricing</li>
+            <li><strong>Terms Acceptance</strong> - Require user to accept terms and conditions</li>
+            <li><strong>Payment Method Collection</strong> - Use Stripe Elements for card input</li>
+            <li><strong>Generate Idempotency Key</strong> - Create UUID v4 client-side</li>
+            <li><strong>Call Backend</strong> - POST to <code>/wallet/purchase</code></li>
+            <li><strong>Confirm Payment</strong> - Use <code>clientSecret</code> with Stripe SDK</li>
+            <li><strong>Handle Result</strong> - Update UI based on payment status</li>
+        </ol>
+
+        <div class="flutter-example">
+            <h4>🎯 Flutter Implementation Example</h4>
+            <p><strong>1. Setup Dependencies</strong></p>
+            <pre><code>dependencies:
+  flutter_stripe: ^10.0.0
+  http: ^1.1.0
+  uuid: ^4.0.0</code></pre>
+
+            <p><strong>2. Initialize Stripe</strong></p>
+            <pre><code>import 'package:flutter_stripe/flutter_stripe.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Stripe with your publishable key
+  Stripe.publishableKey = 'pk_test_xxxxxxxxxxxxx';
+
+  runApp(MyApp());
+}</code></pre>
+
+            <p><strong>3. Create Purchase Service</strong></p>
+            <pre><code>import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:uuid/uuid.dart';
+
+class WalletService {
+  final String baseUrl = 'https://api.eros.app';
+  final String firebaseToken;
+
+  WalletService(this.firebaseToken);
+
+  Future&lt;PurchaseResponse&gt; purchaseTokens({
+    required String packageType,
+    required String paymentMethodId,
+    required bool acceptedTerms,
+  }) async {
+    // Generate idempotency key
+    final idempotencyKey = Uuid().v4();
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/wallet/purchase'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $firebaseToken',
+      },
+      body: jsonEncode({
+        'packageType': packageType,
+        'paymentMethodId': paymentMethodId,
+        'idempotencyKey': idempotencyKey,
+        'acceptedTerms': acceptedTerms,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      return PurchaseResponse.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to purchase tokens: ${response.body}');
+    }
+  }
+}</code></pre>
+
+            <p><strong>4. Create Purchase UI Widget</strong></p>
+            <pre><code>class TokenPurchaseScreen extends StatefulWidget {
+  @override
+  _TokenPurchaseScreenState createState() => _TokenPurchaseScreenState();
+}
+
+class _TokenPurchaseScreenState extends State&lt;TokenPurchaseScreen&gt; {
+  String? selectedPackage;
+  bool acceptedTerms = false;
+  bool isProcessing = false;
+
+  final packages = [
+    {'type': 'STARTER', 'tokens': 1, 'price': 7.00},
+    {'type': 'POPULAR', 'tokens': 3, 'price': 20.00},
+    {'type': 'PREMIUM', 'tokens': 5, 'price': 32.50},
+    {'type': 'MEGA', 'tokens': 10, 'price': 45.00},
+  ];
+
+  Future&lt;void&gt; handlePurchase() async {
+    if (selectedPackage == null || !acceptedTerms) return;
+
+    setState(() =&gt; isProcessing = true);
+
+    try {
+      // 1. Create payment method
+      final paymentMethod = await Stripe.instance.createPaymentMethod(
+        params: PaymentMethodParams.card(
+          paymentMethodData: PaymentMethodData(),
+        ),
+      );
+
+      // 2. Call backend to create payment intent
+      final walletService = WalletService(firebaseToken);
+      final purchase = await walletService.purchaseTokens(
+        packageType: selectedPackage!,
+        paymentMethodId: paymentMethod.id,
+        acceptedTerms: acceptedTerms,
+      );
+
+      // 3. Confirm payment with Stripe
+      final paymentIntent = await Stripe.instance.confirmPayment(
+        paymentIntentClientSecret: purchase.clientSecret,
+      );
+
+      // 4. Handle success
+      if (paymentIntent.status == PaymentIntentsStatus.Succeeded) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('✅ Purchase successful!')),
+        );
+        // Navigate to wallet or refresh balance
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ Purchase failed: $e')),
+      );
+    } finally {
+      setState(() =&gt; isProcessing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Purchase Tokens')),
+      body: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Package selection
+            ...packages.map((pkg) =&gt; PackageCard(
+              type: pkg['type'] as String,
+              tokens: pkg['tokens'] as int,
+              price: pkg['price'] as double,
+              isSelected: selectedPackage == pkg['type'],
+              onTap: () =&gt; setState(() =&gt; selectedPackage = pkg['type'] as String),
+            )),
+
+            // Terms checkbox
+            CheckboxListTile(
+              title: Text('I accept the terms and conditions'),
+              value: acceptedTerms,
+              onChanged: (val) =&gt; setState(() =&gt; acceptedTerms = val ?? false),
+            ),
+
+            // Card input
+            CardField(
+              onCardChanged: (card) {},
+            ),
+
+            SizedBox(height: 20),
+
+            // Purchase button
+            ElevatedButton(
+              onPressed: (selectedPackage != null &amp;&amp; acceptedTerms &amp;&amp; !isProcessing)
+                  ? handlePurchase
+                  : null,
+              child: isProcessing
+                  ? CircularProgressIndicator()
+                  : Text('Purchase'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}</code></pre>
+        </div>
+
+        <div class="warning-box">
+            <strong>⚠️ Idempotency Key:</strong> Store the idempotency key during the payment flow. If the user retries the same purchase (e.g., network failure), reuse the same key. The backend will return the existing transaction instead of creating a duplicate charge.
+        </div>
+
+        <!-- BALANCE DISPLAY -->
+        <h2 id="balance">2. Balance Display</h2>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <code>/wallet/balance</code>
+            </div>
+            <p>Retrieve user's current wallet balance and statistics</p>
+        </div>
+
+        <h3>Response</h3>
+        <pre><code>{
+  "balance": 5.5,                   // Current token balance
+  "pendingBalance": 1.0,            // Tokens committed to pending dates
+  "lifetimeSpent": 10.5,            // Total tokens ever spent
+  "lifetimePurchased": 16.0,        // Total tokens ever purchased
+  "currency": "GBP"
+}</code></pre>
+
+        <h3>Implementation Notes</h3>
+        <ul>
+            <li><strong>Available Balance</strong> = <code>balance - pendingBalance</code></li>
+            <li>Fetch on wallet screen mount</li>
+            <li>Refresh after purchases, spends, or refunds</li>
+            <li>Display lifetime stats for user engagement tracking</li>
+        </ul>
+
+        <div class="flutter-example">
+            <h4>🎯 Flutter Implementation Example</h4>
+            <pre><code>class WalletBalanceWidget extends StatelessWidget {
+  final WalletBalance balance;
+
+  @override
+  Widget build(BuildContext context) {
+    final available = balance.balance - balance.pendingBalance;
+
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Available Balance',
+                style: TextStyle(fontSize: 14, color: Colors.grey)),
+            SizedBox(height: 8),
+            Text('${available.toStringAsFixed(1)} tokens',
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+            SizedBox(height: 16),
+            Divider(),
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Total Balance', style: TextStyle(fontSize: 12)),
+                    Text('${balance.balance} tokens',
+                        style: TextStyle(fontWeight: FontWeight.w500)),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Pending', style: TextStyle(fontSize: 12)),
+                    Text('${balance.pendingBalance} tokens',
+                        style: TextStyle(fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Text('Lifetime Stats',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Purchased: ${balance.lifetimePurchased} tokens'),
+                Text('Spent: ${balance.lifetimeSpent} tokens'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}</code></pre>
+        </div>
+
+        <!-- TRANSACTION HISTORY -->
+        <h2 id="history">3. Transaction History</h2>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <code>/wallet/transactions?limit=20&amp;offset=0&amp;type=PURCHASE</code>
+            </div>
+            <p>Retrieve paginated transaction history with optional filtering</p>
+        </div>
+
+        <h3>Query Parameters</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>limit</code></td>
+                    <td>Integer</td>
+                    <td>✅ Yes</td>
+                    <td>Number of transactions (1-100)</td>
+                </tr>
+                <tr>
+                    <td><code>offset</code></td>
+                    <td>Integer</td>
+                    <td>✅ Yes</td>
+                    <td>Pagination offset (≥ 0)</td>
+                </tr>
+                <tr>
+                    <td><code>type</code></td>
+                    <td>String</td>
+                    <td>❌ No</td>
+                    <td>Filter by: PURCHASE, SPEND, REFUND, ADJUSTMENT</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Response</h3>
+        <pre><code>{
+  "transactions": [
+    {
+      "transactionId": 123,
+      "type": "PURCHASE",
+      "amount": 3.0,                    // Positive for credit, negative for debit
+      "balanceAfter": 8.5,
+      "description": "Token purchase - POPULAR package",
+      "relatedDateId": null,            // Set if related to a date
+      "stripePaymentIntentId": "pi_xxx",
+      "amountPaid": 2000,               // Real money paid (in pence)
+      "paymentCurrency": "gbp",
+      "acceptedTerms": true,
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-01-15T10:30:05Z",
+      "status": "COMPLETED"
+    },
+    {
+      "transactionId": 124,
+      "type": "SPEND",
+      "amount": -1.0,                   // Negative = debit
+      "balanceAfter": 7.5,
+      "description": "Paid for DINNER date",
+      "relatedDateId": 456,
+      "stripePaymentIntentId": null,
+      "amountPaid": null,
+      "paymentCurrency": null,
+      "acceptedTerms": null,
+      "createdAt": "2024-01-16T14:20:00Z",
+      "updatedAt": "2024-01-16T14:20:00Z",
+      "status": "COMPLETED"
+    }
+  ],
+  "total": 45,              // Total transaction count
+  "hasMore": true           // More pages available
+}</code></pre>
+
+        <h3>Transaction Types</h3>
+        <ul>
+            <li><strong>PURCHASE</strong> - Token purchase via Stripe (amount is positive)</li>
+            <li><strong>SPEND</strong> - Date commitment (amount is negative)</li>
+            <li><strong>REFUND</strong> - Cancelled date refund (amount is positive)</li>
+            <li><strong>ADJUSTMENT</strong> - Manual admin adjustment</li>
+        </ul>
+
+        <h3>Transaction Statuses</h3>
+        <ul>
+            <li><strong>PENDING</strong> - Payment intent created, awaiting confirmation</li>
+            <li><strong>COMPLETED</strong> - Successfully processed</li>
+            <li><strong>FAILED</strong> - Payment/transaction failed</li>
+            <li><strong>CANCELLED</strong> - Payment cancelled</li>
+            <li><strong>REFUNDED</strong> - Payment refunded</li>
+            <li><strong>REFUND_FAILED</strong> - Refund attempt failed</li>
+        </ul>
+
+        <div class="flutter-example">
+            <h4>🎯 Flutter Implementation Example</h4>
+            <pre><code>class TransactionHistoryScreen extends StatefulWidget {
+  @override
+  _TransactionHistoryScreenState createState() =&gt; _TransactionHistoryScreenState();
+}
+
+class _TransactionHistoryScreenState extends State&lt;TransactionHistoryScreen&gt; {
+  List&lt;Transaction&gt; transactions = [];
+  bool isLoading = false;
+  bool hasMore = true;
+  int offset = 0;
+  final int limit = 20;
+  String? filterType;
+
+  ScrollController scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    loadTransactions();
+
+    // Infinite scroll
+    scrollController.addListener(() {
+      if (scrollController.position.pixels ==
+          scrollController.position.maxScrollExtent &amp;&amp;
+          hasMore &amp;&amp;
+          !isLoading) {
+        loadTransactions();
+      }
+    });
+  }
+
+  Future&lt;void&gt; loadTransactions() async {
+    if (isLoading) return;
+
+    setState(() =&gt; isLoading = true);
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/wallet/transactions')
+            .replace(queryParameters: {
+              'limit': limit.toString(),
+              'offset': offset.toString(),
+              if (filterType != null) 'type': filterType!,
+            }),
+        headers: {'Authorization': 'Bearer $firebaseToken'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = TransactionHistory.fromJson(jsonDecode(response.body));
+        setState(() {
+          transactions.addAll(data.transactions);
+          offset += limit;
+          hasMore = data.hasMore;
+        });
+      }
+    } catch (e) {
+      print('Error loading transactions: $e');
+    } finally {
+      setState(() =&gt; isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Transaction History'),
+        actions: [
+          // Filter dropdown
+          PopupMenuButton&lt;String&gt;(
+            onSelected: (type) {
+              setState(() {
+                filterType = type;
+                transactions.clear();
+                offset = 0;
+                hasMore = true;
+              });
+              loadTransactions();
+            },
+            itemBuilder: (context) =&gt; [
+              PopupMenuItem(value: null, child: Text('All')),
+              PopupMenuItem(value: 'PURCHASE', child: Text('Purchases')),
+              PopupMenuItem(value: 'SPEND', child: Text('Spends')),
+              PopupMenuItem(value: 'REFUND', child: Text('Refunds')),
+            ],
+          ),
+        ],
+      ),
+      body: ListView.builder(
+        controller: scrollController,
+        itemCount: transactions.length + (hasMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == transactions.length) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          final tx = transactions[index];
+          return TransactionTile(transaction: tx);
+        },
+      ),
+    );
+  }
+}
+
+class TransactionTile extends StatelessWidget {
+  final Transaction transaction;
+
+  @override
+  Widget build(BuildContext context) {
+    final isCredit = transaction.amount &gt; 0;
+    final icon = _getIcon(transaction.type);
+    final color = _getColor(transaction.type, isCredit);
+
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: color.withOpacity(0.2),
+        child: Icon(icon, color: color),
+      ),
+      title: Text(transaction.description),
+      subtitle: Text(
+        '${_formatDate(transaction.createdAt)} • ${transaction.status}',
+      ),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            '${isCredit ? '+' : ''}${transaction.amount} tokens',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: color,
+              fontSize: 16,
+            ),
+          ),
+          if (transaction.amountPaid != null)
+            Text(
+              '£${(transaction.amountPaid! / 100).toStringAsFixed(2)}',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+        ],
+      ),
+      onTap: () {
+        // Navigate to transaction details or related date
+        if (transaction.relatedDateId != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =&gt; DateDetailsScreen(
+                dateId: transaction.relatedDateId!,
+              ),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  IconData _getIcon(String type) {
+    switch (type) {
+      case 'PURCHASE': return Icons.add_shopping_cart;
+      case 'SPEND': return Icons.favorite;
+      case 'REFUND': return Icons.refresh;
+      default: return Icons.swap_horiz;
+    }
+  }
+
+  Color _getColor(String type, bool isCredit) {
+    switch (type) {
+      case 'PURCHASE': return Colors.green;
+      case 'SPEND': return Colors.red;
+      case 'REFUND': return Colors.orange;
+      default: return Colors.blue;
+    }
+  }
+
+  String _formatDate(String iso) {
+    final date = DateTime.parse(iso);
+    return '${date.day}/${date.month}/${date.year}';
+  }
+}</code></pre>
+        </div>
+
+        <!-- TOKEN SPENDING -->
+        <h2 id="spend">4. Token Spending</h2>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method post">POST</span>
+                <code>/wallet/spend</code>
+            </div>
+            <p>Spend tokens to commit to a date</p>
+        </div>
+
+        <h3>Request Payload</h3>
+        <pre><code>{
+  "relatedDateId": 456,
+  "activity": "DINNER",        // Date activity type
+  "idempotencyKey": "uuid-v4"  // Client-generated UUID
+}</code></pre>
+
+        <h3>Response</h3>
+        <pre><code>{
+  "transactionId": 789,
+  "type": "SPEND",
+  "amount": -1.0,                // Negative (debit)
+  "balanceAfter": 4.5,
+  "description": "Paid for DINNER date for 1.0 tokens",
+  "relatedDateId": 456,
+  "status": "COMPLETED",
+  // ... other transaction fields
+}</code></pre>
+
+        <h3>Error Handling</h3>
+        <ul>
+            <li><strong>Insufficient Balance</strong> - Returns error if user doesn't have enough tokens</li>
+            <li><strong>Already Paid</strong> - Returns error if user already paid for this date</li>
+            <li><strong>Duplicate Request</strong> - Idempotency key prevents duplicate spends</li>
+        </ul>
+
+        <div class="flutter-example">
+            <h4>🎯 Flutter Implementation Example</h4>
+            <pre><code>class DateCommitWidget extends StatefulWidget {
+  final int dateId;
+  final String activity;
+  final double tokenCost;
+
+  @override
+  _DateCommitWidgetState createState() =&gt; _DateCommitWidgetState();
+}
+
+class _DateCommitWidgetState extends State&lt;DateCommitWidget&gt; {
+  bool isCommitting = false;
+
+  Future&lt;void&gt; commitToDate() async {
+    setState(() =&gt; isCommitting = true);
+
+    try {
+      final idempotencyKey = Uuid().v4();
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/wallet/spend'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $firebaseToken',
+        },
+        body: jsonEncode({
+          'relatedDateId': widget.dateId,
+          'activity': widget.activity,
+          'idempotencyKey': idempotencyKey,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        final transaction = Transaction.fromJson(jsonDecode(response.body));
+
+        // Show success
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Committed! New balance: ${transaction.balanceAfter}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to date confirmation screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =&gt; DateConfirmationScreen(dateId: widget.dateId),
+          ),
+        );
+      } else if (response.statusCode == 400) {
+        // Insufficient balance or already paid
+        final error = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ ${error['message']}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ Error: $e')),
+      );
+    } finally {
+      setState(() =&gt; isCommitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: isCommitting ? null : commitToDate,
+      child: isCommitting
+          ? CircularProgressIndicator()
+          : Text('Commit (${widget.tokenCost} tokens)'),
+    );
+  }
+}</code></pre>
+        </div>
+
+        <!-- REFUNDS -->
+        <h2 id="refund">5. Refunds</h2>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method post">POST</span>
+                <code>/wallet/refund</code>
+            </div>
+            <p>Request refund for a token purchase</p>
+        </div>
+
+        <h3>Request Payload</h3>
+        <pre><code>{
+  "transactionId": 123,
+  "stripePaymentIntent": "pi_xxxxxxxxxxxxx",
+  "idempotencyKey": "uuid-v4"
+}</code></pre>
+
+        <h3>Response</h3>
+        <pre><code>{
+  "transactionId": 890,
+  "clientSecret": "pi_xxx_secret_xxx",
+  "status": "REFUNDED"
+}</code></pre>
+
+        <h3>Refund Policies</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Policy</th>
+                    <th>Condition</th>
+                    <th>Refund Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>FULL_REFUND</strong></td>
+                    <td>Partner cancelled</td>
+                    <td>100% back</td>
+                </tr>
+                <tr>
+                    <td><strong>PARTIAL_REFUND</strong></td>
+                    <td>User cancelled &gt;24h before</td>
+                    <td>50% back</td>
+                </tr>
+                <tr>
+                    <td><strong>NO_REFUND</strong></td>
+                    <td>User cancelled &lt;24h before</td>
+                    <td>0% back</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="warning-box">
+            <strong>⚠️ Refund Requirements:</strong>
+            <ul>
+                <li>User must have sufficient tokens in wallet to refund</li>
+                <li>Transaction must not already be refunded</li>
+                <li>Creates refund with Stripe and deducts tokens from wallet</li>
+            </ul>
+        </div>
+
+        <div class="flutter-example">
+            <h4>🎯 Flutter Implementation Example</h4>
+            <pre><code>class RefundButton extends StatefulWidget {
+  final Transaction transaction;
+
+  @override
+  _RefundButtonState createState() =&gt; _RefundButtonState();
+}
+
+class _RefundButtonState extends State&lt;RefundButton&gt; {
+  bool isRefunding = false;
+
+  Future&lt;void&gt; requestRefund() async {
+    // Confirm with user
+    final confirm = await showDialog&lt;bool&gt;(
+      context: context,
+      builder: (context) =&gt; AlertDialog(
+        title: Text('Request Refund'),
+        content: Text(
+          'Are you sure you want to refund this purchase?\n\n'
+          'Amount: ${widget.transaction.amount} tokens\n'
+          'Paid: £${(widget.transaction.amountPaid! / 100).toStringAsFixed(2)}'
+        ),
+        actions: [
+          TextButton(
+            onPressed: () =&gt; Navigator.pop(context, false),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () =&gt; Navigator.pop(context, true),
+            child: Text('Refund'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() =&gt; isRefunding = true);
+
+    try {
+      final idempotencyKey = Uuid().v4();
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/wallet/refund'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $firebaseToken',
+        },
+        body: jsonEncode({
+          'transactionId': widget.transaction.transactionId,
+          'stripePaymentIntent': widget.transaction.stripePaymentIntentId,
+          'idempotencyKey': idempotencyKey,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Refund processed successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Refresh transaction list
+      } else {
+        final error = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ ${error['message']}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ Error: $e')),
+      );
+    } finally {
+      setState(() =&gt; isRefunding = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Only show refund button for PURCHASE transactions
+    if (widget.transaction.type != 'PURCHASE' ||
+        widget.transaction.status == 'REFUNDED') {
+      return SizedBox.shrink();
+    }
+
+    return TextButton(
+      onPressed: isRefunding ? null : requestRefund,
+      child: isRefunding
+          ? SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Text('Request Refund'),
+    );
+  }
+}</code></pre>
+        </div>
+
+        <!-- KEY CONSIDERATIONS -->
+        <h2 id="considerations">⚙️ Key Considerations</h2>
+
+        <h3>1. Error Handling</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Status Code</th>
+                    <th>Meaning</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>200 OK</code></td>
+                    <td>Success (GET requests)</td>
+                    <td>Balance retrieved</td>
+                </tr>
+                <tr>
+                    <td><code>201 Created</code></td>
+                    <td>Success (POST requests)</td>
+                    <td>Purchase created</td>
+                </tr>
+                <tr>
+                    <td><code>400 Bad Request</code></td>
+                    <td>Invalid input</td>
+                    <td>Invalid package type, insufficient balance</td>
+                </tr>
+                <tr>
+                    <td><code>401 Unauthorized</code></td>
+                    <td>Missing/invalid auth token</td>
+                    <td>Firebase token expired</td>
+                </tr>
+                <tr>
+                    <td><code>404 Not Found</code></td>
+                    <td>Resource not found</td>
+                    <td>Wallet or transaction doesn't exist</td>
+                </tr>
+                <tr>
+                    <td><code>409 Conflict</code></td>
+                    <td>Conflict with current state</td>
+                    <td>Transaction already refunded</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2. Idempotency Keys</h3>
+        <div class="info-box">
+            <strong>Critical for preventing duplicate charges:</strong>
+            <ul>
+                <li>Generate UUID v4 client-side for each operation</li>
+                <li>Store in local state during payment flow</li>
+                <li>Reuse same key if user retries failed operation</li>
+                <li>Backend returns existing transaction for duplicate keys</li>
+                <li>Use different keys for different purchases/operations</li>
+            </ul>
+        </div>
+
+        <div class="flutter-example">
+            <h4>🎯 Idempotency Key Management</h4>
+            <pre><code>class IdempotencyManager {
+  final _storage = GetStorage(); // Or SharedPreferences
+
+  String getOrCreateKey(String operationId) {
+    final key = 'idempotency_$operationId';
+
+    if (_storage.hasData(key)) {
+      return _storage.read(key);
+    }
+
+    final newKey = Uuid().v4();
+    _storage.write(key, newKey);
+    return newKey;
+  }
+
+  void clearKey(String operationId) {
+    _storage.remove('idempotency_$operationId');
+  }
+}
+
+// Usage
+final manager = IdempotencyManager();
+
+// When starting a purchase
+final purchaseId = 'purchase_${packageType}_${timestamp}';
+final idempotencyKey = manager.getOrCreateKey(purchaseId);
+
+// After successful completion
+manager.clearKey(purchaseId);</code></pre>
+        </div>
+
+        <h3>3. Currency Handling</h3>
+        <ul>
+            <li>All prices are in <strong>GBP</strong></li>
+            <li>API returns amounts in <strong>pence</strong> (smallest unit)</li>
+            <li>Divide by 100 to display in pounds: <code>£{amount / 100}</code></li>
+            <li>Token amounts are decimal values (e.g., 1.0, 3.0, 5.0)</li>
+        </ul>
+
+        <h3>4. Stripe Integration Flow</h3>
+        <div class="success-box">
+            <strong>Two-step payment process:</strong>
+            <ol>
+                <li><strong>Backend</strong> creates payment intent → returns <code>clientSecret</code></li>
+                <li><strong>Frontend</strong> confirms payment with Stripe using <code>clientSecret</code></li>
+            </ol>
+            <p>This separation ensures PCI compliance - card details never touch your backend.</p>
+        </div>
+
+        <h3>5. State Management</h3>
+        <ul>
+            <li>Track payment status: PENDING → COMPLETED/FAILED</li>
+            <li>Update balance immediately after successful operations</li>
+            <li>Show pending transactions differently in UI</li>
+            <li>Implement optimistic updates with rollback on failure</li>
+        </ul>
+
+        <h3>6. Security Best Practices</h3>
+        <div class="warning-box">
+            <ul>
+                <li>Never expose Stripe secret key in frontend code</li>
+                <li>Always use HTTPS for API calls</li>
+                <li>Validate Firebase token expiry client-side</li>
+                <li>Refresh Firebase token before making API calls if close to expiry</li>
+                <li>Store sensitive data (tokens, keys) securely using platform keychain</li>
+            </ul>
+        </div>
+
+        <!-- FLUTTER COMPLETE EXAMPLE -->
+        <h2 id="flutter">📱 Complete Flutter Service Implementation</h2>
+
+        <div class="flutter-example">
+            <h4>Complete WalletService with all endpoints</h4>
+            <pre><code>import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:uuid/uuid.dart';
+
+class WalletService {
+  final String baseUrl;
+  final String firebaseToken;
+
+  WalletService({
+    required this.baseUrl,
+    required this.firebaseToken,
+  });
+
+  Map&lt;String, String&gt; get _headers =&gt; {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $firebaseToken',
+  };
+
+  // Get wallet balance
+  Future&lt;WalletBalance&gt; getBalance() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/wallet/balance'),
+      headers: _headers,
+    );
+
+    if (response.statusCode == 200) {
+      return WalletBalance.fromJson(jsonDecode(response.body));
+    } else {
+      throw WalletException('Failed to fetch balance', response.statusCode);
+    }
+  }
+
+  // Get transaction history
+  Future&lt;TransactionHistory&gt; getTransactions({
+    required int limit,
+    required int offset,
+    String? type,
+  }) async {
+    final uri = Uri.parse('$baseUrl/wallet/transactions').replace(
+      queryParameters: {
+        'limit': limit.toString(),
+        'offset': offset.toString(),
+        if (type != null) 'type': type,
+      },
+    );
+
+    final response = await http.get(uri, headers: _headers);
+
+    if (response.statusCode == 200) {
+      return TransactionHistory.fromJson(jsonDecode(response.body));
+    } else {
+      throw WalletException('Failed to fetch transactions', response.statusCode);
+    }
+  }
+
+  // Purchase tokens
+  Future&lt;PurchaseResponse&gt; purchaseTokens({
+    required String packageType,
+    required String paymentMethodId,
+    required bool acceptedTerms,
+    String? customIdempotencyKey,
+  }) async {
+    final idempotencyKey = customIdempotencyKey ?? Uuid().v4();
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/wallet/purchase'),
+      headers: _headers,
+      body: jsonEncode({
+        'packageType': packageType,
+        'paymentMethodId': paymentMethodId,
+        'idempotencyKey': idempotencyKey,
+        'acceptedTerms': acceptedTerms,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      return PurchaseResponse.fromJson(jsonDecode(response.body));
+    } else {
+      final error = jsonDecode(response.body);
+      throw WalletException(
+        error['message'] ?? 'Purchase failed',
+        response.statusCode,
+      );
+    }
+  }
+
+  // Spend tokens
+  Future&lt;Transaction&gt; spendTokens({
+    required int relatedDateId,
+    required String activity,
+    String? customIdempotencyKey,
+  }) async {
+    final idempotencyKey = customIdempotencyKey ?? Uuid().v4();
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/wallet/spend'),
+      headers: _headers,
+      body: jsonEncode({
+        'relatedDateId': relatedDateId,
+        'activity': activity,
+        'idempotencyKey': idempotencyKey,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      return Transaction.fromJson(jsonDecode(response.body));
+    } else {
+      final error = jsonDecode(response.body);
+      throw WalletException(
+        error['message'] ?? 'Spend failed',
+        response.statusCode,
+      );
+    }
+  }
+
+  // Refund tokens
+  Future&lt;RefundResponse&gt; refundTokens({
+    required int transactionId,
+    required String stripePaymentIntent,
+    String? customIdempotencyKey,
+  }) async {
+    final idempotencyKey = customIdempotencyKey ?? Uuid().v4();
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/wallet/refund'),
+      headers: _headers,
+      body: jsonEncode({
+        'transactionId': transactionId,
+        'stripePaymentIntent': stripePaymentIntent,
+        'idempotencyKey': idempotencyKey,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      return RefundResponse.fromJson(jsonDecode(response.body));
+    } else {
+      final error = jsonDecode(response.body);
+      throw WalletException(
+        error['message'] ?? 'Refund failed',
+        response.statusCode,
+      );
+    }
+  }
+}
+
+// Exception class
+class WalletException implements Exception {
+  final String message;
+  final int? statusCode;
+
+  WalletException(this.message, [this.statusCode]);
+
+  @override
+  String toString() =&gt; 'WalletException: $message (${statusCode ?? 'unknown'})';
+}
+
+// Model classes
+class WalletBalance {
+  final double balance;
+  final double pendingBalance;
+  final double lifetimeSpent;
+  final double lifetimePurchased;
+  final String currency;
+
+  WalletBalance({
+    required this.balance,
+    required this.pendingBalance,
+    required this.lifetimeSpent,
+    required this.lifetimePurchased,
+    required this.currency,
+  });
+
+  factory WalletBalance.fromJson(Map&lt;String, dynamic&gt; json) =&gt; WalletBalance(
+    balance: json['balance'].toDouble(),
+    pendingBalance: json['pendingBalance'].toDouble(),
+    lifetimeSpent: json['lifetimeSpent'].toDouble(),
+    lifetimePurchased: json['lifetimePurchased'].toDouble(),
+    currency: json['currency'],
+  );
+
+  double get availableBalance =&gt; balance - pendingBalance;
+}
+
+class Transaction {
+  final int transactionId;
+  final String type;
+  final double amount;
+  final double balanceAfter;
+  final String description;
+  final int? relatedDateId;
+  final String? stripePaymentIntentId;
+  final double? amountPaid;
+  final String? paymentCurrency;
+  final bool? acceptedTerms;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String status;
+
+  Transaction({
+    required this.transactionId,
+    required this.type,
+    required this.amount,
+    required this.balanceAfter,
+    required this.description,
+    this.relatedDateId,
+    this.stripePaymentIntentId,
+    this.amountPaid,
+    this.paymentCurrency,
+    this.acceptedTerms,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.status,
+  });
+
+  factory Transaction.fromJson(Map&lt;String, dynamic&gt; json) =&gt; Transaction(
+    transactionId: json['transactionId'],
+    type: json['type'],
+    amount: json['amount'].toDouble(),
+    balanceAfter: json['balanceAfter'].toDouble(),
+    description: json['description'],
+    relatedDateId: json['relatedDateId'],
+    stripePaymentIntentId: json['stripePaymentIntentId'],
+    amountPaid: json['amountPaid']?.toDouble(),
+    paymentCurrency: json['paymentCurrency'],
+    acceptedTerms: json['acceptedTerms'],
+    createdAt: DateTime.parse(json['createdAt']),
+    updatedAt: DateTime.parse(json['updatedAt']),
+    status: json['status'],
+  );
+
+  bool get isCredit =&gt; amount &gt; 0;
+}
+
+class TransactionHistory {
+  final List&lt;Transaction&gt; transactions;
+  final int total;
+  final bool hasMore;
+
+  TransactionHistory({
+    required this.transactions,
+    required this.total,
+    required this.hasMore,
+  });
+
+  factory TransactionHistory.fromJson(Map&lt;String, dynamic&gt; json) =&gt;
+      TransactionHistory(
+        transactions: (json['transactions'] as List)
+            .map((t) =&gt; Transaction.fromJson(t))
+            .toList(),
+        total: json['total'],
+        hasMore: json['hasMore'],
+      );
+}
+
+class PurchaseResponse {
+  final String clientSecret;
+  final String paymentIntentId;
+  final double amount;
+  final String currency;
+  final double tokenAmount;
+  final String status;
+  final double? newBalance;
+  final int? transactionId;
+  final bool? acceptedTerms;
+
+  PurchaseResponse({
+    required this.clientSecret,
+    required this.paymentIntentId,
+    required this.amount,
+    required this.currency,
+    required this.tokenAmount,
+    required this.status,
+    this.newBalance,
+    this.transactionId,
+    this.acceptedTerms,
+  });
+
+  factory PurchaseResponse.fromJson(Map&lt;String, dynamic&gt; json) =&gt;
+      PurchaseResponse(
+        clientSecret: json['clientSecret'],
+        paymentIntentId: json['paymentIntentId'],
+        amount: json['amount'].toDouble(),
+        currency: json['currency'],
+        tokenAmount: json['tokenAmount'].toDouble(),
+        status: json['status'],
+        newBalance: json['newBalance']?.toDouble(),
+        transactionId: json['transactionId'],
+        acceptedTerms: json['acceptedTerms'],
+      );
+}
+
+class RefundResponse {
+  final int transactionId;
+  final String clientSecret;
+  final String status;
+
+  RefundResponse({
+    required this.transactionId,
+    required this.clientSecret,
+    required this.status,
+  });
+
+  factory RefundResponse.fromJson(Map&lt;String, dynamic&gt; json) =&gt;
+      RefundResponse(
+        transactionId: json['transactionId'],
+        clientSecret: json['clientSecret'],
+        status: json['status'],
+      );
+}</code></pre>
+        </div>
+
+        <div class="info-box" style="margin-top: 40px;">
+            <h3>📚 Additional Resources</h3>
+            <ul>
+                <li><strong>Stripe Flutter Plugin:</strong> <a href="https://pub.dev/packages/flutter_stripe">https://pub.dev/packages/flutter_stripe</a></li>
+                <li><strong>Stripe Payment Intents Guide:</strong> <a href="https://stripe.com/docs/payments/payment-intents">https://stripe.com/docs/payments/payment-intents</a></li>
+                <li><strong>Firebase Auth Flutter:</strong> <a href="https://firebase.google.com/docs/auth/flutter/start">https://firebase.google.com/docs/auth/flutter/start</a></li>
+                <li><strong>UUID Package:</strong> <a href="https://pub.dev/packages/uuid">https://pub.dev/packages/uuid</a></li>
+            </ul>
+        </div>
+
+        <div class="success-box" style="margin-top: 40px;">
+            <h3>✅ Implementation Checklist</h3>
+            <ul>
+                <li>☐ Setup Stripe SDK with publishable key</li>
+                <li>☐ Implement Firebase authentication token management</li>
+                <li>☐ Create WalletService with all API endpoints</li>
+                <li>☐ Implement idempotency key management</li>
+                <li>☐ Build token package selection UI</li>
+                <li>☐ Integrate Stripe payment confirmation flow</li>
+                <li>☐ Create wallet balance display widget</li>
+                <li>☐ Build transaction history with pagination</li>
+                <li>☐ Implement token spending for date commitments</li>
+                <li>☐ Add refund request functionality</li>
+                <li>☐ Handle all error cases gracefully</li>
+                <li>☐ Test payment flow end-to-end</li>
+                <li>☐ Test idempotency (retry same purchase)</li>
+                <li>☐ Test insufficient balance scenarios</li>
+                <li>☐ Implement loading states and user feedback</li>
+            </ul>
+        </div>
+
+        <footer style="margin-top: 60px; padding-top: 20px; border-top: 2px solid #eee; color: #777; text-align: center;">
+            <p>Generated for Project Eros Backend - Wallet Module</p>
+            <p>Last updated: 2024</p>
+        </footer>
+    </div>
+</body>
+</html>

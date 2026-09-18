@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/widgets/auth_error_boundary.dart';
 import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
 import 'package:eros_app/features/profile/presentation/providers/user_profile_provider.dart';
 import 'package:eros_app/features/wallet/presentation/screens/wallet_screen.dart';
+import 'package:eros_app/features/settings/presentation/screens/app_settings_screen.dart';
 
 /// Profile Screen - Displays user profile and settings
 class ProfileScreen extends ConsumerWidget {
@@ -17,55 +19,23 @@ class ProfileScreen extends ConsumerWidget {
     final isLoading = profileState.isLoading;
     final errorMessage = profileState.errorMessage;
 
+    // Show error state with AuthErrorBoundary (always has sign-out)
+    if (errorMessage != null && profile == null) {
+      return AuthErrorBoundary(
+        errorMessage: errorMessage,
+        onRetry: () {
+          ref.read(userProfileProvider.notifier).refresh();
+        },
+        child: const SizedBox.shrink(), // Won't be shown when error exists
+      );
+    }
+
     // Show loading state
     if (isLoading && profile == null) {
       return const Scaffold(
         backgroundColor: AppColors.background,
         body: Center(
           child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    // Show error state
-    if (errorMessage != null && profile == null) {
-      return Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: AppColors.error,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Failed to load profile',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  errorMessage,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () {
-                    ref.read(userProfileProvider.notifier).refresh();
-                  },
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
         ),
       );
     }
@@ -146,8 +116,11 @@ class ProfileScreen extends ConsumerWidget {
                       icon: Icons.settings_outlined,
                       title: 'App settings',
                       onTap: () {
-                        // TODO: Navigate to app settings screen
-                        _showComingSoon(context, 'App Settings');
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const AppSettingsScreen(),
+                          ),
+                        );
                       },
                     ),
                   ],

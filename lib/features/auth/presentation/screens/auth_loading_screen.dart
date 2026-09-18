@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/widgets/auth_error_boundary.dart';
 import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
+import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:logger/logger.dart';
 
 /// Loading screen that determines initial app route based on auth state
@@ -34,6 +36,7 @@ class _AuthLoadingScreenState extends ConsumerState<AuthLoadingScreen> {
   );
 
   bool _hasNavigated = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -88,10 +91,23 @@ class _AuthLoadingScreenState extends ConsumerState<AuthLoadingScreen> {
         }
       }
     } catch (e) {
-      // On error, default to welcome screen
+      // Handle specific error types
       _logger.e('❌ Error determining route', error: e);
+
+      String errorMsg = 'An unexpected error occurred. Please try signing out and back in.';
+
+      // Check for permission/auth errors
+      if (e is ForbiddenException || e is UnauthorizedException) {
+        errorMsg = 'You do not have permission to view this account. This may be caused by signing in with a different account. Please sign out and try again.';
+      } else if (e is NetworkException) {
+        errorMsg = 'Network error. Please check your connection and try again.';
+      }
+
+      // Show error screen with sign-out option instead of auto-navigating
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/welcome');
+        setState(() {
+          _errorMessage = errorMsg;
+        });
       }
     }
   }
@@ -101,33 +117,44 @@ class _AuthLoadingScreenState extends ConsumerState<AuthLoadingScreen> {
     // Don't watch auth state - we only check it once in initState
     // Watching would cause unnecessary rebuilds on token refresh, etc.
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // App logo or branding
-            Icon(
-              Icons.favorite_rounded,
-              size: 80,
-              color: AppColors.primaryOrange,
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Muse',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+    // Show error screen if we encountered an error
+    return AuthErrorBoundary(
+      errorMessage: _errorMessage,
+      onRetry: () {
+        setState(() {
+          _errorMessage = null;
+          _hasNavigated = false;
+        });
+        _determineInitialRoute();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // App logo or branding
+              Icon(
+                Icons.favorite_rounded,
+                size: 80,
+                color: AppColors.primaryOrange,
               ),
-            ),
-            const SizedBox(height: 48),
-            // Loading indicator
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryOrange),
-            ),
-          ],
+              const SizedBox(height: 24),
+              const Text(
+                'Muse',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 48),
+              // Loading indicator
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryOrange),
+              ),
+            ],
+          ),
         ),
       ),
     );

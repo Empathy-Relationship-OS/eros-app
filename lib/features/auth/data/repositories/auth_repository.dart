@@ -1,10 +1,20 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
+import 'package:eros_app/core/auth/sign_out_service.dart';
+import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 
 /// Provider for FirebaseAuth instance
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
   return FirebaseAuth.instance;
+});
+
+/// Provider for SignOutService
+final signOutServiceProvider = Provider<SignOutService>((ref) {
+  return SignOutService(
+    firebaseAuth: ref.read(firebaseAuthProvider),
+    sharedPrefs: ref.read(sharedPreferencesProvider),
+  );
 });
 
 /// Provider for AuthRepository
@@ -12,6 +22,7 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
     ref.read(firebaseAuthProvider),
     ref.read(authServiceProvider),
+    ref.read(signOutServiceProvider),
   );
 });
 
@@ -39,8 +50,13 @@ class AuthResult {
 class AuthRepository {
   final FirebaseAuth _firebaseAuth;
   final AuthService _authService;
+  final SignOutService _signOutService;
 
-  AuthRepository(this._firebaseAuth, this._authService);
+  AuthRepository(
+    this._firebaseAuth,
+    this._authService,
+    this._signOutService,
+  );
 
   /// Get current user
   User? get currentUser => _firebaseAuth.currentUser;
@@ -91,8 +107,9 @@ class AuthRepository {
   }
 
   /// Sign out
+  /// Performs complete sign-out including clearing all user-specific data
   Future<void> signOut() async {
-    await _firebaseAuth.signOut();
+    await _signOutService.signOut();
   }
 
   /// Get Firebase ID token for backend API calls

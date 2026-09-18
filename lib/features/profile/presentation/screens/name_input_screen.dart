@@ -5,6 +5,7 @@ import 'package:eros_app/core/utils/validators.dart';
 import 'package:eros_app/core/constants/profile_creation.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
+import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
 
 /// First screen in profile creation flow - Name input
 /// Matches screenshot: @screenshots/login/create-user/0818BA8E-C49E-4657-A7F0-87429222351A.png
@@ -72,6 +73,43 @@ class _NameInputScreenState extends ConsumerState<NameInputScreen> {
     super.dispose();
   }
 
+  Future<void> _handleBack() async {
+    // Show confirmation dialog before allowing back navigation
+    final shouldSignOut = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel profile creation?'),
+        content: const Text(
+          'Going back will sign you out. You can continue creating your profile next time you sign in.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Continue Creating'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldSignOut == true && mounted) {
+      // Import auth provider at top of file
+      final authNotifier = ref.read(authStateProvider.notifier);
+      await authNotifier.signOut();
+
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/welcome',
+          (route) => false,
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,7 +119,7 @@ class _NameInputScreenState extends ConsumerState<NameInputScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: _handleBack,
         ),
       ),
       body: SafeArea(

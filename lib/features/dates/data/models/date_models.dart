@@ -344,9 +344,9 @@ class DateDetail {
   ParticipantDepositStatus partnerDeposit(String myUid) =>
       user1Id == myUid ? depositStatus.user2 : depositStatus.user1;
 
-  // TODO(backend): These properties should be provided by the backend API
-  // For now, using placeholder values. Backend should include partner name and thumbnail.
-  String get partnerName => 'Partner'; // Placeholder
+  // TODO(backend): partnerName should be provided by the backend API
+  // For now, using placeholder value
+  String partnerName(String myUid) => 'Partner'; // Placeholder
   String? get partnerThumbnailUrl => null; // Placeholder
   List<int> get myRankings => []; // Placeholder - should come from backend
   bool get partnerRanked => false; // Placeholder - should come from backend

@@ -201,7 +201,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       child: PartnerHeader(
-        partnerName: dateDetail.partnerName,
+        partnerName: dateDetail.partnerName(currentUid),
         partnerThumbnailUrl: dateDetail.partnerThumbnailUrl,
         // TODO: Add verification badges if available
       ),
@@ -211,7 +211,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
   Widget _buildStatusPill(DateDetail dateDetail, String currentUid) {
     final (pillText, tone) = DatesCopy.statusPill(
       state: dateDetail.state,
-      partnerName: dateDetail.partnerName,
+      partnerName: dateDetail.partnerName(currentUid),
       tokenCost: TokenAmount.formatTokenAmount(dateDetail.tokenCost),
       youSubmitted: _hasUserSubmitted(dateDetail, currentUid),
       youPaid: _hasUserPaid(dateDetail, currentUid),

@@ -225,6 +225,31 @@ class DatesRepository {
     }
   }
 
+  /// Get presence confirmation status
+  ///
+  /// Returns presence status for both participants.
+  /// Only available when state is AWAITING_PRESENCE_CONFIRMATION.
+  ///
+  /// Throws:
+  /// - [ConflictException] if wrong state (409)
+  /// - Other [ApiException] subclasses for other errors
+  Future<PresenceConfirmationStatus> getPresenceStatus(String dateId) async {
+    try {
+      _logger.d('🔍 Getting presence status for date: $dateId');
+
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        ApiEndpoints.dates.getPresenceStatus(dateId),
+      );
+
+      final status = PresenceConfirmationStatus.fromJson(response);
+      _logger.d('✅ Got presence status');
+      return status;
+    } on ApiException catch (e) {
+      _logger.e('🚨 Failed to get presence status', error: e);
+      rethrow;
+    }
+  }
+
   /// Confirm presence for date
   ///
   /// Returns presence confirmation status for both participants.

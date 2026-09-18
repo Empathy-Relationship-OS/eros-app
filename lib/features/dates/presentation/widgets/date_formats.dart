@@ -15,6 +15,13 @@ class DateFormats {
     return DateFormat('EEE d MMM, HH:mm').format(local);
   }
 
+  /// Format a 2-hour date range from start time
+  /// Example: "Sun 20 Sep, 19:00 - 21:00"
+  static String formatRange(DateTime start) {
+    final end = start.add(const Duration(hours: 2));
+    return formatDateTimeRange(start, end);
+  }
+
   /// Format a date range (start to end) in local timezone
   /// Example: "Sun 20 Sep, 19:00 - 21:00"
   static String formatDateTimeRange(DateTime start, DateTime end) {

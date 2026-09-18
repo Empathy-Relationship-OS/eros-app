@@ -137,6 +137,23 @@ class WalletBalanceNotifier extends StateNotifier<WalletBalanceState> {
     await fetchBalance();
   }
 
+  /// Update balance with a new balance value (e.g., after deposit)
+  void updateBalance(String newBalanceString) {
+    if (state.balance == null) {
+      // Cannot update if no balance loaded yet
+      return;
+    }
+    final newBalanceValue = double.tryParse(newBalanceString) ?? state.balance!.balance;
+    final updatedBalance = WalletBalance(
+      balance: newBalanceValue,
+      pendingBalance: state.balance!.pendingBalance,
+      lifetimeSpent: state.balance!.lifetimeSpent,
+      lifetimePurchased: state.balance!.lifetimePurchased,
+      currency: state.balance!.currency,
+    );
+    state = state.copyWith(balance: updatedBalance);
+  }
+
   /// Clear error message
   void clearError() {
     state = state.copyWith(clearError: true);

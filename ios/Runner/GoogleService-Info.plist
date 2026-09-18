@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>785930119954-hhfjlgptdm404siatsras7p4gk0gltu0.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.785930119954-hhfjlgptdm404siatsras7p4gk0gltu0</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDfO5dlvoGYOUCfXk9VgevBLzOkHhmtI90</string>
+	<key>GCM_SENDER_ID</key>
+	<string>785930119954</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.eros.erosApp</string>
+	<key>PROJECT_ID</key>
+	<string>eros-81081</string>
+	<key>STORAGE_BUCKET</key>
+	<string>eros-81081.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:785930119954:ios:691fdd574eb5fd4ac3e1cb</string>
+</dict>
+</plist>
