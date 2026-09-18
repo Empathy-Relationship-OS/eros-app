@@ -12,6 +12,7 @@ import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/deadline_countdown.dart';
 import 'package:eros_app/features/dates/presentation/widgets/token_amount.dart';
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
+import 'package:eros_app/features/dates/presentation/widgets/terminal_panel.dart';
 
 /// Date detail screen showing full date info, stepper, and CTA panel
 ///
@@ -277,8 +278,12 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
       case DateState.completed:
       case DateState.cancelled:
       case DateState.expired:
-        // TODO: Implement terminal panels (UI-10)
-        return const SizedBox.shrink();
+        return TerminalPanel(
+          state: dateDetail.state,
+          onBackToDates: () {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          },
+        );
     }
   }
 
