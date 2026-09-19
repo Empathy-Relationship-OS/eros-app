@@ -204,7 +204,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       child: PartnerHeader(
-        partnerName: dateDetail.partnerName(currentUid),
+        partnerName: dateDetail.partnerName,
         partnerThumbnailUrl: dateDetail.partnerThumbnailUrl,
         // TODO: Add verification badges if available
       ),
@@ -214,7 +214,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
   Widget _buildStatusPill(DateDetail dateDetail, String currentUid) {
     final (pillText, tone) = DatesCopy.statusPill(
       state: dateDetail.state,
-      partnerName: dateDetail.partnerName(currentUid),
+      partnerName: dateDetail.partnerName,
       tokenCost: TokenAmount.formatTokenAmount(dateDetail.tokenCost),
       youSubmitted: _hasUserSubmitted(dateDetail, currentUid),
       youPaid: _hasUserPaid(dateDetail, currentUid),
@@ -345,7 +345,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
             ),
           const SizedBox(height: 12),
           Text(
-            'You\'ve committed. Waiting for ${dateDetail.partnerName(currentUid)}.',
+            'You\'ve committed. Waiting for ${dateDetail.partnerName}.',
             style: const TextStyle(
               fontSize: 15,
               color: AppColors.textSecondary,
@@ -404,7 +404,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
         ],
         if (hasRanked) ...[
           Text(
-            'Waiting for ${dateDetail.partnerName(currentUid)}\'s picks',
+            'Waiting for ${dateDetail.partnerName}\'s picks',
             style: const TextStyle(
               fontSize: 15,
               color: AppColors.textSecondary,
@@ -434,7 +434,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
 
     if (youConfirmed) {
       return Text(
-        'Waiting for ${dateDetail.partnerName(currentUid)} to confirm',
+        'Waiting for ${dateDetail.partnerName} to confirm',
         style: const TextStyle(
           fontSize: 15,
           color: AppColors.textSecondary,
@@ -578,7 +578,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
       builder: (context) => CancelDateDialog(
         dateId: widget.dateId,
         dateDetail: dateDetail,
-        partnerName: dateDetail.partnerName(currentUid),
+        partnerName: dateDetail.partnerName,
         currentUid: currentUid,
       ),
     );

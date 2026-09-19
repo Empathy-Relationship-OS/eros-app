@@ -259,6 +259,8 @@ class DateDetail {
   final int matchId;
   final String user1Id;
   final String user2Id;
+  final String partnerName;
+  final String? partnerThumbnailUrl;
   final int activityId;
   final String activityName;
   final String tokenCost; // Decimal string, e.g. "5.00"
@@ -286,6 +288,8 @@ class DateDetail {
     required this.matchId,
     required this.user1Id,
     required this.user2Id,
+    required this.partnerName,
+    this.partnerThumbnailUrl,
     required this.activityId,
     required this.activityName,
     required this.tokenCost,
@@ -314,6 +318,8 @@ class DateDetail {
         matchId: json['matchId'] as int,
         user1Id: json['user1Id'] as String,
         user2Id: json['user2Id'] as String,
+        partnerName: json['partnerName'] as String,
+        partnerThumbnailUrl: json['partnerThumbnailUrl'] as String?,
         activityId: json['activityId'] as int,
         activityName: json['activityName'] as String,
         tokenCost: json['tokenCost'] as String,
@@ -349,10 +355,7 @@ class DateDetail {
   ParticipantDepositStatus partnerDeposit(String myUid) =>
       user1Id == myUid ? depositStatus.user2 : depositStatus.user1;
 
-  // TODO(backend): partnerName should be provided by the backend API
-  // For now, using placeholder value
-  String partnerName(String myUid) => 'Partner'; // Placeholder
-  String? get partnerThumbnailUrl => null; // Placeholder
+  // TODO(backend): These should come from backend API
   List<int> get myRankings => []; // Placeholder - should come from backend
   bool get partnerRanked => false; // Placeholder - should come from backend
 

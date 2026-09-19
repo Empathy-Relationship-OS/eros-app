@@ -420,7 +420,7 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
         builder: (context) => CancelDateDialog(
           dateId: widget.dateId,
           dateDetail: dateDetail,
-          partnerName: dateDetail.partnerName(currentUid),
+          partnerName: dateDetail.partnerName,
           currentUid: currentUid,
         ),
       );

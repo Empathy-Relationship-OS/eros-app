@@ -179,7 +179,7 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
                     children: [
                       Text(
                         DatesCopy.depositPartnerStatus(
-                          widget.dateDetail.partnerName(widget.currentUid),
+                          widget.dateDetail.partnerName,
                           partnerDeposit == ParticipantDepositStatus.paid,
                         ),
                         style: const TextStyle(
@@ -291,7 +291,7 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
       builder: (context) => CancelDateDialog(
         dateId: widget.dateDetail.dateId.toString(),
         dateDetail: widget.dateDetail,
-        partnerName: widget.dateDetail.partnerName(currentUid),
+        partnerName: widget.dateDetail.partnerName,
         currentUid: currentUid,
       ),
     );
@@ -325,7 +325,7 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(DatesCopy.depositSuccessWaiting(
-              widget.dateDetail.partnerName(widget.currentUid),
+              widget.dateDetail.partnerName,
             )),
             backgroundColor: AppColors.success,
           ),

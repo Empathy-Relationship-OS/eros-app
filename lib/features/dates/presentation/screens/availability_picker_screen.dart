@@ -500,7 +500,7 @@ class _AvailabilityPickerScreenState
         builder: (context) => CancelDateDialog(
           dateId: widget.dateId,
           dateDetail: dateDetail,
-          partnerName: dateDetail.partnerName(currentUid),
+          partnerName: dateDetail.partnerName,
           currentUid: currentUid,
         ),
       );

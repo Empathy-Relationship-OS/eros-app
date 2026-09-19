@@ -289,7 +289,7 @@ class _BookingCardState extends ConsumerState<BookingCard> {
             ),
             const SizedBox(height: 8),
             _buildPresenceRow(
-              widget.dateDetail.partnerName(widget.currentUid),
+              widget.dateDetail.partnerName,
               partnerConfirmed,
             ),
 
@@ -331,7 +331,7 @@ class _BookingCardState extends ConsumerState<BookingCard> {
             else
               Text(
                 DatesCopy.presenceConfirmedWaiting(
-                  widget.dateDetail.partnerName(widget.currentUid),
+                  widget.dateDetail.partnerName,
                 ),
                 style: const TextStyle(
                   fontSize: 13,
@@ -407,7 +407,7 @@ class _BookingCardState extends ConsumerState<BookingCard> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(DatesCopy.presenceConfirmedWaiting(
-            widget.dateDetail.partnerName(widget.currentUid),
+            widget.dateDetail.partnerName,
           )),
           backgroundColor: AppColors.success,
         ),
@@ -456,10 +456,10 @@ class _BookingCardState extends ConsumerState<BookingCard> {
 
     final event = calendar.Event(
       title: DatesCopy.bookingCalendarTitle(
-        widget.dateDetail.partnerName(widget.currentUid),
+        widget.dateDetail.partnerName,
         widget.dateDetail.venueName ?? 'Date',
       ),
-      description: 'Date with ${widget.dateDetail.partnerName(widget.currentUid)}',
+      description: 'Date with ${widget.dateDetail.partnerName}',
       location: widget.dateDetail.venueAddress,
       startDate: scheduledStart,
       endDate: scheduledEnd,
