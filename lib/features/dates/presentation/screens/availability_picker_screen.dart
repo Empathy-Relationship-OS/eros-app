@@ -233,6 +233,7 @@ class _AvailabilityPickerScreenState
             onTap: () => setState(() => _selectedDay = day),
             child: Container(
               width: 56,
+              height: 48,
               decoration: BoxDecoration(
                 color: isSelected ? AppColors.primaryOrange : Colors.white,
                 borderRadius: BorderRadius.circular(8),
@@ -245,29 +246,32 @@ class _AvailabilityPickerScreenState
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     DateFormat('E').format(day).substring(0, 3),
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight: FontWeight.w600,
                       color: isSelected
                           ? Colors.white
                           : AppColors.textSecondary,
+                      height: 1.0,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 1),
                   Text(
                     day.day.toString(),
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: isSelected ? Colors.white : AppColors.textPrimary,
+                      height: 1.0,
                     ),
                   ),
                   if (hasMark)
                     Padding(
-                      padding: const EdgeInsets.only(top: 2),
+                      padding: const EdgeInsets.only(top: 1),
                       child: Container(
                         width: 4,
                         height: 4,
