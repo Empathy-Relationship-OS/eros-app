@@ -11,6 +11,9 @@ import 'package:eros_app/features/dates/presentation/widgets/date_stepper.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/deadline_countdown.dart';
 import 'package:eros_app/features/dates/presentation/widgets/token_amount.dart';
+import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
+import 'package:eros_app/features/dates/presentation/widgets/terminal_panel.dart';
+import 'package:eros_app/features/home/presentation/screens/home_screen.dart';
 
 /// Date detail screen showing full date info, stepper, and CTA panel
 ///
@@ -276,8 +279,19 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
       case DateState.completed:
       case DateState.cancelled:
       case DateState.expired:
-        // TODO: Implement terminal panels (UI-10)
-        return const SizedBox.shrink();
+        return TerminalPanel(
+          state: dateDetail.state,
+          onBackToDates: () {
+            // Pop until we reach HomeScreen and ensure Dates tab is selected
+            Navigator.of(context).popUntil((route) => route.isFirst);
+            // Replace the current route with HomeScreen showing Dates tab
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const HomeScreen(initialIndex: 1),
+              ),
+            );
+          },
+        );
     }
   }
 
@@ -559,11 +573,13 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
   }
 
   void _showCancelDialog(BuildContext context, DateDetail dateDetail, String currentUid) {
-    // TODO: Implement cancel flow (UI-9)
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Cancel flow coming soon'),
-        behavior: SnackBarBehavior.floating,
+    showDialog(
+      context: context,
+      builder: (context) => CancelDateDialog(
+        dateId: widget.dateId,
+        dateDetail: dateDetail,
+        partnerName: dateDetail.partnerName(currentUid),
+        currentUid: currentUid,
       ),
     );
   }

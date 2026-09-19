@@ -5,6 +5,8 @@ import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/availability_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
+import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
+import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:intl/intl.dart';
 
 /// UI-5: Availability picker screen
@@ -37,6 +39,7 @@ class _AvailabilityPickerScreenState
   late DateTime _windowEnd;
   bool _showEarlierSlots = false;
   bool _showLaterSlots = false;
+  bool _isLoadingCancelDialog = false;
 
   // Local state: Map<slotStart UTC, SlotAvailability?>
   // null = unmarked, AVAILABLE = Free, UNAVAILABLE = Busy
@@ -456,10 +459,67 @@ class _AvailabilityPickerScreenState
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+            // Cancel button
+            Center(
+              child: TextButton(
+                onPressed: () => _showCancelDialog(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                ),
+                child: const Text(
+                  'Cancel this date',
+                  style: TextStyle(
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  void _showCancelDialog(BuildContext context) async {
+    if (_isLoadingCancelDialog) return;
+
+    setState(() {
+      _isLoadingCancelDialog = true;
+    });
+
+    try {
+      // Get date detail for cancel dialog
+      final dateDetail = await ref.read(datesRepositoryProvider).getDateById(widget.dateId);
+      if (dateDetail == null || !mounted) return;
+
+      final currentUid = ref.read(authServiceProvider).currentUser?.uid ?? '';
+
+      showDialog(
+        context: context,
+        builder: (context) => CancelDateDialog(
+          dateId: widget.dateId,
+          dateDetail: dateDetail,
+          partnerName: dateDetail.partnerName(currentUid),
+          currentUid: currentUid,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load date details: ${e.toString()}'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingCancelDialog = false;
+        });
+      }
+    }
   }
 
   // ==================== HELPERS ====================

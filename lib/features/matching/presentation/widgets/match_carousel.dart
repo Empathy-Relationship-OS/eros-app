@@ -123,9 +123,16 @@ class _CarouselCardState extends ConsumerState<_CarouselCard> {
       barrierDismissible: false,
       builder: (context) => MutualMatchDialog(
         partnerName: widget.profile.name,
+        dateId: mutualMatch.dateId,
         onContinue: () {
           Navigator.of(context).pop();
-          // TODO: Navigate to dates/chat when implemented
+          // UI-11: Navigate to date detail if dateId present
+          if (mutualMatch.dateId != null) {
+            Navigator.of(context).pushNamed(
+              '/dates/detail',
+              arguments: mutualMatch.dateId.toString(),
+            );
+          }
         },
       ),
     );

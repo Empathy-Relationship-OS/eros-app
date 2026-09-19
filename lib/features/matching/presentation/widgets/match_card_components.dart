@@ -426,13 +426,17 @@ class SingleActionButton extends StatelessWidget {
 }
 
 /// Mutual match dialog
+///
+/// Per UI-11: Shows match celebration and date planning CTA
 class MutualMatchDialog extends StatelessWidget {
   final String partnerName;
+  final int? dateId; // Optional: if null, just dismiss; if present, navigate to date
   final VoidCallback onContinue;
 
   const MutualMatchDialog({
     super.key,
     required this.partnerName,
+    this.dateId,
     required this.onContinue,
   });
 
@@ -469,6 +473,18 @@ class MutualMatchDialog extends StatelessWidget {
               color: AppColors.textSecondary,
             ),
           ),
+          // Date planning message (UI-11)
+          if (dateId != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              "Your date with $partnerName is ready to plan",
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
           const SizedBox(height: 32),
           SizedBox(
             width: double.infinity,
@@ -481,9 +497,9 @@ class MutualMatchDialog extends StatelessWidget {
                   borderRadius: BorderRadius.circular(28),
                 ),
               ),
-              child: const Text(
-                'Continue',
-                style: TextStyle(
+              child: Text(
+                dateId != null ? 'Plan the date' : 'Continue',
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
