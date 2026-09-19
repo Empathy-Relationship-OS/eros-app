@@ -49,6 +49,12 @@ flutter test test/widget_test.dart
 # Analyze code
 flutter analyze
 
+# Check for em-dashes in dates feature (UI-12)
+./scripts/check_em_dashes.sh
+
+# Run all linting checks
+flutter analyze && ./scripts/check_em_dashes.sh
+
 # Format code
 flutter format .
 

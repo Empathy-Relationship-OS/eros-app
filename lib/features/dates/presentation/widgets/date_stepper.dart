@@ -69,10 +69,8 @@ class DateStepper extends StatelessWidget {
     final stepIndex = timeline.indexOf(step) + 1;
     final semanticLabel = 'step $stepIndex of ${timeline.length}, ${step.label}, ${_statusToSemanticString(step.status)}';
 
-    return Semantics(
-      label: semanticLabel,
-      child: IntrinsicHeight(
-        child: Row(
+    return IntrinsicHeight(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Left rail: icon + connector
@@ -102,6 +100,7 @@ class DateStepper extends StatelessWidget {
                   // Step label
                   Text(
                     step.label,
+                    semanticsLabel: semanticLabel,
                     style: TextStyle(
                       fontSize: step.status == StepStatus.current ? 16 : 14,
                       fontWeight: step.status == StepStatus.current
@@ -125,7 +124,6 @@ class DateStepper extends StatelessWidget {
             ),
           ),
         ],
-        ),
       ),
     );
   }

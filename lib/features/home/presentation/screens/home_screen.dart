@@ -7,14 +7,22 @@ import 'package:eros_app/features/profile/presentation/screens/profile_screen.da
 /// Main Home Screen with bottom navigation bar
 /// Allows switching between Match, Dates, and Profile sections
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final int initialIndex;
+
+  const HomeScreen({super.key, this.initialIndex = 0});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+  }
 
   // Pages for each tab
   static const List<Widget> _pages = [

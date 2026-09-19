@@ -150,8 +150,13 @@ class CancelDateRequest {
 
   const CancelDateRequest({this.reason});
 
-  Map<String, dynamic> toJson() =>
-      {'reason': reason}; // Always send body, even {"reason": null}
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+    if (reason != null) {
+      json['reason'] = reason;
+    }
+    return json;
+  }
 }
 
 // ====================

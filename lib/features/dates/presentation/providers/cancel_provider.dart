@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:eros_app/core/network/api_client.dart';
+import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
 
@@ -19,11 +19,13 @@ class CancelState {
     bool? isLoading,
     CancellationResult? result,
     String? errorMessage,
+    bool clearResult = false,
+    bool clearErrorMessage = false,
   }) {
     return CancelState(
       isLoading: isLoading ?? this.isLoading,
-      result: result ?? this.result,
-      errorMessage: errorMessage ?? this.errorMessage,
+      result: clearResult ? null : (result ?? this.result),
+      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }
@@ -37,7 +39,11 @@ class CancelNotifier extends StateNotifier<CancelState> {
 
   /// Cancel the date with optional reason
   Future<void> cancelDate({String? reason}) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(
+      isLoading: true,
+      clearResult: true,
+      clearErrorMessage: true,
+    );
 
     try {
       final repository = ref.read(datesRepositoryProvider);

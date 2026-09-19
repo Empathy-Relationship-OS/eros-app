@@ -6,7 +6,6 @@ import 'package:eros_app/features/dates/presentation/providers/availability_prov
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
-import 'package:eros_app/features/dates/presentation/providers/date_detail_provider.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:intl/intl.dart';
 
@@ -40,6 +39,7 @@ class _AvailabilityPickerScreenState
   late DateTime _windowEnd;
   bool _showEarlierSlots = false;
   bool _showLaterSlots = false;
+  bool _isLoadingCancelDialog = false;
 
   // Local state: Map<slotStart UTC, SlotAvailability?>
   // null = unmarked, AVAILABLE = Free, UNAVAILABLE = Busy
@@ -482,21 +482,35 @@ class _AvailabilityPickerScreenState
   }
 
   void _showCancelDialog(BuildContext context) async {
-    // Get date detail for cancel dialog
-    final dateDetail = await ref.read(datesRepositoryProvider).getDateDetail(widget.dateId);
-    if (dateDetail == null || !mounted) return;
+    if (_isLoadingCancelDialog) return;
 
-    final currentUid = ref.read(authServiceProvider).currentUser?.uid ?? '';
+    setState(() {
+      _isLoadingCancelDialog = true;
+    });
 
-    showDialog(
-      context: context,
-      builder: (context) => CancelDateDialog(
-        dateId: widget.dateId,
-        dateDetail: dateDetail,
-        partnerName: dateDetail.partnerName(currentUid),
-        currentUid: currentUid,
-      ),
-    );
+    try {
+      // Get date detail for cancel dialog
+      final dateDetail = await ref.read(datesRepositoryProvider).getDateById(widget.dateId);
+      if (dateDetail == null || !mounted) return;
+
+      final currentUid = ref.read(authServiceProvider).currentUser?.uid ?? '';
+
+      showDialog(
+        context: context,
+        builder: (context) => CancelDateDialog(
+          dateId: widget.dateId,
+          dateDetail: dateDetail,
+          partnerName: dateDetail.partnerName(currentUid),
+          currentUid: currentUid,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingCancelDialog = false;
+        });
+      }
+    }
   }
 
   // ==================== HELPERS ====================

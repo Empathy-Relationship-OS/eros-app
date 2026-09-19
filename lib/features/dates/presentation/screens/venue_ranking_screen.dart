@@ -38,6 +38,7 @@ class VenueRankingScreen extends ConsumerStatefulWidget {
 class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
   List<VenueOption> _orderedVenues = [];
   bool _isSubmitting = false;
+  bool _isLoadingCancelDialog = false;
 
   @override
   Widget build(BuildContext context) {
@@ -401,21 +402,35 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
   }
 
   void _showCancelDialog(BuildContext context) async {
-    // Get date detail for cancel dialog
-    final dateDetail = await ref.read(datesRepositoryProvider).getDateDetail(widget.dateId);
-    if (dateDetail == null || !mounted) return;
+    if (_isLoadingCancelDialog) return;
 
-    final currentUid = ref.read(authServiceProvider).currentUser?.uid ?? '';
+    setState(() {
+      _isLoadingCancelDialog = true;
+    });
 
-    showDialog(
-      context: context,
-      builder: (context) => CancelDateDialog(
-        dateId: widget.dateId,
-        dateDetail: dateDetail,
-        partnerName: dateDetail.partnerName(currentUid),
-        currentUid: currentUid,
-      ),
-    );
+    try {
+      // Get date detail for cancel dialog
+      final dateDetail = await ref.read(datesRepositoryProvider).getDateById(widget.dateId);
+      if (dateDetail == null || !mounted) return;
+
+      final currentUid = ref.read(authServiceProvider).currentUser?.uid ?? '';
+
+      showDialog(
+        context: context,
+        builder: (context) => CancelDateDialog(
+          dateId: widget.dateId,
+          dateDetail: dateDetail,
+          partnerName: dateDetail.partnerName(currentUid),
+          currentUid: currentUid,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingCancelDialog = false;
+        });
+      }
+    }
   }
 
   Future<void> _handleSubmit() async {

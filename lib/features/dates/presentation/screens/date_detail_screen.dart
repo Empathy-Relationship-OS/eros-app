@@ -13,6 +13,7 @@ import 'package:eros_app/features/dates/presentation/widgets/deadline_countdown.
 import 'package:eros_app/features/dates/presentation/widgets/token_amount.dart';
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
 import 'package:eros_app/features/dates/presentation/widgets/terminal_panel.dart';
+import 'package:eros_app/features/home/presentation/screens/home_screen.dart';
 
 /// Date detail screen showing full date info, stepper, and CTA panel
 ///
@@ -281,7 +282,14 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
         return TerminalPanel(
           state: dateDetail.state,
           onBackToDates: () {
+            // Pop until we reach HomeScreen and ensure Dates tab is selected
             Navigator.of(context).popUntil((route) => route.isFirst);
+            // Replace the current route with HomeScreen showing Dates tab
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const HomeScreen(initialIndex: 1),
+              ),
+            );
           },
         );
     }

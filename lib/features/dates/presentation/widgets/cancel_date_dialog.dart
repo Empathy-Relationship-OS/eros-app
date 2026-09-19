@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/utils/validators.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/cancel_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/date_detail_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/token_amount.dart';
+import 'package:eros_app/features/wallet/presentation/providers/wallet_provider.dart';
 
 /// Cancel date confirmation dialog
 ///
@@ -93,9 +95,17 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
   void _handleCancel() async {
     final reason = _reasonController.text.trim();
 
-    // Close dialog immediately
-    if (!mounted) return;
-    Navigator.of(context).pop();
+    // Validate reason if provided
+    if (reason.isNotEmpty && !Validators.isSafeText(reason)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cancellation note contains invalid characters'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
 
     // Trigger cancellation
     await ref
@@ -105,6 +115,9 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
     // Handle result
     if (!mounted) return;
     final cancelState = ref.read(cancelProvider(widget.dateId));
+
+    // Close dialog after cancellation completes
+    Navigator.of(context).pop();
 
     if (cancelState.errorMessage == 'conflict') {
       // Date moved on - refetch and show toast
@@ -135,6 +148,9 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
       if (refund != null && double.tryParse(refund.amount) != null) {
         final amount = double.parse(refund.amount);
         if (amount > 0) {
+          // Refresh wallet balance after refund
+          ref.read(walletBalanceProvider.notifier).refresh();
+
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
