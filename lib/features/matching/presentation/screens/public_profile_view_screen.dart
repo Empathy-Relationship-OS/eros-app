@@ -17,11 +17,15 @@ class PublicProfileViewScreen extends ConsumerStatefulWidget {
   /// If false, show both "Not for me" and "Go for a date" buttons
   final bool isFromLast24Hours;
 
+  /// If true, hide action buttons entirely (used when viewing already matched dates)
+  final bool hideActionButtons;
+
   const PublicProfileViewScreen({
     super.key,
     required this.userId,
     required this.matchId,
     this.isFromLast24Hours = false,
+    this.hideActionButtons = false,
   });
 
   @override
@@ -33,7 +37,6 @@ class _PublicProfileViewScreenState
     extends ConsumerState<PublicProfileViewScreen> {
   late final Future<PublicProfileDTO> _profileFuture;
   bool _isProcessingAction = false;
-  final bool _showActionButtons = true;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -210,7 +213,7 @@ class _PublicProfileViewScreenState
               ),
 
               // Floating action buttons at bottom
-              if (_showActionButtons)
+              if (!widget.hideActionButtons)
                 Positioned(
                   left: 0,
                   right: 0,

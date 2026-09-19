@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/date_detail_provider.dart';
-import 'package:eros_app/features/dates/presentation/widgets/partner_header.dart';
-import 'package:eros_app/features/dates/presentation/widgets/date_facts.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_status_pill.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_stepper.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
@@ -14,6 +14,7 @@ import 'package:eros_app/features/dates/presentation/widgets/token_amount.dart';
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
 import 'package:eros_app/features/dates/presentation/widgets/terminal_panel.dart';
 import 'package:eros_app/features/home/presentation/screens/home_screen.dart';
+import 'package:eros_app/features/matching/presentation/screens/public_profile_view_screen.dart';
 
 /// Date detail screen showing full date info, stepper, and CTA panel
 ///
@@ -109,23 +110,9 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
         // Main content
         CustomScrollView(
           slivers: [
-            // Partner header
+            // Partner header with date facts
             SliverToBoxAdapter(
               child: _buildHeader(context, dateDetail, currentUid),
-            ),
-
-            // Date facts
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: DateFacts(
-                  startTime: dateDetail.scheduledStart,
-                  endTime: dateDetail.scheduledEnd,
-                  venueName: dateDetail.venueName,
-                  venueAddress: dateDetail.venueAddress,
-                  activityName: dateDetail.activityName,
-                ),
-              ),
             ),
 
             // Status pill
@@ -201,12 +188,113 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
   }
 
   Widget _buildHeader(BuildContext context, DateDetail dateDetail, String currentUid) {
+    // Determine partner's userId
+    final partnerId = dateDetail.user1Id == currentUid
+        ? dateDetail.user2Id
+        : dateDetail.user1Id;
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      child: PartnerHeader(
-        partnerName: dateDetail.partnerName,
-        partnerThumbnailUrl: dateDetail.partnerThumbnailUrl,
-        // TODO: Add verification badges if available
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Large partner photo on the left (tappable)
+            GestureDetector(
+              onTap: () {
+                // Navigate to public profile view screen
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => PublicProfileViewScreen(
+                      userId: partnerId,
+                      matchId: dateDetail.matchId,
+                      isFromLast24Hours: false,
+                      hideActionButtons: true, // Already matched, viewing from date screen
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                width: 140,
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    bottomLeft: Radius.circular(16),
+                  ),
+                  color: AppColors.primaryOrangeLight,
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: dateDetail.partnerThumbnailUrl != null
+                    ? CachedNetworkImage(
+                        imageUrl: dateDetail.partnerThumbnailUrl!,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        errorWidget: (context, url, error) => _buildInitialAvatar(
+                          dateDetail.partnerName,
+                          140,
+                        ),
+                      )
+                    : _buildInitialAvatar(dateDetail.partnerName, 140),
+              ),
+            ),
+
+            // Partner name and date facts on the right
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Partner name
+                    Text(
+                      dateDetail.partnerName,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Date facts inline
+                    if (dateDetail.scheduledStart != null) ...[
+                      _buildInlineFact(
+                        Icons.calendar_today,
+                        _formatDateTime(dateDetail.scheduledStart!),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    if (dateDetail.venueName != null) ...[
+                      _buildInlineFact(
+                        Icons.location_on,
+                        dateDetail.venueName!,
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    _buildInlineFact(
+                      Icons.local_bar,
+                      dateDetail.activityName,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -629,5 +717,58 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
     // This would need to be tracked in date detail or separate state
     // For now, return false (will be implemented in UI-8)
     return false;
+  }
+
+  // Helper methods for header
+
+  Widget _buildInlineFact(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: AppColors.textSecondary,
+        ),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    // Format as "Wed, 10 Dec - 19:00"
+    final dayFormat = DateFormat('EEE, d MMM');
+    final timeFormat = DateFormat('HH:mm');
+    return '${dayFormat.format(dateTime)} - ${timeFormat.format(dateTime)}';
+  }
+
+  Widget _buildInitialAvatar(String name, double size) {
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+
+    return Container(
+      width: size,
+      height: size,
+      color: AppColors.primaryOrangeLight,
+      child: Center(
+        child: Text(
+          initial,
+          style: TextStyle(
+            fontSize: size * 0.4,
+            fontWeight: FontWeight.bold,
+            color: AppColors.white,
+          ),
+        ),
+      ),
+    );
   }
 }
