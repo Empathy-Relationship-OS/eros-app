@@ -14,10 +14,10 @@ import 'package:intl/intl.dart';
 ///
 /// Full-screen route for selecting available time slots.
 /// - Horizontal day strip covering [now+48h, now+21d]
-/// - Vertical slot list per selected day (30-min grid, 2-hour slots)
-/// - Tap cycle: unmarked → Free → Busy → unmarked
-/// - Partner overlay when available
-/// - Requires 3+ Free slots to submit
+/// - Vertical slot list per selected day (30-min intervals)
+/// - Tap cycle: unmarked → Available → Busy → unmarked
+/// - Partner availability shown side-by-side with colored indicators
+/// - Requires 3+ Available slots to submit
 class AvailabilityPickerScreen extends ConsumerStatefulWidget {
   final String dateId;
   final int round;
@@ -39,7 +39,6 @@ class _AvailabilityPickerScreenState
   late DateTime _windowStart;
   late DateTime _windowEnd;
   bool _showEarlierSlots = false;
-  bool _showLaterSlots = false;
   bool _isLoadingCancelDialog = false;
 
   // Local state: Map<slotStart UTC, SlotAvailability?>
@@ -107,26 +106,64 @@ class _AvailabilityPickerScreenState
               // Partner legend
               if (availability.partnerSlots.isNotEmpty)
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  color: AppColors.cardBackground,
+                  padding: const EdgeInsets.all(16),
+                  color: const Color(0xFFF5F5F5),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline,
-                          size: 16, color: AppColors.textSecondary),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          DatesCopy.availabilityPartnerLegend(
+                      // Your availability
+                      Row(
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: AppColors.success,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 12,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            'You',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 20),
+                      // Partner availability
+                      Row(
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: AppColors.success,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 12,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
                             'Partner', // Would come from dateDetail.partnerName
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
+                        ],
                       ),
                     ],
                   ),
@@ -170,13 +207,23 @@ class _AvailabilityPickerScreenState
     final days = _generateDayChips();
 
     return Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      height: 80,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: days.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (context, index) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
           final day = days[index];
           final isSelected = _isSameDay(day, _selectedDay);
@@ -185,54 +232,53 @@ class _AvailabilityPickerScreenState
           return GestureDetector(
             onTap: () => setState(() => _selectedDay = day),
             child: Container(
-              width: 48,
+              width: 56,
               decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primaryOrange
-                    : AppColors.cardBackground,
-                borderRadius: BorderRadius.circular(12),
+                color: isSelected ? AppColors.primaryOrange : Colors.white,
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isSelected
                       ? AppColors.primaryOrange
-                      : Colors.transparent,
-                  width: 2,
+                      : AppColors.textTertiary.withValues(alpha: 0.2),
+                  width: 1.5,
                 ),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    DateFormat('E').format(day).substring(0, 1),
+                    DateFormat('E').format(day).substring(0, 3),
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: isSelected
                           ? Colors.white
                           : AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     day.day.toString(),
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: isSelected ? Colors.white : AppColors.textPrimary,
                     ),
                   ),
-                  if (hasMark) ...[
-                    const SizedBox(height: 2),
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? Colors.white
-                            : AppColors.primaryOrange,
-                        shape: BoxShape.circle,
+                  if (hasMark)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Container(
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? Colors.white
+                              : AppColors.primaryOrange,
+                          shape: BoxShape.circle,
+                        ),
                       ),
                     ),
-                  ],
                 ],
               ),
             ),
@@ -247,7 +293,7 @@ class _AvailabilityPickerScreenState
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: slots.length + 2, // +2 for Earlier/Later expanders
+      itemCount: slots.length + 1, // +1 for Earlier expander
       itemBuilder: (context, index) {
         if (index == 0) {
           // Earlier expander
@@ -255,15 +301,6 @@ class _AvailabilityPickerScreenState
             label: 'Earlier',
             isExpanded: _showEarlierSlots,
             onTap: () => setState(() => _showEarlierSlots = !_showEarlierSlots),
-          );
-        }
-
-        if (index == slots.length + 1) {
-          // Later expander
-          return _buildExpander(
-            label: 'Later',
-            isExpanded: _showLaterSlots,
-            onTap: () => setState(() => _showLaterSlots = !_showLaterSlots),
           );
         }
 
@@ -302,7 +339,7 @@ class _AvailabilityPickerScreenState
               ),
               const SizedBox(width: 4),
               Icon(
-                isExpanded ? Icons.expand_less : Icons.expand_more,
+                isExpanded ? Icons.expand_more : Icons.expand_less,
                 color: AppColors.textSecondary,
                 size: 20,
               ),
@@ -314,8 +351,7 @@ class _AvailabilityPickerScreenState
   }
 
   Widget _buildSlotRow(DateTime slotStart, AvailabilityView availability) {
-    final slotEnd = slotStart.add(const Duration(hours: 2));
-    final timeLabel = '${DateFormat('HH:mm').format(slotStart.toLocal())} - ${DateFormat('HH:mm').format(slotEnd.toLocal())}';
+    final timeLabel = DateFormat('HH:mm').format(slotStart.toLocal());
 
     final myMark = _marks[slotStart];
     final partnerMark = availability.partnerSlots
@@ -323,64 +359,43 @@ class _AvailabilityPickerScreenState
         .firstOrNull
         ?.availability;
 
-    Color bgColor;
-    Color textColor;
-    IconData? icon;
-
-    if (myMark == SlotAvailability.available) {
-      bgColor = AppColors.primaryOrange;
-      textColor = Colors.white;
-      icon = Icons.check;
-    } else if (myMark == SlotAvailability.unavailable) {
-      bgColor = AppColors.textTertiary.withValues(alpha: 0.2);
-      textColor = AppColors.textSecondary;
-      icon = Icons.close;
-    } else {
-      bgColor = AppColors.cardBackground;
-      textColor = AppColors.textPrimary;
-    }
-
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 4),
       child: InkWell(
         onTap: () => _cycleSlot(slotStart),
         onLongPress: () => _fillRestOfDay(slotStart, myMark),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: myMark != null
-                  ? Colors.transparent
-                  : AppColors.textTertiary.withValues(alpha: 0.3),
-              width: 1,
-            ),
+            color: _getSlotBackgroundColor(myMark),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             children: [
-              Expanded(
+              // Time label
+              SizedBox(
+                width: 60,
                 child: Text(
                   timeLabel,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: textColor,
+                    color: _getSlotTextColor(myMark),
                   ),
                 ),
               ),
-              if (icon != null)
-                Icon(icon, color: textColor, size: 20)
-              else if (partnerMark == SlotAvailability.available)
-                const Icon(Icons.favorite_border,
-                    color: AppColors.textSecondary, size: 16)
-              else if (partnerMark == SlotAvailability.unavailable)
-                Container(
-                  width: 16,
-                  height: 2,
-                  color: AppColors.textSecondary,
-                ),
+
+              const SizedBox(width: 16),
+
+              // My availability indicator
+              _buildAvailabilityIndicator(myMark, isPartner: false),
+
+              const SizedBox(width: 12),
+
+              // Partner availability indicator (if exists)
+              if (availability.partnerSlots.isNotEmpty)
+                _buildAvailabilityIndicator(partnerMark, isPartner: true),
             ],
           ),
         ),
@@ -525,6 +540,68 @@ class _AvailabilityPickerScreenState
 
   // ==================== HELPERS ====================
 
+  Color _getSlotBackgroundColor(SlotAvailability? mark) {
+    if (mark == SlotAvailability.available) {
+      return const Color(0xFFE8F5E9); // Light green background
+    } else if (mark == SlotAvailability.unavailable) {
+      return const Color(0xFFFFEBEE); // Light red background
+    } else {
+      return Colors.white;
+    }
+  }
+
+  Color _getSlotTextColor(SlotAvailability? mark) {
+    return AppColors.textPrimary;
+  }
+
+  Widget _buildAvailabilityIndicator(SlotAvailability? mark, {required bool isPartner}) {
+    if (mark == SlotAvailability.available) {
+      return Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: isPartner ? AppColors.success : AppColors.success,
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.check,
+          color: Colors.white,
+          size: 18,
+        ),
+      );
+    } else if (mark == SlotAvailability.unavailable) {
+      return Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: isPartner ? AppColors.error : AppColors.error,
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.close,
+          color: Colors.white,
+          size: 18,
+        ),
+      );
+    } else {
+      // Unmarked - show empty circle for user, nothing for partner
+      if (isPartner) {
+        return const SizedBox(width: 32, height: 32);
+      }
+      return Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: AppColors.textTertiary.withValues(alpha: 0.3),
+            width: 2,
+          ),
+          shape: BoxShape.circle,
+        ),
+      );
+    }
+  }
+
   List<DateTime> _generateDayChips() {
     final days = <DateTime>[];
     var current = DateTime(
@@ -554,12 +631,17 @@ class _AvailabilityPickerScreenState
       _selectedDay.day,
     ).toUtc();
 
-    // Default: 08:00 to 22:00 (22:00 is last start, ends at 00:00 next day)
-    final int startHour = _showEarlierSlots ? 0 : 8;
-    final int endHour = _showLaterSlots ? 23 : 21; // 21 = 21:30 is last slot before 22:00
+    // Default: 15:00 (3pm) to 22:00 (10pm)
+    // Earlier: 09:00 (9am) to 14:30
+    // Absolute limits: 09:00 to 22:00 (9am to 10pm, last slot at 22:00)
+    final int startHour = _showEarlierSlots ? 9 : 15;
+    final int endHour = 22; // Always ends at 22:00 (10pm)
 
     for (int hour = startHour; hour <= endHour; hour++) {
       for (int minute in [0, 30]) {
+        // Skip 22:30 - last slot should be 22:00
+        if (hour == 22 && minute == 30) continue;
+
         final slot = dayStart.add(Duration(hours: hour, minutes: minute));
 
         // Skip if before windowStart or after windowEnd
