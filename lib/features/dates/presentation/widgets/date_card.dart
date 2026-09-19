@@ -9,16 +9,19 @@ import 'package:eros_app/features/dates/presentation/widgets/date_facts.dart';
 ///
 /// Per UI-3: Shows partner photo, name, facts (time/venue/activity), and status pill
 /// Whole card taps through to detail screen
+/// Action pills can optionally navigate directly to action-specific screens
 class DateCard extends StatelessWidget {
   final DateSummary date;
   final String currentUserId;
   final VoidCallback onTap;
+  final VoidCallback? onActionTap;
 
   const DateCard({
     super.key,
     required this.date,
     required this.currentUserId,
     required this.onTap,
+    this.onActionTap,
   });
 
   @override
@@ -142,11 +145,33 @@ class DateCard extends StatelessWidget {
     // Per UI-3: Use state-only fallback text since DateSummary lacks
     // deposit status, per-round info, and rankings
     final (pillText, tone) = _getStatePill();
+    final isActionable = _isActionableState();
+
+    // Wrap in InkWell if this is an actionable state and onActionTap is provided
+    if (isActionable && onActionTap != null) {
+      return InkWell(
+        onTap: onActionTap,
+        borderRadius: BorderRadius.circular(20),
+        child: DateStatusPill(
+          text: pillText,
+          tone: tone,
+          isClickable: true,
+        ),
+      );
+    }
 
     return DateStatusPill(
       text: pillText,
       tone: tone,
     );
+  }
+
+  /// Returns true if the current state requires user action
+  bool _isActionableState() {
+    return date.state == DateState.awaitingAvailability ||
+        date.state == DateState.awaitingDeposit ||
+        date.state == DateState.awaitingVenueRanking ||
+        date.state == DateState.awaitingPresenceConfirmation;
   }
 
   String _getStateBadgeText() {

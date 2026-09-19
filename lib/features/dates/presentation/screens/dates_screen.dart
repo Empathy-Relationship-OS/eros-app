@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
+import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_list_provider.dart';
+import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_empty_state.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_card.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
@@ -118,11 +120,12 @@ class DatesScreen extends ConsumerWidget {
     }
 
     // Active dates list
-    return _buildActiveList(context, state, authService);
+    return _buildActiveList(context, ref, state, authService);
   }
 
   Widget _buildActiveList(
     BuildContext context,
+    WidgetRef ref,
     DatesListState state,
     AuthService authService,
   ) {
@@ -144,6 +147,10 @@ class DatesScreen extends ConsumerWidget {
                     '/dates/detail',
                     arguments: date.dateId.toString(),
                   );
+                },
+                onActionTap: () {
+                  // Navigate directly to action-specific screen
+                  _handleActionNavigation(context, ref, date);
                 },
               );
             },
@@ -183,6 +190,74 @@ class DatesScreen extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  /// Navigate directly to action-specific screen based on date state
+  ///
+  /// Fetches full date detail to get context like availabilityRound,
+  /// then navigates to the appropriate action screen
+  Future<void> _handleActionNavigation(BuildContext context, WidgetRef ref, DateSummary date) async {
+    // Show loading indicator while fetching
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // Fetch full date detail to get additional context
+      final repository = ref.read(datesRepositoryProvider);
+      final dateDetail = await repository.getDateById(date.dateId.toString());
+
+      if (!context.mounted) return;
+
+      // Dismiss loading
+      Navigator.of(context).pop();
+
+      if (dateDetail == null) {
+        // Date not found, show error
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Date not found')),
+        );
+        return;
+      }
+
+      // Navigate based on state
+      switch (date.state) {
+        case DateState.awaitingAvailability:
+          // Navigate to availability picker with round
+          Navigator.of(context).pushNamed(
+            '/dates/availability',
+            arguments: {
+              'dateId': date.dateId.toString(),
+              'round': dateDetail.availabilityRound,
+            },
+          );
+          break;
+
+        case DateState.awaitingDeposit:
+        case DateState.awaitingVenueRanking:
+        case DateState.awaitingPresenceConfirmation:
+        default:
+          // For other states, navigate to detail screen
+          Navigator.of(context).pushNamed(
+            '/dates/detail',
+            arguments: date.dateId.toString(),
+          );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+
+      // Dismiss loading
+      Navigator.of(context).pop();
+
+      // Show error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load date: $e')),
+      );
+    }
   }
 
   void _showHowItWorks(BuildContext context) {
