@@ -13,6 +13,7 @@ import 'package:eros_app/features/dates/presentation/widgets/deadline_countdown.
 import 'package:eros_app/features/dates/presentation/widgets/token_amount.dart';
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
 import 'package:eros_app/features/dates/presentation/widgets/terminal_panel.dart';
+import 'package:eros_app/features/dates/presentation/screens/availability_picker_screen.dart';
 import 'package:eros_app/features/home/presentation/screens/home_screen.dart';
 import 'package:eros_app/features/matching/presentation/screens/public_profile_view_screen.dart';
 
@@ -400,19 +401,25 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           const SizedBox(height: 12),
         ],
         ElevatedButton(
-          onPressed: () {
-            // TODO: Navigate to availability picker (UI-5)
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Availability picker coming soon'),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          },
+          onPressed: () => _navigateToAvailabilityPicker(context, dateDetail),
           child: const Text('Pick your times'),
         ),
       ],
     );
+  }
+
+  void _navigateToAvailabilityPicker(BuildContext context, DateDetail dateDetail) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AvailabilityPickerScreen(
+          dateId: widget.dateId,
+          round: dateDetail.availabilityRound,
+        ),
+      ),
+    ).then((_) {
+      // Refetch when returning from availability picker
+      ref.read(dateDetailProvider(widget.dateId).notifier).refresh();
+    });
   }
 
   Widget _buildDepositCTA(BuildContext context, DateDetail dateDetail, String currentUid) {

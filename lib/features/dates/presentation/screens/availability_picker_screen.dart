@@ -6,6 +6,7 @@ import 'package:eros_app/features/dates/presentation/providers/availability_prov
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
+import 'package:eros_app/features/dates/presentation/screens/deposit_sheet.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:intl/intl.dart';
 
@@ -702,10 +703,32 @@ class _AvailabilityPickerScreenState
 
       if (!mounted) return;
 
-      // After submit, refetch the date detail to see if state changed
-      // For now, just pop - UI-4 detail screen will refetch on focus
-      // TODO: Fetch detail here to detect time found vs no overlap vs expired
-      Navigator.of(context).pop();
+      // Refetch date detail to check what state we're in now
+      final dateDetail = await ref.read(datesRepositoryProvider).getDateById(widget.dateId);
+
+      if (!mounted) return;
+
+      if (dateDetail == null) {
+        // Date not found, just pop
+        Navigator.of(context).pop();
+        return;
+      }
+
+      // Handle different state transitions per UI-5 spec
+      if (dateDetail.state == DateState.awaitingDeposit) {
+        // Time found! Pop and open deposit sheet with celebratory header
+        Navigator.of(context).pop();
+        _showDepositSheet(context, dateDetail);
+      } else if (dateDetail.availabilityRound > widget.round) {
+        // Round incremented - no overlap
+        _showNoOverlapDialog();
+      } else if (dateDetail.state == DateState.expired) {
+        // Date expired (e.g., after round 2 failure)
+        Navigator.of(context).pop();
+      } else {
+        // Still AWAITING_AVAILABILITY - waiting on partner
+        Navigator.of(context).pop();
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -715,6 +738,30 @@ class _AvailabilityPickerScreenState
         ),
       );
     }
+  }
+
+  void _showDepositSheet(BuildContext context, DateDetail dateDetail) {
+    final currentUid = ref.read(authServiceProvider).currentUser?.uid ?? '';
+
+    // Format agreed time range
+    String agreedTimeRange = 'Time agreed';
+    if (dateDetail.scheduledStart != null) {
+      final formatter = DateFormat('EEE d MMM, HH:mm');
+      final start = formatter.format(dateDetail.scheduledStart!.toLocal());
+      final end = DateFormat('HH:mm').format(dateDetail.scheduledStart!.add(const Duration(hours: 2)).toLocal());
+      agreedTimeRange = '$start - $end';
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DepositSheet(
+        dateDetail: dateDetail,
+        currentUid: currentUid,
+        agreedTimeRange: agreedTimeRange,
+      ),
+    );
   }
 
   void _showNoOverlapDialog() {
