@@ -753,10 +753,11 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
   }
 
   String _formatDateTime(DateTime dateTime) {
-    // Format as "Wed, 10 Dec - 19:00"
+    // Format as "Wed, 10 Dec - 19:00" in local timezone
+    final local = dateTime.toLocal();
     final dayFormat = DateFormat('EEE, d MMM');
     final timeFormat = DateFormat('HH:mm');
-    return '${dayFormat.format(dateTime)} - ${timeFormat.format(dateTime)}';
+    return '${dayFormat.format(local)} - ${timeFormat.format(local)}';
   }
 
   Widget _buildInitialAvatar(String name, double size) {
