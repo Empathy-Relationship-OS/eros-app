@@ -378,24 +378,21 @@ class _AvailabilityPickerScreenState
           child: Row(
             children: [
               // Time label
-              SizedBox(
-                width: 60,
-                child: Text(
-                  timeLabel,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: _getSlotTextColor(myMark),
-                  ),
+              Text(
+                timeLabel,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: _getSlotTextColor(myMark),
                 ),
               ),
 
-              const SizedBox(width: 16),
+              const Spacer(),
 
               // My availability indicator
               _buildAvailabilityIndicator(myMark, isPartner: false),
 
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
 
               // Partner availability indicator (if exists)
               if (availability.partnerSlots.isNotEmpty)
