@@ -11,6 +11,7 @@ import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/wallet/presentation/providers/wallet_provider.dart';
 import 'package:eros_app/features/wallet/presentation/screens/payment_screen.dart';
+import 'package:eros_app/features/dates/presentation/screens/venue_ranking_screen.dart';
 
 /// UI-6: Deposit sheet (modal bottom sheet)
 ///
@@ -316,8 +317,16 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
         // Both paid! Show success and push to venue ranking
         Navigator.of(context).pop(); // Close sheet
         _showSuccessOverlay(DatesCopy.depositSuccessBothPaid, () {
-          // TODO: Push to venue ranking screen (UI-7)
-          // For now, just close - parent will refetch and show ranking CTA
+          // Navigate to venue ranking screen (UI-7)
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => VenueRankingScreen(
+                dateId: widget.dateDetail.dateId.toString(),
+                rankingDeadline: widget.dateDetail.rankingDeadline,
+                readOnly: false,
+              ),
+            ),
+          );
         });
       } else {
         // You paid, waiting for partner
