@@ -14,6 +14,7 @@ import 'package:eros_app/features/dates/presentation/widgets/token_amount.dart';
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
 import 'package:eros_app/features/dates/presentation/widgets/terminal_panel.dart';
 import 'package:eros_app/features/dates/presentation/screens/availability_picker_screen.dart';
+import 'package:eros_app/features/dates/presentation/screens/deposit_sheet.dart';
 import 'package:eros_app/features/home/presentation/screens/home_screen.dart';
 import 'package:eros_app/features/matching/presentation/screens/public_profile_view_screen.dart';
 
@@ -466,15 +467,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           const SizedBox(height: 12),
         ],
         ElevatedButton(
-          onPressed: () {
-            // TODO: Open deposit sheet (UI-6)
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Deposit sheet coming soon'),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          },
+          onPressed: () => _showDepositSheet(context, dateDetail, currentUid),
           child: Text('Commit ${TokenAmount.formatTokenAmount(dateDetail.tokenCost)}'),
         ),
       ],
@@ -776,6 +769,29 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
             color: AppColors.white,
           ),
         ),
+      ),
+    );
+  }
+
+  /// Show deposit sheet modal (UI-6)
+  void _showDepositSheet(BuildContext context, DateDetail dateDetail, String currentUid) {
+    // Format agreed time range
+    String agreedTimeRange = 'Time agreed';
+    if (dateDetail.scheduledStart != null) {
+      final formatter = DateFormat('EEE d MMM, HH:mm');
+      final start = formatter.format(dateDetail.scheduledStart!.toLocal());
+      final end = DateFormat('HH:mm').format(dateDetail.scheduledStart!.add(const Duration(hours: 2)).toLocal());
+      agreedTimeRange = '$start - $end';
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DepositSheet(
+        dateDetail: dateDetail,
+        currentUid: currentUid,
+        agreedTimeRange: agreedTimeRange,
       ),
     );
   }
