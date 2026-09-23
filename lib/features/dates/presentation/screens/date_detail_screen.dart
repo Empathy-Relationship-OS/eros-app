@@ -15,6 +15,7 @@ import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.
 import 'package:eros_app/features/dates/presentation/widgets/terminal_panel.dart';
 import 'package:eros_app/features/dates/presentation/screens/availability_picker_screen.dart';
 import 'package:eros_app/features/dates/presentation/screens/deposit_sheet.dart';
+import 'package:eros_app/features/dates/presentation/screens/venue_ranking_screen.dart';
 import 'package:eros_app/features/home/presentation/screens/home_screen.dart';
 import 'package:eros_app/features/matching/presentation/screens/public_profile_view_screen.dart';
 
@@ -423,6 +424,21 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
     });
   }
 
+  void _navigateToVenueRanking(BuildContext context, DateDetail dateDetail, bool hasRanked) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => VenueRankingScreen(
+          dateId: widget.dateId,
+          rankingDeadline: dateDetail.rankingDeadline,
+          readOnly: hasRanked,
+        ),
+      ),
+    ).then((_) {
+      // Refetch when returning from venue ranking
+      ref.read(dateDetailProvider(widget.dateId).notifier).refresh();
+    });
+  }
+
   Widget _buildDepositCTA(BuildContext context, DateDetail dateDetail, String currentUid) {
     final youPaid = _hasUserPaid(dateDetail, currentUid);
 
@@ -502,15 +518,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           const SizedBox(height: 12),
         ],
         ElevatedButton(
-          onPressed: () {
-            // TODO: Navigate to venue ranking (UI-7)
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Venue ranking coming soon'),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          },
+          onPressed: () => _navigateToVenueRanking(context, dateDetail, hasRanked),
           child: Text(hasRanked ? 'View your ranking' : 'Rank venues'),
         ),
       ],

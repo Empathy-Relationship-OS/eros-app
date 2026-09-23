@@ -7,6 +7,7 @@ import 'package:eros_app/features/dates/presentation/providers/venue_ranking_pro
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/deadline_countdown.dart';
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
+import 'package:eros_app/features/dates/presentation/widgets/error_state_widget.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -223,23 +224,13 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                error is NotFoundException
-                    ? 'Venues not available yet'
-                    : 'Failed to load venues',
-                style: const TextStyle(color: AppColors.error),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.refresh(venueOptionsProvider(widget.dateId)),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
+        error: (error, stack) => ErrorStateWidget(
+          error: error,
+          onRetry: () => ref.refresh(venueOptionsProvider(widget.dateId)),
+          onGoBack: () => Navigator.of(context).pop(),
+          customMessage: error is NotFoundException
+              ? 'Venues are still being prepared for your date. This usually takes a few moments.'
+              : null,
         ),
       ),
     );
