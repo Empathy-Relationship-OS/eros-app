@@ -13,6 +13,7 @@ import 'package:eros_app/features/dates/presentation/widgets/deadline_countdown.
 import 'package:eros_app/features/dates/presentation/widgets/token_amount.dart';
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
 import 'package:eros_app/features/dates/presentation/widgets/terminal_panel.dart';
+import 'package:eros_app/features/dates/presentation/widgets/error_state_widget.dart';
 import 'package:eros_app/features/dates/presentation/screens/availability_picker_screen.dart';
 import 'package:eros_app/features/dates/presentation/screens/deposit_sheet.dart';
 import 'package:eros_app/features/dates/presentation/screens/venue_ranking_screen.dart';
@@ -62,41 +63,12 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
 
     // Error state
     if (state.hasError && state.dateDetail == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: AppColors.error,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Failed to load date',
-                style: Theme.of(context).textTheme.headlineSmall,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                state.errorMessage ?? 'Unknown error',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  ref.read(dateDetailProvider(widget.dateId).notifier).refresh();
-                },
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
+      return ErrorStateWidget(
+        error: Exception(state.errorMessage ?? 'Unknown error'),
+        onRetry: () {
+          ref.read(dateDetailProvider(widget.dateId).notifier).refresh();
+        },
+        onGoBack: () => Navigator.of(context).pop(),
       );
     }
 

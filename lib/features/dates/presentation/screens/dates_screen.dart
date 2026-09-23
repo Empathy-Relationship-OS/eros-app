@@ -8,6 +8,7 @@ import 'package:eros_app/features/dates/presentation/providers/dates_repository_
 import 'package:eros_app/features/dates/presentation/widgets/dates_empty_state.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_card.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
+import 'package:eros_app/features/dates/presentation/widgets/error_state_widget.dart';
 import 'package:eros_app/features/dates/presentation/screens/date_history_screen.dart';
 
 /// Dates tab screen - Shows active dates or empty state
@@ -77,40 +78,11 @@ class DatesScreen extends ConsumerWidget {
 
     // Error state
     if (state.hasError && state.dates.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(24.0),
-        children: [
-          const SizedBox(height: 100),
-          const Icon(
-            Icons.error_outline,
-            size: 64,
-            color: AppColors.error,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Failed to load dates',
-            style: Theme.of(context).textTheme.headlineSmall,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            state.errorMessage ?? 'Unknown error',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          Center(
-            child: ElevatedButton(
-              onPressed: () {
-                ref.read(activeDatesProvider.notifier).refresh();
-              },
-              child: const Text('Retry'),
-            ),
-          ),
-        ],
+      return ErrorStateWidget(
+        error: Exception(state.errorMessage ?? 'Unknown error'),
+        onRetry: () {
+          ref.read(activeDatesProvider.notifier).refresh();
+        },
       );
     }
 

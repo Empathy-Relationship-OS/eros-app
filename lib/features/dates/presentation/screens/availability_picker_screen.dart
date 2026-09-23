@@ -6,6 +6,7 @@ import 'package:eros_app/features/dates/presentation/providers/availability_prov
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
+import 'package:eros_app/features/dates/presentation/widgets/error_state_widget.dart';
 import 'package:eros_app/features/dates/presentation/screens/deposit_sheet.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:intl/intl.dart';
@@ -183,21 +184,10 @@ class _AvailabilityPickerScreenState
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Failed to load availability',
-                style: TextStyle(color: AppColors.error),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.refresh(availabilityProvider(widget.dateId)),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
+        error: (error, stack) => ErrorStateWidget(
+          error: error,
+          onRetry: () => ref.refresh(availabilityProvider(widget.dateId)),
+          onGoBack: () => Navigator.of(context).pop(),
         ),
       ),
     );
