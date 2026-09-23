@@ -42,6 +42,19 @@ class _MatchCarouselV2State extends State<MatchCarouselV2> {
   }
 
   @override
+  void didUpdateWidget(MatchCarouselV2 oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // If profiles list changed (e.g., after taking action), ensure current index is valid
+    if (widget.profiles.length != oldWidget.profiles.length) {
+      // If current index is out of bounds, clamp it to valid range
+      if (_currentIndex >= widget.profiles.length && widget.profiles.isNotEmpty) {
+        _currentIndex = widget.profiles.length - 1;
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _carouselController.dispose();
     super.dispose();
@@ -49,7 +62,11 @@ class _MatchCarouselV2State extends State<MatchCarouselV2> {
 
   @override
   Widget build(BuildContext context) {
+    // Generate a stable key based on the profile IDs to force rebuild when list changes
+    final profileIds = widget.profiles.map((p) => p.matchId).join('-');
+
     return CarouselView(
+      key: ValueKey(profileIds),
       itemExtent: MediaQuery.of(context).size.width - 32,
       shrinkExtent: MediaQuery.of(context).size.width - 32,
       elevation: 0,
@@ -58,6 +75,7 @@ class _MatchCarouselV2State extends State<MatchCarouselV2> {
       children: List.generate(
         widget.profiles.length,
         (index) => _CarouselCardV2(
+          key: ValueKey(widget.profiles[index].matchId),
           profile: widget.profiles[index],
           notifier: widget.notifier,
           index: index,
@@ -76,6 +94,7 @@ class _CarouselCardV2 extends ConsumerStatefulWidget {
   final bool isActive;
 
   const _CarouselCardV2({
+    super.key,
     required this.profile,
     required this.notifier,
     required this.index,
