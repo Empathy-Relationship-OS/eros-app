@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
@@ -40,6 +41,26 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
   List<VenueOption> _orderedVenues = [];
   bool _isSubmitting = false;
   bool _isLoadingCancelDialog = false;
+  String? _cachedAuthToken; // Cache auth token to prevent repeated fetches
+
+  @override
+  void initState() {
+    super.initState();
+    _initAuthToken();
+  }
+
+  Future<void> _initAuthToken() async {
+    try {
+      final token = await ref.read(authServiceProvider).getIdToken();
+      if (mounted) {
+        setState(() {
+          _cachedAuthToken = token;
+        });
+      }
+    } catch (e) {
+      // Ignore auth errors - images will show placeholder
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -263,8 +284,10 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
     }
 
     // Reorderable list for active ranking
+    // Set buildDefaultDragHandles to false to prevent scroll conflict
     return ReorderableListView.builder(
       padding: const EdgeInsets.all(16),
+      buildDefaultDragHandles: false, // Critical: prevents scroll conflict
       onReorder: _handleReorder,
       itemCount: _orderedVenues.length,
       proxyDecorator: (child, index, animation) {
@@ -285,6 +308,7 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
         return _buildVenueCard(
           venue,
           index + 1,
+          index: index, // Pass index for ReorderableDragStartListener
           key: ValueKey(venue.venueId),
           isDraggable: true,
         );
@@ -296,88 +320,139 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
     VenueOption venue,
     int rank, {
     Key? key,
+    int? index, // Required for ReorderableDragStartListener
     required bool isDraggable,
   }) {
-    return Container(
+    return Padding(
       key: key,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.textTertiary.withValues(alpha: 0.2),
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.textTertiary.withValues(alpha: 0.2),
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          // Rank badge
-          Container(
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(
-              color: AppColors.primaryOrange,
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              rank.toString(),
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
+        child: Row(
+          children: [
+            // Rank badge
+            Container(
+              width: 32,
+              height: 32,
+              decoration: const BoxDecoration(
+                color: AppColors.primaryOrange,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                rank.toString(),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
+            const SizedBox(width: 12),
 
-          // Venue info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  venue.name,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  venue.address,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                InkWell(
-                  onTap: () => _openMaps(venue.address),
-                  child: const Text(
-                    'Open in Maps',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.primaryOrange,
+            // Venue thumbnail image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: venue.thumbnailUrl != null
+                  ? _buildAuthenticatedImage(venue.thumbnailUrl!)
+                  : _buildImagePlaceholder(),
+            ),
+            const SizedBox(width: 12),
+
+            // Venue info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    venue.name,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    venue.address,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () => _openMaps(venue.address),
+                    child: const Text(
+                      'Open in Maps',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.primaryOrange,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          // Drag handle
-          if (isDraggable)
-            const Icon(
-              Icons.drag_handle,
-              color: AppColors.textSecondary,
-              size: 24,
-            ),
-        ],
+            // Drag handle (wrapped with ReorderableDragStartListener)
+            if (isDraggable && index != null)
+              ReorderableDragStartListener(
+                index: index,
+                child: const Icon(
+                  Icons.drag_handle,
+                  color: AppColors.textSecondary,
+                  size: 24,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build an authenticated image with Firebase ID token (cached)
+  Widget _buildAuthenticatedImage(String imageUrl) {
+    // Use cached token to prevent repeated auth calls during reordering
+    if (_cachedAuthToken == null) {
+      return _buildImagePlaceholder();
+    }
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      width: 80,
+      height: 80,
+      fit: BoxFit.cover,
+      placeholder: (context, url) => _buildImagePlaceholder(),
+      errorWidget: (context, url, error) => _buildImagePlaceholder(),
+      httpHeaders: {
+        'Authorization': 'Bearer $_cachedAuthToken',
+      },
+    );
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: AppColors.textTertiary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Icon(
+        Icons.restaurant,
+        color: AppColors.textSecondary,
+        size: 32,
       ),
     );
   }
