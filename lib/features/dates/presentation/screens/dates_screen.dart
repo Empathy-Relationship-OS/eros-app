@@ -196,8 +196,8 @@ class DatesScreen extends ConsumerWidget {
         return;
       }
 
-      // Navigate based on state
-      switch (date.state) {
+      // Navigate based on state (use fetched dateDetail.state, not potentially stale date.state)
+      switch (dateDetail.state) {
         case DateState.awaitingAvailability:
           // Navigate to availability picker with round
           Navigator.of(context).pushNamed(
