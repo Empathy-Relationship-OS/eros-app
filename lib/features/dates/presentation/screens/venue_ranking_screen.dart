@@ -522,12 +522,6 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
             ))
         .toList();
 
-    // Debug: Log what we're submitting
-    print('🎯 Submitting ${rankings.length} venue rankings:');
-    for (var r in rankings) {
-      print('   - venueId: ${r.venueId}, rank: ${r.rank}');
-    }
-
     final request = SubmitRankingsRequest(rankings);
 
     try {
