@@ -86,8 +86,10 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
       backgroundColor: AppColors.background,
       body: venueOptionsAsync.when(
         data: (venueOptions) {
-          // Initialize ordered venues on first build
-          if (_orderedVenues.isEmpty) {
+          // Initialize ordered venues - always sync with latest data
+          // This ensures we don't have stale venues in the list
+          if (_orderedVenues.isEmpty ||
+              _orderedVenues.length != venueOptions.options.length) {
             if (venueOptions.myRankings.isNotEmpty) {
               // User already ranked - restore their order
               _orderedVenues = _restoreRankedOrder(
@@ -520,6 +522,12 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
             ))
         .toList();
 
+    // Debug: Log what we're submitting
+    print('🎯 Submitting ${rankings.length} venue rankings:');
+    for (var r in rankings) {
+      print('   - venueId: ${r.venueId}, rank: ${r.rank}');
+    }
+
     final request = SubmitRankingsRequest(rankings);
 
     try {
@@ -667,8 +675,16 @@ class _VenueAssignedResultScreen extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Pop to detail screen
-                    Navigator.of(context).popUntil((route) => route.isFirst);
+                    // Pop back 2 screens: VenueAssignedResultScreen + VenueRankingScreen
+                    // This returns us to the date detail screen
+                    int popCount = 0;
+                    Navigator.of(context).popUntil((route) {
+                      if (popCount < 2) {
+                        popCount++;
+                        return false; // Keep popping
+                      }
+                      return true; // Stop popping
+                    });
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryOrange,

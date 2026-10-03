@@ -42,6 +42,15 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
   bool _needsTopUp = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Fetch latest wallet balance when sheet opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(walletBalanceProvider.notifier).fetchBalance();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final walletState = ref.watch(walletBalanceProvider);
     final balance = walletState.balance?.balance.toString() ?? '0.00';
@@ -315,8 +324,9 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
 
       if (response.transitionedToRanking) {
         // Both paid! Show success and push to venue ranking
-        Navigator.of(context).pop(); // Close sheet
         _showSuccessOverlay(DatesCopy.depositSuccessBothPaid, () {
+          // Close the deposit sheet
+          Navigator.of(context).pop();
           // Navigate to venue ranking screen (UI-7)
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -386,7 +396,7 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
+      builder: (dialogContext) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
         child: Container(
@@ -425,13 +435,22 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
           ),
         ),
       ),
-    );
+    ).then((_) {
+      // After dialog is dismissed, call the onDismiss callback
+      print('🎯 Success dialog dismissed, calling onDismiss');
+      if (mounted) {
+        onDismiss();
+      }
+    });
 
     // Auto-dismiss after 1.2s
     Future.delayed(const Duration(milliseconds: 1200), () {
-      if (mounted) {
+      print('⏰ Auto-dismiss timer triggered, mounted: $mounted, canPop: ${Navigator.canPop(context)}');
+      if (mounted && Navigator.canPop(context)) {
+        print('✅ Attempting to pop success dialog');
         Navigator.of(context).pop(); // Close dialog
-        onDismiss();
+      } else {
+        print('❌ Cannot pop - mounted: $mounted, canPop: ${Navigator.canPop(context)}');
       }
     });
   }
