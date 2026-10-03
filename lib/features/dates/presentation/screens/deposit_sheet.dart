@@ -393,51 +393,59 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
   }
 
   void _showSuccessOverlay(String message, VoidCallback onDismiss) {
+    ModalRoute<dynamic>? dialogRoute;
+    NavigatorState? dialogNavigator;
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => Dialog(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        child: Container(
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: AppColors.cardBackground,
-            borderRadius: BorderRadius.circular(20),
+      builder: (dialogContext) {
+        // Capture dialog's route and navigator for safe dismissal
+        dialogRoute = ModalRoute.of(dialogContext);
+        dialogNavigator = Navigator.of(dialogContext);
+
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: AppColors.cardBackground,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: AppColors.success,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: 36,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: const BoxDecoration(
-                  color: AppColors.success,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check,
-                  color: Colors.white,
-                  size: 36,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+        );
+      },
     ).then((_) {
       // After dialog is dismissed, call the onDismiss callback
-      print('🎯 Success dialog dismissed, calling onDismiss');
       if (mounted) {
         onDismiss();
       }
@@ -445,12 +453,14 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
 
     // Auto-dismiss after 1.2s
     Future.delayed(const Duration(milliseconds: 1200), () {
-      print('⏰ Auto-dismiss timer triggered, mounted: $mounted, canPop: ${Navigator.canPop(context)}');
-      if (mounted && Navigator.canPop(context)) {
-        print('✅ Attempting to pop success dialog');
-        Navigator.of(context).pop(); // Close dialog
-      } else {
-        print('❌ Cannot pop - mounted: $mounted, canPop: ${Navigator.canPop(context)}');
+      if (!mounted) return;
+
+      final route = dialogRoute;
+      final navigator = dialogNavigator;
+
+      // Only pop if the dialog route is still current
+      if (route?.isCurrent == true && navigator != null) {
+        navigator.pop();
       }
     });
   }
