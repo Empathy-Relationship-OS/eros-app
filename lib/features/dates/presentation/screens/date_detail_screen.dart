@@ -13,6 +13,10 @@ import 'package:eros_app/features/dates/presentation/widgets/deadline_countdown.
 import 'package:eros_app/features/dates/presentation/widgets/token_amount.dart';
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
 import 'package:eros_app/features/dates/presentation/widgets/terminal_panel.dart';
+import 'package:eros_app/features/dates/presentation/widgets/error_state_widget.dart';
+import 'package:eros_app/features/dates/presentation/screens/availability_picker_screen.dart';
+import 'package:eros_app/features/dates/presentation/screens/deposit_sheet.dart';
+import 'package:eros_app/features/dates/presentation/screens/venue_ranking_screen.dart';
 import 'package:eros_app/features/home/presentation/screens/home_screen.dart';
 import 'package:eros_app/features/matching/presentation/screens/public_profile_view_screen.dart';
 
@@ -59,41 +63,12 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
 
     // Error state
     if (state.hasError && state.dateDetail == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: AppColors.error,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Failed to load date',
-                style: Theme.of(context).textTheme.headlineSmall,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                state.errorMessage ?? 'Unknown error',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  ref.read(dateDetailProvider(widget.dateId).notifier).refresh();
-                },
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
+      return ErrorStateWidget(
+        error: Exception(state.errorMessage ?? 'Unknown error'),
+        onRetry: () {
+          ref.read(dateDetailProvider(widget.dateId).notifier).refresh();
+        },
+        onGoBack: () => Navigator.of(context).pop(),
       );
     }
 
@@ -400,19 +375,40 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           const SizedBox(height: 12),
         ],
         ElevatedButton(
-          onPressed: () {
-            // TODO: Navigate to availability picker (UI-5)
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Availability picker coming soon'),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          },
+          onPressed: () => _navigateToAvailabilityPicker(context, dateDetail),
           child: const Text('Pick your times'),
         ),
       ],
     );
+  }
+
+  void _navigateToAvailabilityPicker(BuildContext context, DateDetail dateDetail) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AvailabilityPickerScreen(
+          dateId: widget.dateId,
+          round: dateDetail.availabilityRound,
+        ),
+      ),
+    ).then((_) {
+      // Refetch when returning from availability picker
+      ref.read(dateDetailProvider(widget.dateId).notifier).refresh();
+    });
+  }
+
+  void _navigateToVenueRanking(BuildContext context, DateDetail dateDetail, bool hasRanked) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => VenueRankingScreen(
+          dateId: widget.dateId,
+          rankingDeadline: dateDetail.rankingDeadline,
+          readOnly: hasRanked,
+        ),
+      ),
+    ).then((_) {
+      // Refetch when returning from venue ranking
+      ref.read(dateDetailProvider(widget.dateId).notifier).refresh();
+    });
   }
 
   Widget _buildDepositCTA(BuildContext context, DateDetail dateDetail, String currentUid) {
@@ -459,15 +455,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           const SizedBox(height: 12),
         ],
         ElevatedButton(
-          onPressed: () {
-            // TODO: Open deposit sheet (UI-6)
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Deposit sheet coming soon'),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          },
+          onPressed: () => _showDepositSheet(context, dateDetail, currentUid),
           child: Text('Commit ${TokenAmount.formatTokenAmount(dateDetail.tokenCost)}'),
         ),
       ],
@@ -502,15 +490,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           const SizedBox(height: 12),
         ],
         ElevatedButton(
-          onPressed: () {
-            // TODO: Navigate to venue ranking (UI-7)
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Venue ranking coming soon'),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          },
+          onPressed: () => _navigateToVenueRanking(context, dateDetail, hasRanked),
           child: Text(hasRanked ? 'View your ranking' : 'Rank venues'),
         ),
       ],
@@ -746,10 +726,11 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
   }
 
   String _formatDateTime(DateTime dateTime) {
-    // Format as "Wed, 10 Dec - 19:00"
+    // Format as "Wed, 10 Dec - 19:00" in local timezone
+    final local = dateTime.toLocal();
     final dayFormat = DateFormat('EEE, d MMM');
     final timeFormat = DateFormat('HH:mm');
-    return '${dayFormat.format(dateTime)} - ${timeFormat.format(dateTime)}';
+    return '${dayFormat.format(local)} - ${timeFormat.format(local)}';
   }
 
   Widget _buildInitialAvatar(String name, double size) {
@@ -768,6 +749,29 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
             color: AppColors.white,
           ),
         ),
+      ),
+    );
+  }
+
+  /// Show deposit sheet modal (UI-6)
+  void _showDepositSheet(BuildContext context, DateDetail dateDetail, String currentUid) {
+    // Format agreed time range
+    String agreedTimeRange = 'Time agreed';
+    if (dateDetail.scheduledStart != null) {
+      final formatter = DateFormat('EEE d MMM, HH:mm');
+      final start = formatter.format(dateDetail.scheduledStart!.toLocal());
+      final end = DateFormat('HH:mm').format(dateDetail.scheduledStart!.add(const Duration(hours: 2)).toLocal());
+      agreedTimeRange = '$start - $end';
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DepositSheet(
+        dateDetail: dateDetail,
+        currentUid: currentUid,
+        agreedTimeRange: agreedTimeRange,
       ),
     );
   }

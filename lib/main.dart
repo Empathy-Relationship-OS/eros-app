@@ -47,6 +47,7 @@ import 'features/profile/presentation/providers/profile_creation_provider.dart';
 import 'features/profile/domain/models/question_dto.dart';
 import 'features/home/presentation/screens/home_screen.dart';
 import 'features/dates/presentation/screens/date_detail_screen.dart';
+import 'features/dates/presentation/screens/availability_picker_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -157,6 +158,19 @@ class ErosApp extends StatelessWidget {
           final dateId = settings.arguments as String;
           return MaterialPageRoute(
             builder: (context) => DateDetailScreen(dateId: dateId),
+          );
+        }
+
+        // Dates availability picker route
+        if (settings.name == '/dates/availability') {
+          final args = settings.arguments as Map<String, dynamic>;
+          final dateId = args['dateId'] as String;
+          final round = args['round'] as int;
+          return MaterialPageRoute(
+            builder: (context) => AvailabilityPickerScreen(
+              dateId: dateId,
+              round: round,
+            ),
           );
         }
 

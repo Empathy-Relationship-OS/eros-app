@@ -90,8 +90,18 @@ class MatchRepository {
       }
 
       // 200 OK - mutual match!
-      final mutualMatch = MutualMatchInfo.fromJson(response);
-      _logger.d('🎉 MUTUAL MATCH! matchId=${mutualMatch.matchId}');
+      // Response structure: { mutualMatchInfo: {...}, dateId: 4 }
+      final mutualMatchInfoData = response['mutualMatchInfo'] as Map<String, dynamic>;
+      final dateId = response['dateId'] as int?;
+
+      // Merge dateId into mutualMatchInfo for parsing
+      final mergedData = {
+        ...mutualMatchInfoData,
+        if (dateId != null) 'dateId': dateId,
+      };
+
+      final mutualMatch = MutualMatchInfo.fromJson(mergedData);
+      _logger.d('🎉 MUTUAL MATCH! matchId=${mutualMatch.matchId}, dateId=${mutualMatch.dateId}');
       return mutualMatch;
     } on ConflictException {
       _logger.w('⚠️  User already took action on match $matchId');

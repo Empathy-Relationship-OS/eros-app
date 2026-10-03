@@ -5,11 +5,13 @@ import 'package:eros_app/core/theme/app_colors.dart';
 ///
 /// Per UI-1: Full-width rounded outline with trailing info icon
 /// Tones: action (orange), waiting (grey), success (green), neutral, muted
+/// Can be made clickable to navigate directly to action screens
 class DateStatusPill extends StatelessWidget {
   final String text;
   final String tone; // 'action', 'waiting', 'success', 'neutral', 'muted'
   final String? explanationText;
   final VoidCallback? onInfoTap;
+  final bool isClickable;
 
   const DateStatusPill({
     super.key,
@@ -17,6 +19,7 @@ class DateStatusPill extends StatelessWidget {
     required this.tone,
     this.explanationText,
     this.onInfoTap,
+    this.isClickable = false,
   });
 
   @override
@@ -37,7 +40,9 @@ class DateStatusPill extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              semanticsLabel: 'Date status: $text',
+              semanticsLabel: isClickable
+                  ? 'Tap to $text'
+                  : 'Date status: $text',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -45,7 +50,14 @@ class DateStatusPill extends StatelessWidget {
               ),
             ),
           ),
-          if (explanationText != null || onInfoTap != null)
+          // Show chevron for clickable pills, info icon for explanation
+          if (isClickable)
+            Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: colors.iconColor,
+            )
+          else if (explanationText != null || onInfoTap != null)
             Semantics(
               label: 'More information',
               button: true,

@@ -11,6 +11,7 @@ import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/wallet/presentation/providers/wallet_provider.dart';
 import 'package:eros_app/features/wallet/presentation/screens/payment_screen.dart';
+import 'package:eros_app/features/dates/presentation/screens/venue_ranking_screen.dart';
 
 /// UI-6: Deposit sheet (modal bottom sheet)
 ///
@@ -39,6 +40,15 @@ class DepositSheet extends ConsumerStatefulWidget {
 class _DepositSheetState extends ConsumerState<DepositSheet> {
   bool _isSubmitting = false;
   bool _needsTopUp = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch latest wallet balance when sheet opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(walletBalanceProvider.notifier).fetchBalance();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -314,10 +324,19 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
 
       if (response.transitionedToRanking) {
         // Both paid! Show success and push to venue ranking
-        Navigator.of(context).pop(); // Close sheet
         _showSuccessOverlay(DatesCopy.depositSuccessBothPaid, () {
-          // TODO: Push to venue ranking screen (UI-7)
-          // For now, just close - parent will refetch and show ranking CTA
+          // Close the deposit sheet
+          Navigator.of(context).pop();
+          // Navigate to venue ranking screen (UI-7)
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => VenueRankingScreen(
+                dateId: widget.dateDetail.dateId.toString(),
+                rankingDeadline: widget.dateDetail.rankingDeadline,
+                readOnly: false,
+              ),
+            ),
+          );
         });
       } else {
         // You paid, waiting for partner
@@ -374,55 +393,74 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
   }
 
   void _showSuccessOverlay(String message, VoidCallback onDismiss) {
+    ModalRoute<dynamic>? dialogRoute;
+    NavigatorState? dialogNavigator;
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        child: Container(
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: AppColors.cardBackground,
-            borderRadius: BorderRadius.circular(20),
+      builder: (dialogContext) {
+        // Capture dialog's route and navigator for safe dismissal
+        dialogRoute = ModalRoute.of(dialogContext);
+        dialogNavigator = Navigator.of(dialogContext);
+
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: AppColors.cardBackground,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: AppColors.success,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: 36,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: const BoxDecoration(
-                  color: AppColors.success,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check,
-                  color: Colors.white,
-                  size: 36,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+        );
+      },
+    ).then((_) {
+      // After dialog is dismissed, call the onDismiss callback
+      if (mounted) {
+        onDismiss();
+      }
+    });
 
     // Auto-dismiss after 1.2s
     Future.delayed(const Duration(milliseconds: 1200), () {
-      if (mounted) {
-        Navigator.of(context).pop(); // Close dialog
-        onDismiss();
+      if (!mounted) return;
+
+      final route = dialogRoute;
+      final navigator = dialogNavigator;
+
+      // Only pop if the dialog route is still current
+      if (route?.isCurrent == true && navigator != null) {
+        navigator.pop();
       }
     });
   }
