@@ -73,6 +73,9 @@ class _DateHistoryScreenState extends ConsumerState<DateHistoryScreen>
       child: _buildDatesList(
         state: pastState,
         emptyMessage: DatesCopy.historyEmptyPast,
+        onRetry: () {
+          ref.read(pastDatesProvider.notifier).refresh();
+        },
       ),
     );
   }
@@ -87,6 +90,9 @@ class _DateHistoryScreenState extends ConsumerState<DateHistoryScreen>
       child: _buildDatesList(
         state: cancelledState,
         emptyMessage: DatesCopy.historyEmptyCancelled,
+        onRetry: () {
+          ref.read(cancelledDatesProvider.notifier).refresh();
+        },
       ),
     );
   }
@@ -94,6 +100,7 @@ class _DateHistoryScreenState extends ConsumerState<DateHistoryScreen>
   Widget _buildDatesList({
     required DatesListState state,
     required String emptyMessage,
+    required VoidCallback onRetry,
   }) {
     // Loading state
     if (state.isLoading && state.dates.isEmpty) {
@@ -110,14 +117,7 @@ class _DateHistoryScreenState extends ConsumerState<DateHistoryScreen>
     if (state.hasError && state.dates.isEmpty) {
       return ErrorStateWidget(
         error: Exception(state.errorMessage ?? 'Unknown error'),
-        onRetry: () {
-          // Retry based on which tab we're on
-          if (_tabController.index == 0) {
-            ref.read(pastDatesProvider.notifier).refresh();
-          } else {
-            ref.read(cancelledDatesProvider.notifier).refresh();
-          }
-        },
+        onRetry: onRetry,
         onGoBack: () => Navigator.of(context).pop(),
       );
     }
