@@ -1,4 +1,5 @@
 /// Date models and DTOs for the dates feature
+///
 /// Translates wire format (Kotlin backend) to Dart
 ///
 /// Wire conventions:
@@ -6,6 +7,7 @@
 /// - Instant: ISO-8601 UTC strings ("2026-09-20T19:00:00Z")
 /// - BigDecimal: JSON strings ("5.00"), not numbers
 /// - Nullable fields: present as null, never omitted
+library;
 
 // ====================
 // ENUMS
@@ -68,6 +70,23 @@ enum CancellationSource {
   user,
   admin,
   system,
+}
+
+enum DressCode {
+  casual,
+  smartCasual,
+  formal;
+
+  String get displayName {
+    switch (this) {
+      case DressCode.casual:
+        return 'Casual';
+      case DressCode.smartCasual:
+        return 'Smart Casual';
+      case DressCode.formal:
+        return 'Formal';
+    }
+  }
 }
 
 // ====================
@@ -174,6 +193,7 @@ class DateSummary {
   final DateTime createdAt;
   final DateTime? scheduledStart;
   final String? venueName;
+  final String? venueAddress;
   final String activityName;
 
   const DateSummary({
@@ -186,6 +206,7 @@ class DateSummary {
     required this.createdAt,
     this.scheduledStart,
     this.venueName,
+    this.venueAddress,
     required this.activityName,
   });
 
@@ -199,6 +220,7 @@ class DateSummary {
         createdAt: _instant(json['createdAt'])!,
         scheduledStart: _instant(json['scheduledStart']),
         venueName: json['venueName'] as String?,
+        venueAddress: json['venueAddress'] as String?,
         activityName: json['activityName'] as String,
       );
 }
@@ -649,6 +671,38 @@ class MutualMatchResponse {
       dateId: json['dateId'] as int,
     );
   }
+}
+
+/// Venue public info (full details)
+class VenuePublicInfo {
+  final int venueId;
+  final String name;
+  final String address;
+  final String description;
+  final String? imageUrl;
+  final DressCode dressCode;
+  final String? websiteUrl;
+
+  const VenuePublicInfo({
+    required this.venueId,
+    required this.name,
+    required this.address,
+    required this.description,
+    this.imageUrl,
+    required this.dressCode,
+    this.websiteUrl,
+  });
+
+  factory VenuePublicInfo.fromJson(Map<String, dynamic> json) =>
+      VenuePublicInfo(
+        venueId: json['venueId'] as int,
+        name: json['name'] as String,
+        address: json['address'] as String,
+        description: json['description'] as String,
+        imageUrl: json['imageUrl'] as String?,
+        dressCode: enumFromWire(DressCode.values, json['dressCode'] as String),
+        websiteUrl: json['websiteUrl'] as String?,
+      );
 }
 
 // ====================

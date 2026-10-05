@@ -50,7 +50,9 @@ class DateCard extends StatelessWidget {
               DateFacts(
                 startTime: date.scheduledStart,
                 venueName: date.venueName,
+                venueAddress: date.venueAddress,
                 activityName: date.activityName,
+                dateId: date.dateId.toString(),
               ),
 
               const SizedBox(height: 12),

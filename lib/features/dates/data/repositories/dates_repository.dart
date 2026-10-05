@@ -307,4 +307,31 @@ class DatesRepository {
       rethrow;
     }
   }
+
+  /// Get venue details for date
+  ///
+  /// Returns venue public info with full details (image, description, dress code, etc).
+  /// Only available when venue has been assigned to the date.
+  ///
+  /// Throws:
+  /// - [ForbiddenException] if user is not a participant (403)
+  /// - [NotFoundException] if date not found (404)
+  /// - [ConflictException] if venue not yet assigned (409)
+  /// - Other [ApiException] subclasses for other errors
+  Future<VenuePublicInfo> getVenueDetails(String dateId) async {
+    try {
+      _logger.d('🏛️  Getting venue details for date: $dateId');
+
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        ApiEndpoints.dates.getVenueDetails(dateId),
+      );
+
+      final venueInfo = VenuePublicInfo.fromJson(response);
+      _logger.d('✅ Got venue details: ${venueInfo.name}');
+      return venueInfo;
+    } on ApiException catch (e) {
+      _logger.e('🚨 Failed to get venue details', error: e);
+      rethrow;
+    }
+  }
 }

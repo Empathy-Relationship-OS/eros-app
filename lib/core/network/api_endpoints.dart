@@ -127,6 +127,9 @@ class _DatesEndpoints {
 
   /// POST /dates/{dateId}/cancel - Cancel date
   String cancel(String dateId) => '/dates/$dateId/cancel';
+
+  /// GET /dates/{dateId}/venue-details - Get venue public info
+  String getVenueDetails(String dateId) => '/dates/$dateId/venue-details';
 }
 
 // ====================

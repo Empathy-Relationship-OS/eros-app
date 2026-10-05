@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_formats.dart';
+import 'package:eros_app/features/dates/presentation/widgets/venue_detail_sheet.dart';
 
 /// Date facts display widget
 ///
@@ -11,6 +12,7 @@ import 'package:eros_app/features/dates/presentation/widgets/date_formats.dart';
 ///
 /// Each row accepts null and hides itself
 /// Time and venue rows are tappable when a handler is passed (UI-8 uses this for maps)
+/// If dateId is provided, venue row opens venue detail sheet
 class DateFacts extends StatelessWidget {
   final DateTime? startTime;
   final DateTime? endTime;
@@ -19,6 +21,7 @@ class DateFacts extends StatelessWidget {
   final String? activityName;
   final VoidCallback? onTimeTap;
   final VoidCallback? onVenueTap;
+  final String? dateId; // For opening venue detail sheet
 
   const DateFacts({
     super.key,
@@ -29,6 +32,7 @@ class DateFacts extends StatelessWidget {
     this.activityName,
     this.onTimeTap,
     this.onVenueTap,
+    this.dateId,
   });
 
   @override
@@ -51,7 +55,9 @@ class DateFacts extends StatelessWidget {
             icon: Icons.location_on_outlined,
             text: venueName!,
             subtitle: venueAddress,
-            onTap: onVenueTap,
+            onTap: onVenueTap ?? (dateId != null
+              ? () => VenueDetailSheet.show(context, dateId!)
+              : null),
           ),
 
         // Activity row (drinks, dinner, etc.)
