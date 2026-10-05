@@ -196,7 +196,7 @@ class DateCard extends StatelessWidget {
       case DateState.cancelled:
         return 'Cancelled';
       case DateState.expired:
-        return 'Expired';
+        return 'No longer active';
     }
   }
 
@@ -218,7 +218,7 @@ class DateCard extends StatelessWidget {
         return ('Booking your spot', 'waiting');
 
       case DateState.booked:
-        return ('Booked. Confirm 24h before', 'neutral');
+        return ('You\'re all set. Sit back and relax', 'neutral');
 
       case DateState.awaitingPresenceConfirmation:
         return ('Confirm you\'re coming', 'action');
@@ -233,7 +233,7 @@ class DateCard extends StatelessWidget {
         return ('Cancelled', 'muted');
 
       case DateState.expired:
-        return ('Expired', 'muted');
+        return ('No longer active', 'muted');
     }
   }
 }

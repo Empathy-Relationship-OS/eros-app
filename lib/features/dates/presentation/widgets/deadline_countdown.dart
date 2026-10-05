@@ -107,7 +107,7 @@ class _DeadlineCountdownState extends State<DeadlineCountdown> {
       return const SizedBox.shrink();
     }
 
-    final isExpired = _displayText == 'Expired';
+    final isExpired = _displayText == 'Time\'s up';
     final isUrgent = widget.deadline != null &&
         widget.deadline!.difference(DateTime.now()).inHours < 24;
 
@@ -125,7 +125,7 @@ class _DeadlineCountdownState extends State<DeadlineCountdown> {
         ),
         const SizedBox(width: 6),
         Text(
-          isExpired ? 'Expired, refreshing' : _displayText,
+          isExpired ? 'Refreshing' : _displayText,
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,

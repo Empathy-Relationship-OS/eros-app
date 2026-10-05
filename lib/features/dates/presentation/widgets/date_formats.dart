@@ -60,13 +60,13 @@ class DateFormats {
   }
 
   /// Format a relative time difference for countdown display
-  /// Examples: "2d 3h left", "5h 12m left", "Under an hour", "Expired"
+  /// Examples: "2d 3h left", "5h 12m left", "Under an hour", "Time's up"
   static String formatTimeRemaining(DateTime deadline) {
     final now = DateTime.now();
     final difference = deadline.difference(now);
 
     if (difference.isNegative) {
-      return 'Expired';
+      return 'Time\'s up';
     }
 
     final days = difference.inDays;

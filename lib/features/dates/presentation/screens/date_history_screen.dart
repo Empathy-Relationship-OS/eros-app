@@ -265,7 +265,7 @@ class _HistoryDateRow extends StatelessWidget {
       case DateState.cancelled:
         return ('Cancelled', 'muted');
       case DateState.expired:
-        return ('Expired', 'muted');
+        return ('No longer active', 'muted');
       default:
         return (date.state.name, 'neutral');
     }

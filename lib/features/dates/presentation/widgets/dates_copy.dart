@@ -70,7 +70,7 @@ class DatesCopy {
         return ('Booking your spot', 'waiting');
 
       case DateState.booked:
-        return ('Booked. Confirm 24h before', 'neutral');
+        return ('You\'re all set. Sit back and relax', 'neutral');
 
       case DateState.awaitingPresenceConfirmation:
         if (!youConfirmed) {
@@ -89,7 +89,7 @@ class DatesCopy {
         return ('Cancelled', 'muted');
 
       case DateState.expired:
-        return ('Expired', 'muted');
+        return ('No longer active', 'muted');
     }
   }
 
@@ -113,7 +113,7 @@ class DatesCopy {
         return 'Our team is confirming your table. Nothing to do yet.';
 
       case DateState.booked:
-        return 'You\'re booked. The day before, we\'ll ask you both to confirm you\'re still coming.';
+        return 'Everything is confirmed. We\'ll check in with you both the day before to make sure you\'re still good to go.';
 
       case DateState.awaitingPresenceConfirmation:
         return 'Final check. Once you\'ve both confirmed, you\'re all set.';
@@ -235,7 +235,7 @@ class DatesCopy {
   static const String depositTopUpButton = 'Top up tokens';
 
   static String depositPartnerStatus(String partnerName, bool paid) =>
-      '$partnerName: ${paid ? 'committed' : 'not yet'}';
+      '$partnerName: ${paid ? 'committed' : 'pending'}';
 
   static const String depositDeadlineCaption =
       'If either of you hasn\'t committed by then, the date expires and any deposit is refunded.';
@@ -301,7 +301,7 @@ class DatesCopy {
 
   static String presencePartnerLabel(String partnerName) => partnerName;
 
-  static const String presenceNotYet = 'not yet';
+  static const String presenceNotYet = 'pending';
 
   static const String presenceConfirmedStatus = 'confirmed';
 
@@ -345,17 +345,17 @@ class DatesCopy {
 
   static const String completedHeading = 'You met!';
 
-  static const String completedBody = 'Hope it went well.';
+  static const String completedBody = 'We hope it went well.';
 
   static const String cancelledHeading = 'This date was cancelled';
 
   static const String cancelledBody =
       'If you had a deposit in play, check your wallet for any refund.';
 
-  static const String expiredHeading = 'This date ran out of time';
+  static const String expiredHeading = 'This date didn\'t work out';
 
   static const String expiredBody =
-      'It can happen when times don\'t overlap, a deadline passes, or no venue was free. Any deposit has been refunded.';
+      'This can happen when times don\'t overlap, a deadline passes, or no venue was available. Don\'t worry, any deposit has been fully refunded.';
 
   static const String terminalBackButton = 'Back to dates';
 
@@ -395,9 +395,9 @@ class DatesCopy {
 
   static const String cancelDate = 'Cancel date';
 
-  static const String errorRetry = 'Something went wrong. Try again.';
+  static const String errorRetry = 'Something went wrong. Please try again.';
 
-  static const String errorConnection = 'Connection error. Check your internet.';
+  static const String errorConnection = 'Unable to connect. Please check your internet connection.';
 
-  static const String errorDateNotAvailable = 'That date isn\'t available.';
+  static const String errorDateNotAvailable = 'This date is no longer available.';
 }
