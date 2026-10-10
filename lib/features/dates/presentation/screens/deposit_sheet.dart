@@ -10,7 +10,7 @@ import 'package:eros_app/features/dates/presentation/widgets/deadline_countdown.
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/wallet/presentation/providers/wallet_provider.dart';
-import 'package:eros_app/features/wallet/presentation/screens/payment_screen.dart';
+import 'package:eros_app/features/wallet/presentation/screens/purchase_tokens_screen.dart';
 import 'package:eros_app/features/dates/presentation/screens/venue_ranking_screen.dart';
 
 /// UI-6: Deposit sheet (modal bottom sheet)
@@ -383,7 +383,7 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
   void _handleTopUp() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => const PaymentScreen(),
+        builder: (_) => const PurchaseTokensScreen(),
       ),
     ).then((_) {
       // On return, refetch balance and reset top-up flag
