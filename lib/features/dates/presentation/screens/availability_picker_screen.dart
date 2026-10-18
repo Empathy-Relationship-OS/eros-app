@@ -95,10 +95,18 @@ class _AvailabilityPickerScreenState
       backgroundColor: AppColors.background,
       body: availabilityAsync.when(
         data: (availability) {
-          // Load mySlots into _marks on first build
+          // Load mySlots into _marks on first build (excluding blocked slots)
           if (_marks.isEmpty && availability.mySlots.isNotEmpty) {
+            // Create a set of blocked slot times for fast lookup
+            final blockedTimes = availability.blockedSlots
+                .map((s) => s.slotStart)
+                .toSet();
+
             for (final slot in availability.mySlots) {
-              _marks[slot.slotStart] = slot.availability;
+              // Only load non-blocked slots
+              if (!blockedTimes.contains(slot.slotStart)) {
+                _marks[slot.slotStart] = slot.availability;
+              }
             }
           }
 
@@ -353,41 +361,55 @@ class _AvailabilityPickerScreenState
         .firstOrNull
         ?.availability;
 
+    // Check if this slot is blocked
+    final blockedSlot = availability.blockedSlots
+        .where((s) => s.slotStart.isAtSameMomentAs(slotStart))
+        .firstOrNull;
+    final isBlocked = blockedSlot != null;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
-      child: InkWell(
-        onTap: () => _cycleSlot(slotStart),
-        onLongPress: () => _fillRestOfDay(slotStart, myMark),
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          decoration: BoxDecoration(
-            color: _getSlotBackgroundColor(myMark),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              // Time label
-              Text(
-                timeLabel,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: _getSlotTextColor(myMark),
+      child: Tooltip(
+        message: isBlocked ? blockedSlot.reason : '',
+        preferBelow: false,
+        child: InkWell(
+          onTap: isBlocked ? null : () => _cycleSlot(slotStart),
+          onLongPress: isBlocked ? null : () => _fillRestOfDay(slotStart, myMark),
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+            decoration: BoxDecoration(
+              color: _getSlotBackgroundColor(myMark, isBlocked: isBlocked),
+              borderRadius: BorderRadius.circular(8),
+              border: isBlocked ? Border.all(
+                color: AppColors.textTertiary.withValues(alpha: 0.3),
+                width: 1,
+              ) : null,
+            ),
+            child: Row(
+              children: [
+                // Time label
+                Text(
+                  timeLabel,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: _getSlotTextColor(myMark, isBlocked: isBlocked),
+                  ),
                 ),
-              ),
 
-              const Spacer(),
+                const Spacer(),
 
-              // My availability indicator
-              _buildAvailabilityIndicator(myMark, isPartner: false),
+                // My availability indicator
+                _buildAvailabilityIndicator(myMark, isPartner: false, isBlocked: isBlocked),
 
-              const SizedBox(width: 16),
+                const SizedBox(width: 16),
 
-              // Partner availability indicator (if exists)
-              if (availability.partnerSlots.isNotEmpty)
-                _buildAvailabilityIndicator(partnerMark, isPartner: true),
-            ],
+                // Partner availability indicator (if exists)
+                if (availability.partnerSlots.isNotEmpty)
+                  _buildAvailabilityIndicator(partnerMark, isPartner: true, isBlocked: false),
+              ],
+            ),
           ),
         ),
       ),
@@ -531,8 +553,10 @@ class _AvailabilityPickerScreenState
 
   // ==================== HELPERS ====================
 
-  Color _getSlotBackgroundColor(SlotAvailability? mark) {
-    if (mark == SlotAvailability.available) {
+  Color _getSlotBackgroundColor(SlotAvailability? mark, {bool isBlocked = false}) {
+    if (isBlocked) {
+      return const Color(0xFFF5F5F5); // Light grey for blocked slots
+    } else if (mark == SlotAvailability.available) {
       return const Color(0xFFE8F5E9); // Light green background
     } else if (mark == SlotAvailability.unavailable) {
       return const Color(0xFFFFEBEE); // Light red background
@@ -541,11 +565,31 @@ class _AvailabilityPickerScreenState
     }
   }
 
-  Color _getSlotTextColor(SlotAvailability? mark) {
+  Color _getSlotTextColor(SlotAvailability? mark, {bool isBlocked = false}) {
+    if (isBlocked) {
+      return AppColors.textTertiary; // Greyed out text for blocked slots
+    }
     return AppColors.textPrimary;
   }
 
-  Widget _buildAvailabilityIndicator(SlotAvailability? mark, {required bool isPartner}) {
+  Widget _buildAvailabilityIndicator(SlotAvailability? mark, {required bool isPartner, bool isBlocked = false}) {
+    // For blocked slots on user side, show X icon in grey circle
+    if (isBlocked && !isPartner) {
+      return Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: AppColors.textTertiary.withValues(alpha: 0.4),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.close,
+          color: Colors.white,
+          size: 18,
+        ),
+      );
+    }
+
     if (mark == SlotAvailability.available) {
       return Container(
         width: 32,

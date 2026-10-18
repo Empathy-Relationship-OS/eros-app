@@ -413,18 +413,33 @@ class SlotDto {
       );
 }
 
+/// Blocked slot DTO - slots that cannot be selected
+class BlockedSlotDto {
+  final DateTime slotStart;
+  final String reason; // Human-readable message explaining why it's blocked
+
+  const BlockedSlotDto({required this.slotStart, required this.reason});
+
+  factory BlockedSlotDto.fromJson(Map<String, dynamic> json) => BlockedSlotDto(
+        slotStart: _instant(json['slotStart'])!,
+        reason: json['reason'] as String,
+      );
+}
+
 /// Availability view response
 class AvailabilityView {
   final int dateId;
   final int currentRound;
   final List<SlotDto> mySlots;
   final List<SlotDto> partnerSlots;
+  final List<BlockedSlotDto> blockedSlots;
 
   const AvailabilityView({
     required this.dateId,
     required this.currentRound,
     required this.mySlots,
     required this.partnerSlots,
+    required this.blockedSlots,
   });
 
   factory AvailabilityView.fromJson(Map<String, dynamic> json) =>
@@ -437,6 +452,9 @@ class AvailabilityView {
         partnerSlots: (json['partnerSlots'] as List)
             .map((e) => SlotDto.fromJson(e as Map<String, dynamic>))
             .toList(),
+        blockedSlots: (json['blockedSlots'] as List?)
+            ?.map((e) => BlockedSlotDto.fromJson(e as Map<String, dynamic>))
+            .toList() ?? [],
       );
 }
 
