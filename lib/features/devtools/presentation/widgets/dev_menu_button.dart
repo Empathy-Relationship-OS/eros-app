@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/time/server_clock.dart';
 import '../dev_menu_navigation.dart';
+import '../time_travel.dart';
 
 /// Wraps the whole app (via `MaterialApp.builder`) with a small draggable
-/// "DEV" button that opens the dev menu.
+/// "DEV" button that opens the dev menu, and the "time shifted" banner.
 ///
 /// It sits above the app's [Navigator], so it is visible on every screen,
 /// including while signed out (when you pick a persona). Only ever built
@@ -10,16 +13,114 @@ import '../dev_menu_navigation.dart';
 class DevOverlay extends StatelessWidget {
   final Widget child;
 
-  const DevOverlay({super.key, required this.child});
+  /// Clock whose [ServerClock.devOffset] drives the banner. Defaults to
+  /// [ServerClock.instance].
+  final ServerClock? clock;
+
+  const DevOverlay({super.key, required this.child, this.clock});
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       fit: StackFit.expand,
       children: [
-        child,
+        TimeShiftedBanner(clock: clock, child: child),
         const DevMenuButton(),
       ],
+    );
+  }
+}
+
+/// While the backend clock is shifted, shows a thin "TIME SHIFTED +1d 1h"
+/// banner above [child], on every screen. Tap it to open the dev menu on the
+/// Time tab.
+///
+/// Listens to [ServerClock.devOffset], which every API response updates
+/// (including `/dev` responses), so it appears and disappears on its own.
+/// The banner takes the status bar inset, and [child] is laid out below it.
+class TimeShiftedBanner extends StatelessWidget {
+  final Widget child;
+
+  /// Defaults to [ServerClock.instance].
+  final ServerClock? clock;
+
+  /// Defaults to opening the dev menu on [DevMenuTab.time].
+  final VoidCallback? onTap;
+
+  const TimeShiftedBanner({
+    super.key,
+    required this.child,
+    this.clock,
+    this.onTap,
+  });
+
+  /// Amber, from [AppColors.warning]: a warning colour distinct from the
+  /// brand coral, with black text.
+  static const Color color = AppColors.warning;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<Duration>(
+      valueListenable: (clock ?? ServerClock.instance).devOffset,
+      // Keep the app subtree mounted when the banner toggles.
+      child: child,
+      builder: (context, offset, child) {
+        final shifted = offset != Duration.zero;
+        final media = MediaQuery.of(context);
+        return Column(
+          children: [
+            if (shifted) _bar(media, offset),
+            Expanded(
+              key: const ValueKey('devOverlayApp'),
+              child: MediaQuery.removePadding(
+                context: context,
+                removeTop: shifted,
+                child: child!,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _bar(MediaQueryData media, Duration offset) {
+    final text = 'TIME SHIFTED ${formatShortOffset(offset)}';
+    return Semantics(
+      button: true,
+      label: '$text. Open the time travel panel',
+      excludeSemantics: true,
+      child: Material(
+        key: const Key('timeShiftedBanner'),
+        color: color,
+        child: InkWell(
+          onTap: onTap ?? () => openDevMenu(tab: DevMenuTab.time),
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: media.padding.top + 2,
+              bottom: 2,
+              left: 8 + media.padding.left,
+              right: 8 + media.padding.right,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.schedule, size: 14, color: AppColors.black),
+                const SizedBox(width: 6),
+                Text(
+                  text,
+                  style: const TextStyle(
+                    color: AppColors.black,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

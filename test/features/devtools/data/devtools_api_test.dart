@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
+import 'package:eros_app/core/time/server_clock.dart';
 import 'package:eros_app/features/devtools/data/devtools_api.dart';
 import 'package:eros_app/features/devtools/data/devtools_exceptions.dart';
 import 'package:eros_app/features/devtools/data/models/devtools_models.dart';
@@ -198,6 +199,70 @@ void main() {
     });
   });
 
+  group('server time headers', () {
+    // RFC-003 §5.6: every response carries X-Server-Time, and
+    // X-Clock-Offset-Seconds while the clock is shifted.
+    setUp(ServerClock.instance.reset);
+    tearDown(ServerClock.instance.reset);
+
+    test('a clock response updates ServerClock.devOffset', () async {
+      adapter.stubs['POST /dev/clock/advance'] = const _Stub(
+        200,
+        _clockJson,
+        headers: {
+          'X-Server-Time': '2026-10-17T13:00:00.000Z',
+          'X-Clock-Offset-Seconds': '90000',
+        },
+      );
+
+      await api.advanceClock(hours: 25);
+
+      expect(ServerClock.instance.devOffset.value, const Duration(seconds: 90000));
+    });
+
+    test('a reset response without the offset header clears devOffset', () async {
+      adapter.stubs['POST /dev/clock/advance'] = const _Stub(
+        200,
+        _clockJson,
+        headers: {
+          'X-Server-Time': '2026-10-17T13:00:00.000Z',
+          'X-Clock-Offset-Seconds': '90000',
+        },
+      );
+      adapter.stubs['POST /dev/clock/reset'] = const _Stub(
+        200,
+        {
+          'realTime': '2026-10-16T12:00:00Z',
+          'serverTime': '2026-10-16T12:00:00Z',
+          'offsetSeconds': 0,
+        },
+        headers: {'X-Server-Time': '2026-10-16T12:00:00.000Z'},
+      );
+
+      await api.advanceClock(hours: 25);
+      await api.resetClock();
+
+      expect(ServerClock.instance.devOffset.value, Duration.zero);
+    });
+
+    test('a 400 response still feeds ServerClock', () async {
+      adapter.stubs['POST /dev/clock/advance-to'] = const _Stub(
+        400,
+        {'error': 'bad_request', 'message': 'instant must be in the future'},
+        headers: {
+          'X-Server-Time': '2026-10-17T13:00:00.000Z',
+          'X-Clock-Offset-Seconds': '3600',
+        },
+      );
+
+      await expectLater(
+        api.advanceClockTo(DateTime.utc(2026, 10, 1)),
+        throwsA(isA<ValidationException>()),
+      );
+      expect(ServerClock.instance.devOffset.value, const Duration(hours: 1));
+    });
+  });
+
   group('personas', () {
     void expectAlice(Persona p) {
       expect(p.uid, 'dev_alice');
@@ -351,8 +416,9 @@ void main() {
 class _Stub {
   final int status;
   final Object? body;
+  final Map<String, String> headers;
 
-  const _Stub(this.status, this.body);
+  const _Stub(this.status, this.body, {this.headers = const {}});
 }
 
 /// Serves canned responses keyed by `METHOD /path` and records requests.
@@ -380,14 +446,18 @@ class _FakeAdapter implements HttpClientAdapter {
     if (stub == null) {
       return ResponseBody.fromString('', 599);
     }
+    final extraHeaders = {
+      for (final e in stub.headers.entries) e.key.toLowerCase(): [e.value],
+    };
     if (stub.body == null) {
-      return ResponseBody.fromString('', stub.status);
+      return ResponseBody.fromString('', stub.status, headers: extraHeaders);
     }
     return ResponseBody.fromString(
       jsonEncode(stub.body),
       stub.status,
       headers: {
         Headers.contentTypeHeader: [Headers.jsonContentType],
+        ...extraHeaders,
       },
     );
   }
