@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/constants/languages.dart';
+import 'package:eros_app/features/devtools/devtools_config.dart';
+import 'package:eros_app/features/devtools/presentation/dev_menu_navigation.dart';
 import '../providers/app_settings_provider.dart';
 
 /// App Settings Screen - Allows users to configure app-level settings
@@ -133,6 +135,24 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
             ),
           ],
         ),
+
+        // Developer tools: compiled in only for local/develop builds with
+        // DEVTOOLS=true (DevtoolsConfig.enabled is a compile-time const).
+        if (DevtoolsConfig.enabled) ...[
+          const SizedBox(height: 24),
+          _SettingsSection(
+            title: 'Developer',
+            children: [
+              ListTile(
+                leading: const Icon(Icons.developer_mode, color: AppColors.textPrimary),
+                title: const Text('Developer tools'),
+                subtitle: const Text('Personas, time travel and scenarios'),
+                trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                onTap: () => openDevMenu(context: context),
+              ),
+            ],
+          ),
+        ],
 
         const SizedBox(height: 24),
 

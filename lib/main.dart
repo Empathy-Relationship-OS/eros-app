@@ -48,6 +48,10 @@ import 'features/profile/domain/models/question_dto.dart';
 import 'features/home/presentation/screens/home_screen.dart';
 import 'features/dates/presentation/screens/date_detail_screen.dart';
 import 'features/dates/presentation/screens/availability_picker_screen.dart';
+import 'features/devtools/devtools_config.dart';
+import 'features/devtools/presentation/dev_menu_navigation.dart';
+import 'features/devtools/presentation/dev_menu_screen.dart';
+import 'features/devtools/presentation/widgets/dev_menu_button.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -92,6 +96,13 @@ class ErosApp extends StatelessWidget {
       title: 'Muse',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      // Developer tools (RFC-003). DevtoolsConfig.enabled is a compile-time
+      // const, so in beta and production builds these collapse to null / no
+      // entry and the dev menu is tree-shaken out of the binary.
+      navigatorKey: DevtoolsConfig.enabled ? devtoolsNavigatorKey : null,
+      builder: DevtoolsConfig.enabled
+          ? (context, child) => DevOverlay(child: child ?? const SizedBox.shrink())
+          : null,
       home: const AuthLoadingScreen(),
       routes: {
         // Auth routes
@@ -143,6 +154,11 @@ class ErosApp extends StatelessWidget {
 
         // Main app routes
         '/match': (context) => const HomeScreen(),
+
+        // Developer tools: only registered in local/develop builds with
+        // DEVTOOLS=true. DT-F3 to DT-F5 must not edit this file.
+        if (DevtoolsConfig.enabled)
+          devMenuRoute: (context) => DevMenuScreen.fromRoute(context),
       },
       onGenerateRoute: (settings) {
         // Handle routes with arguments
