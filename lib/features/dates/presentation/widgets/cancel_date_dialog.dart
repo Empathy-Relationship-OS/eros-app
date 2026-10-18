@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/time/server_clock.dart';
 import 'package:eros_app/core/utils/validators.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/cancel_provider.dart';
@@ -53,7 +54,7 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
     // Post-commitment or late
     if (scheduledStart != null) {
       final hoursUntilDate =
-          scheduledStart.difference(DateTime.now()).inHours;
+          scheduledStart.difference(ServerClock.instance.now()).inHours;
       if (hoursUntilDate < 24) {
         return CancellationTier.late;
       }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/time/server_clock.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/availability_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
@@ -49,9 +50,13 @@ class _AvailabilityPickerScreenState
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now().toUtc();
-    _windowStart = now.add(const Duration(hours: 48));
-    _windowEnd = now.add(const Duration(days: 21));
+    // Server time, so the slot horizon matches the backend's
+    // [MIN_LEAD_HOURS, MAX_HORIZON_DAYS] window even if the device clock is off
+    // or the dev clock has been advanced.
+    final now = ServerClock.instance.now();
+    _windowStart =
+        now.add(const Duration(hours: DatesConstants.minLeadHours));
+    _windowEnd = now.add(const Duration(days: DatesConstants.horizonDays));
 
     // Select first day in window (local date)
     _selectedDay = _windowStart.toLocal();
