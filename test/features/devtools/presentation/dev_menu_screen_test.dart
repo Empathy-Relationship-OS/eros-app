@@ -8,6 +8,7 @@ import 'package:eros_app/features/devtools/data/models/devtools_models.dart';
 import 'package:eros_app/features/devtools/presentation/dev_menu_navigation.dart';
 import 'package:eros_app/features/devtools/presentation/dev_menu_screen.dart';
 import 'package:eros_app/features/devtools/presentation/providers/devtools_providers.dart';
+import 'package:eros_app/features/devtools/presentation/providers/personas_providers.dart';
 import 'package:eros_app/features/devtools/presentation/tabs/personas_tab.dart';
 import 'package:eros_app/features/devtools/presentation/tabs/scenarios_tab.dart';
 import 'package:eros_app/features/devtools/presentation/tabs/time_tab.dart';
@@ -28,6 +29,9 @@ List<Override> _overrides({
       devtoolsKeyProvider.overrideWithValue(key),
       devtoolsSignedInUidProvider.overrideWithValue(uid),
       devtoolsHealthProvider.overrideWith((ref) => (health ?? () async => _healthOn)()),
+      // PersonasTab (DT-F3): no backend, no SharedPreferences.
+      devtoolsPersonasProvider.overrideWith((ref) async => const <Persona>[]),
+      recentPersonaUidsProvider.overrideWith((ref) => const <String>[]),
     ];
 
 Widget _app({required List<Override> overrides, Widget home = const DevMenuScreen()}) {

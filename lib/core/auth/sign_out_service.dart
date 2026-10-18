@@ -41,6 +41,10 @@ class SignOutService {
   /// These are app-level settings that should persist across accounts
   static const List<String> _preservedKeys = [
     'app_settings', // App settings (notifications, language preferences)
+    // Dev tooling: recent personas, kept across persona switches
+    // (`recentPersonasPrefsKey` in features/devtools). Never written in
+    // builds without devtools.
+    'devtools_recent_personas',
   ];
 
   /// Perform complete sign-out and cleanup
