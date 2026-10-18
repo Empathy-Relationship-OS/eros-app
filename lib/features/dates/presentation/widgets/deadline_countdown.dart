@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/time/server_clock.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_formats.dart';
 
 /// Countdown timer for date deadlines
@@ -32,8 +33,10 @@ class _DeadlineCountdownState extends State<DeadlineCountdown> {
     super.initState();
     // Compute initial display text directly without setState
     if (widget.deadline != null) {
-      _displayText = DateFormats.formatTimeRemaining(widget.deadline!);
-      final expired = widget.deadline!.isBefore(DateTime.now());
+      final now = ServerClock.instance.now();
+      _displayText =
+          DateFormats.formatTimeRemaining(widget.deadline!, now: now);
+      final expired = widget.deadline!.isBefore(now);
       if (expired) {
         _hasExpired = true;
         // Schedule expired callback after current frame
@@ -83,8 +86,9 @@ class _DeadlineCountdownState extends State<DeadlineCountdown> {
       return;
     }
 
-    final text = DateFormats.formatTimeRemaining(widget.deadline!);
-    final expired = widget.deadline!.isBefore(DateTime.now());
+    final now = ServerClock.instance.now();
+    final text = DateFormats.formatTimeRemaining(widget.deadline!, now: now);
+    final expired = widget.deadline!.isBefore(now);
 
     setState(() {
       _displayText = text;
@@ -109,7 +113,7 @@ class _DeadlineCountdownState extends State<DeadlineCountdown> {
 
     final isExpired = _displayText == 'Time\'s up';
     final isUrgent = widget.deadline != null &&
-        widget.deadline!.difference(DateTime.now()).inHours < 24;
+        widget.deadline!.difference(ServerClock.instance.now()).inHours < 24;
 
     return Row(
       mainAxisSize: MainAxisSize.min,

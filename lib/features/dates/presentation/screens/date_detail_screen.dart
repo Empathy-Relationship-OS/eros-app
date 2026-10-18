@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:eros_app/core/time/server_clock.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
@@ -660,7 +661,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
 
     // Don't show if past scheduled end
     if (dateDetail.scheduledEnd != null &&
-        dateDetail.scheduledEnd!.isBefore(DateTime.now())) {
+        dateDetail.scheduledEnd!.isBefore(ServerClock.instance.now())) {
       return false;
     }
 

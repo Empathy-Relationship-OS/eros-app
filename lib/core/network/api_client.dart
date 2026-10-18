@@ -6,6 +6,7 @@ import 'exceptions/api_exception.dart';
 import 'interceptors/auth_interceptor.dart';
 import 'interceptors/logging_interceptor.dart';
 import 'interceptors/retry_interceptor.dart';
+import 'interceptors/server_time_interceptor.dart';
 
 /// Centralized HTTP client for all API requests
 /// Uses Dio with automatic auth injection, retry logic, and error handling
@@ -29,8 +30,12 @@ class ApiClient {
       },
     );
 
-    // Add interceptors in order (auth → retry → logging)
+    // Add interceptors in order (server time → auth → retry → logging).
+    // ServerTimeInterceptor goes first: RetryInterceptor resolves 401/403/429
+    // in onError, which skips later interceptors, and those responses still
+    // carry X-Server-Time.
     _dio.interceptors.addAll([
+      ServerTimeInterceptor(),
       AuthInterceptor(authService),
       RetryInterceptor(authService),
       LoggingInterceptor(),

@@ -61,8 +61,13 @@ class DateFormats {
 
   /// Format a relative time difference for countdown display
   /// Examples: "2d 3h left", "5h 12m left", "Under an hour", "Time's up"
-  static String formatTimeRemaining(DateTime deadline) {
-    final now = DateTime.now();
+  ///
+  /// [now] is the reference time. Callers pass `ServerClock.instance.now()` so
+  /// the countdown matches the backend's clock, not the device's.
+  static String formatTimeRemaining(
+    DateTime deadline, {
+    required DateTime now,
+  }) {
     final difference = deadline.difference(now);
 
     if (difference.isNegative) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/time/server_clock.dart';
 import 'package:eros_app/features/wallet/presentation/providers/wallet_provider.dart';
 import 'package:eros_app/features/wallet/presentation/screens/wallet_info_screen.dart';
 import 'package:eros_app/features/wallet/presentation/screens/purchase_tokens_screen.dart';
@@ -211,12 +212,19 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     );
   }
 
+  /// Same calendar day in the device's timezone.
   bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
+    final la = a.toLocal();
+    final lb = b.toLocal();
+    return la.year == lb.year && la.month == lb.month && la.day == lb.day;
   }
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
+  /// Buckets a server timestamp ("Today", "Yesterday", ...). Uses ServerClock
+  /// so the buckets agree with the backend's clock; converts to local only for
+  /// the calendar-day display.
+  String _formatDate(DateTime serverTimestamp) {
+    final now = ServerClock.instance.now().toLocal();
+    final date = serverTimestamp.toLocal();
     final diff = now.difference(date);
 
     if (_isSameDay(now, date)) {

@@ -1,8 +1,14 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
+import 'package:eros_app/core/time/server_clock.dart';
 
 /// Local storage service for match-related data
 /// Primarily used to cache the daily batch limit reset time
+///
+/// Clock: the stored reset time is normally the server's `resetAt` timestamp
+/// (DailyBatchLimitError), so it is compared against [ServerClock], not the
+/// device clock. The Retry-After fallback in MatchNotifier also anchors to
+/// [ServerClock] so every stored value is in the same (server) time frame.
 class MatchStorageService {
   static const String _keyBatchLimitResetAt = 'match_batch_limit_reset_at';
 
@@ -37,7 +43,7 @@ class MatchStorageService {
       final resetAt = DateTime.parse(resetAtString);
 
       // Check if the reset time has passed
-      if (DateTime.now().isAfter(resetAt)) {
+      if (ServerClock.instance.now().isAfter(resetAt)) {
         // Reset time has passed, clear it and return null
         clearBatchLimitResetTime();
         _logger.d('🕐 Batch limit reset time has passed, cleared');
@@ -64,7 +70,7 @@ class MatchStorageService {
   /// Check if the daily batch limit is currently active (hasn't reset yet)
   bool isBatchLimitActive() {
     final resetAt = getBatchLimitResetTime();
-    return resetAt != null && DateTime.now().isBefore(resetAt);
+    return resetAt != null && ServerClock.instance.now().isBefore(resetAt);
   }
 
   /// Get the time remaining until the batch limit resets
@@ -75,7 +81,7 @@ class MatchStorageService {
       return null;
     }
 
-    final now = DateTime.now();
+    final now = ServerClock.instance.now();
     if (now.isAfter(resetAt)) {
       return null;
     }

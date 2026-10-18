@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:eros_app/core/network/api_client_provider.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
+import 'package:eros_app/core/time/server_clock.dart';
 import 'package:eros_app/features/matching/data/repositories/match_repository.dart';
 import 'package:eros_app/features/matching/data/services/match_storage_service.dart';
 import 'package:eros_app/features/matching/domain/models/match_models.dart';
@@ -179,9 +180,11 @@ class MatchBatchNotifier extends StateNotifier<MatchBatchState> {
               resetAt = DateTime.parse(resetAtString);
               await _storageService.saveBatchLimitResetTime(resetAt);
             } catch (_) {
-              // Use Retry-After header if available
+              // Use Retry-After header if available. Relative, but anchored to
+              // ServerClock because MatchStorageService compares the stored
+              // value against ServerClock (server `resetAt` is the main source).
               if (e.retryAfter != null) {
-                resetAt = DateTime.now().add(e.retryAfter!);
+                resetAt = ServerClock.instance.now().add(e.retryAfter!);
                 await _storageService.saveBatchLimitResetTime(resetAt);
               }
             }
@@ -190,7 +193,8 @@ class MatchBatchNotifier extends StateNotifier<MatchBatchState> {
       } else if (e.retryAfter != null) {
         // Fallback: use Retry-After header
         _logger.d('Using Retry-After header fallback');
-        resetAt = DateTime.now().add(e.retryAfter!);
+        // Anchored to ServerClock for the same reason as above.
+        resetAt = ServerClock.instance.now().add(e.retryAfter!);
         errorMessage = 'Daily batch limit exceeded';
         await _storageService.saveBatchLimitResetTime(resetAt);
       }
