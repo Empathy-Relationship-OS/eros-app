@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:eros_app/core/network/api_config.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
+import 'package:eros_app/core/network/interceptors/server_time_interceptor.dart';
 import '../devtools_config.dart';
 import 'devtools_exceptions.dart';
 import 'models/devtools_models.dart';
@@ -64,6 +65,7 @@ class DevEndpoints {
 /// - sends `X-Dev-Key` on every request
 /// - has **no** `AuthInterceptor`: `/dev` routes do not use Firebase auth,
 ///   and the persona switcher must work while signed out
+/// - has the [ServerTimeInterceptor], so dev responses feed `ServerClock`
 ///
 /// Errors are thrown as the app's [ApiException] types. A 404 on
 /// [health] becomes [DevtoolsDisabledException]. If the app was built
@@ -100,8 +102,10 @@ class DevtoolsApi {
     if (httpClientAdapter != null) {
       _dio.httpClientAdapter = httpClientAdapter;
     }
-    // DT-F1: add ServerTimeInterceptor here once it has merged, so dev
-    // responses also feed ServerClock.
+    // Dev responses carry X-Server-Time and X-Clock-Offset-Seconds too, so a
+    // clock change (or a scenario that moves the clock) updates ServerClock
+    // and the "time shifted" banner straight away.
+    _dio.interceptors.add(ServerTimeInterceptor());
   }
 
   bool get hasKey => _devKey.isNotEmpty;
