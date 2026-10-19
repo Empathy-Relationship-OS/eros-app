@@ -196,12 +196,22 @@ class ResetResult {
   final List<int> skippedDates;
   final ClockInfo clock;
 
+  /// `dev_` uids that were not deleted because they share a date with a
+  /// real (non-`dev_`) user. Empty when the backend does not send it.
+  final List<String> keptPersonas;
+
+  /// uids whose Firebase user could not be deleted. Their database rows are
+  /// gone. Empty when the backend does not send it.
+  final List<String> authDeleteFailures;
+
   const ResetResult({
     required this.deletedPersonas,
     required this.deletedMatches,
     required this.deletedDates,
     required this.skippedDates,
     required this.clock,
+    this.keptPersonas = const [],
+    this.authDeleteFailures = const [],
   });
 
   factory ResetResult.fromJson(Map<String, dynamic> json) => ResetResult(
@@ -212,8 +222,13 @@ class ResetResult {
             .map((d) => (d as num).toInt())
             .toList(),
         clock: ClockInfo.fromJson(json['clock'] as Map<String, dynamic>),
+        keptPersonas: _stringList(json['keptPersonas']),
+        authDeleteFailures: _stringList(json['authDeleteFailures']),
       );
 }
+
+List<String> _stringList(dynamic v) =>
+    (v as List<dynamic>? ?? const []).map((e) => e as String).toList();
 
 /// `POST /dev/fixtures/venues`
 class VenueFixturesResult {

@@ -336,6 +336,28 @@ void main() {
       expect(result.deletedDates, 2);
       expect(result.skippedDates, isEmpty);
       expect(result.clock.offsetSeconds, 0);
+      // Older responses without these lists still parse.
+      expect(result.keptPersonas, isEmpty);
+      expect(result.authDeleteFailures, isEmpty);
+    });
+
+    test('reset parses keptPersonas and authDeleteFailures (DT-B5)', () {
+      final result = ResetResult.fromJson({
+        'deletedPersonas': 5,
+        'deletedMatches': 4,
+        'deletedDates': 2,
+        'skippedDates': [9],
+        'clock': {
+          'realTime': '2026-10-16T12:00:00Z',
+          'serverTime': '2026-10-16T12:00:00Z',
+          'offsetSeconds': 0,
+        },
+        'keptPersonas': ['dev_alice'],
+        'authDeleteFailures': ['dev_bob'],
+      });
+      expect(result.skippedDates, [9]);
+      expect(result.keptPersonas, ['dev_alice']);
+      expect(result.authDeleteFailures, ['dev_bob']);
     });
   });
 

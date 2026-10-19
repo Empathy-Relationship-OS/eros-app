@@ -180,7 +180,11 @@ class _ScenariosTabState extends ConsumerState<ScenariosTab> {
     invalidateTimeSensitiveState(ref);
     final summary = describeReset(result);
 
-    if (signedInUid == null || !signedInUid.startsWith('dev_')) {
+    // A persona that shares a date with a real user is kept, so stays
+    // signed in.
+    if (signedInUid == null ||
+        !signedInUid.startsWith('dev_') ||
+        result.keptPersonas.contains(signedInUid)) {
       setState(() => _resetting = false);
       _showMessage(summary);
       return;
@@ -302,15 +306,26 @@ const String resetConfirmationText =
     'users. Resets the clock to real time. Venue fixtures are kept. If you '
     'are signed in as a persona, you will be signed out.';
 
-/// Snackbar text for a `POST /dev/reset` result.
+/// Snackbar text for a `POST /dev/reset` result, including anything the
+/// backend kept or could not delete.
 String describeReset(ResetResult result) {
-  final skipped = result.skippedDates.isEmpty
-      ? ''
-      : ' Kept ${result.skippedDates.length} date(s) that include a real '
-            'user: ${result.skippedDates.join(', ')}.';
-  return 'Reset: deleted ${result.deletedPersonas} personas, '
-      '${result.deletedMatches} matches and ${result.deletedDates} dates. '
-      'Clock reset.$skipped';
+  String count(int n, String one, String many) => '$n ${n == 1 ? one : many}';
+  final parts = [
+    'Reset: deleted ${result.deletedPersonas} personas, '
+        '${result.deletedMatches} matches and ${result.deletedDates} dates. '
+        'Clock reset.',
+    if (result.keptPersonas.isNotEmpty)
+      'Kept ${count(result.keptPersonas.length, 'persona that has', 'personas that have')} '
+          'a date with a real user: ${result.keptPersonas.join(', ')}.',
+    if (result.skippedDates.isNotEmpty)
+      'Kept ${count(result.skippedDates.length, 'date that includes', 'dates that include')} '
+          'a real user: ${result.skippedDates.join(', ')}.',
+    if (result.authDeleteFailures.isNotEmpty)
+      'Could not delete the Firebase '
+          '${result.authDeleteFailures.length == 1 ? 'user' : 'users'} of '
+          '${result.authDeleteFailures.join(', ')} (database rows are gone).',
+  ];
+  return parts.join(' ');
 }
 
 /// The dates feature's [DateState] for a backend wire name, or null if it is

@@ -604,7 +604,29 @@ void main() {
       expect(find.byType(ScenariosTab), findsOneWidget);
       expect(find.byKey(const Key('scenarioResult')), findsNothing);
       expect(
-        find.textContaining('Kept 1 date(s) that include a real user: 9.'),
+        find.textContaining('Kept 1 date that includes a real user: 9.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('keeps a persona the backend kept signed in', (tester) async {
+      final h = _Harness();
+      h.api.resetResult = ResetResult.fromJson({
+        ...resetResultJson,
+        'skippedDates': [9],
+        'keptPersonas': ['dev_alice'],
+      });
+      await h.pump(tester, signedInUid: 'dev_alice');
+
+      await tap(tester, find.text('Reset all dev data'));
+      await tap(tester, find.widgetWithText(TextButton, 'Reset'));
+
+      expect(h.session.signOuts, 0);
+      expect(find.byType(ScenariosTab), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Kept 1 persona that has a date with a real user: dev_alice.',
+        ),
         findsOneWidget,
       );
     });
@@ -619,6 +641,32 @@ void main() {
 
       expect(find.text('Reset failed: db down'), findsOneWidget);
       expect(h.session.signOuts, 0);
+    });
+  });
+
+  group('describeReset', () {
+    test('summarises a plain reset', () {
+      expect(
+        describeReset(ResetResult.fromJson(resetResultJson)),
+        'Reset: deleted 6 personas, 4 matches and 2 dates. Clock reset.',
+      );
+    });
+
+    test('lists kept personas, skipped dates and Firebase failures', () {
+      final result = ResetResult.fromJson({
+        ...resetResultJson,
+        'skippedDates': [9, 11],
+        'keptPersonas': ['dev_alice', 'dev_bob'],
+        'authDeleteFailures': ['dev_cara'],
+      });
+
+      expect(
+        describeReset(result),
+        'Reset: deleted 6 personas, 4 matches and 2 dates. Clock reset. '
+        'Kept 2 personas that have a date with a real user: dev_alice, '
+        'dev_bob. Kept 2 dates that include a real user: 9, 11. Could not '
+        'delete the Firebase user of dev_cara (database rows are gone).',
+      );
     });
   });
 

@@ -392,5 +392,21 @@ void main() {
       expect(find.text(deleteUnavailableMessage), findsOneWidget);
       expect(row('dev_bob'), findsOneWidget);
     });
+
+    testWidgets('shows the backend message on a 409 and keeps the row', (
+      tester,
+    ) async {
+      const message = 'dev_bob shares a date with a real user';
+      api.deleteError = const ConflictException(message, statusCode: 409);
+      await pumpTab(tester);
+
+      await tester.tap(find.byTooltip('Delete dev_bob'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(message), findsOneWidget);
+      expect(row('dev_bob'), findsOneWidget);
+    });
   });
 }
