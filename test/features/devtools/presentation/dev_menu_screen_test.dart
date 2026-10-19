@@ -9,6 +9,7 @@ import 'package:eros_app/features/devtools/presentation/dev_menu_navigation.dart
 import 'package:eros_app/features/devtools/presentation/dev_menu_screen.dart';
 import 'package:eros_app/features/devtools/presentation/providers/devtools_providers.dart';
 import 'package:eros_app/features/devtools/presentation/providers/personas_providers.dart';
+import 'package:eros_app/features/devtools/presentation/providers/scenarios_providers.dart';
 import 'package:eros_app/features/devtools/presentation/tabs/personas_tab.dart';
 import 'package:eros_app/features/devtools/presentation/tabs/scenarios_tab.dart';
 import 'package:eros_app/features/devtools/presentation/tabs/time_tab.dart';
@@ -32,6 +33,10 @@ List<Override> _overrides({
       // PersonasTab (DT-F3): no backend, no SharedPreferences.
       devtoolsPersonasProvider.overrideWith((ref) async => const <Persona>[]),
       recentPersonaUidsProvider.overrideWith((ref) => const <String>[]),
+      // ScenariosTab (DT-F5): no backend.
+      devtoolsScenariosProvider.overrideWith(
+        (ref) async => const <ScenarioInfo>[],
+      ),
     ];
 
 Widget _app({required List<Override> overrides, Widget home = const DevMenuScreen()}) {
@@ -119,6 +124,31 @@ void main() {
       expect(find.byType(DevMenuScreen), findsOneWidget);
       expect(find.byType(TimeTab), findsOneWidget);
       expect(find.byType(PersonasTab), findsNothing);
+    });
+
+    testWidgets('openDevMenu while the menu is open replaces it, not stacks',
+        (tester) async {
+      await tester.pumpWidget(
+        _app(overrides: _overrides(), home: const Scaffold(body: Text('home'))),
+      );
+      await tester.pumpAndSettle();
+
+      openDevMenu(tab: DevMenuTab.scenarios);
+      await tester.pumpAndSettle();
+      expect(find.byType(ScenariosTab), findsOneWidget);
+
+      // For example the "time shifted" banner tapped over the open menu.
+      openDevMenu(tab: DevMenuTab.time);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DevMenuScreen), findsOneWidget);
+      expect(find.byType(TimeTab), findsOneWidget);
+
+      // One pop closes the menu: there was only one copy.
+      devtoolsNavigatorKey.currentState!.pop();
+      await tester.pumpAndSettle();
+      expect(find.byType(DevMenuScreen), findsNothing);
+      expect(find.text('home'), findsOneWidget);
     });
   });
 

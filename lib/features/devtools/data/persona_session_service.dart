@@ -215,6 +215,22 @@ class PersonaSessionService {
     _logger.i('🛠️ Signed in as persona $uid');
   }
 
+  /// Signs out whoever is signed in and drops every per-user cache.
+  ///
+  /// Used after `POST /dev/reset` has deleted the signed-in persona. Same
+  /// steps as the sign-out half of [signInAs]: [SignOutService], wait for
+  /// the app's auth state to show nobody, then invalidate
+  /// [userScopedProviders]. The caller then navigates to the
+  /// `AuthLoadingScreen` route, which sends a signed-out app to welcome.
+  ///
+  /// Throws whatever [SignOutService.signOut] throws.
+  Future<void> signOut() async {
+    _logger.i('🛠️ Signing out persona');
+    await _signOutService.signOut();
+    await _awaitAuthUid(null);
+    _resetUserState();
+  }
+
   String _describe(Object e) =>
       e is FirebaseAuthException ? (e.message ?? e.code) : e.toString();
 }

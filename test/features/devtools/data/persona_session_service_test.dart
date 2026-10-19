@@ -247,6 +247,36 @@ void main() {
     });
   });
 
+  group('PersonaSessionService.signOut', () {
+    test('signs out, waits for nobody, then resets user state', () async {
+      final log = <String>[];
+      final service = _service(
+        api: _LoggingApi(log),
+        signOutService: _FakeSignOutService(log),
+        log: log,
+        prefs: prefs,
+      );
+
+      await service.signOut();
+
+      expect(log, ['signOut', 'await:none', 'reset']);
+    });
+
+    test('rethrows a sign-out failure without resetting', () async {
+      final log = <String>[];
+      final signOut = _FakeSignOutService(log)..error = Exception('boom');
+      final service = _service(
+        api: _LoggingApi(log),
+        signOutService: signOut,
+        log: log,
+        prefs: prefs,
+      );
+
+      await expectLater(service.signOut(), throwsException);
+      expect(log, ['signOut']);
+    });
+  });
+
   group('RecentPersonasStore', () {
     test('keeps the last 5, most recent first, without duplicates', () async {
       final store = RecentPersonasStore(prefs);
