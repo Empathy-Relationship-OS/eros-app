@@ -12,7 +12,9 @@ enum Gender {
       case Gender.female:
         return 'Female';
       case Gender.nonBinary:
-        return 'Non-binary';
+        // Must match the backend's Gender.displayName exactly, because it is also the wire
+        // value. 'Non-binary' was rejected by POST /users.
+        return 'Non-Binary';
       case Gender.other:
         return 'Other';
     }

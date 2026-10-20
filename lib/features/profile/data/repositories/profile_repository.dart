@@ -6,6 +6,7 @@ import 'package:eros_app/core/network/api_endpoints.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/profile/domain/models/create_user_request.dart';
+import 'package:eros_app/features/profile/domain/models/my_profile.dart';
 import 'package:eros_app/features/profile/domain/models/update_user_request.dart';
 import 'package:eros_app/features/profile/domain/models/public_profile.dart';
 
@@ -116,9 +117,9 @@ class ProfileRepository {
     }
   }
 
-  /// Get current user's profile
+  /// Get current user's profile, as values for editing
   /// GET /users/me
-  Future<Map<String, dynamic>> getCurrentUser() async {
+  Future<MyProfile> getCurrentUser() async {
     try {
       _logger.i('👤 Getting current user profile');
 
@@ -127,7 +128,7 @@ class ProfileRepository {
       );
 
       _logger.i('✅ User profile retrieved successfully');
-      return response;
+      return MyProfile.fromJson(response);
     } on NotFoundException {
       _logger.w('⚠️  User profile not found (404)');
       throw ProfileRepositoryException(
@@ -153,16 +154,18 @@ class ProfileRepository {
 
   /// Update user profile with UpdateUserRequest
   /// PATCH /users/me
-  Future<void> updateUser(UpdateUserRequest request) async {
+  /// Returns the whole profile as the server stored it.
+  Future<MyProfile> updateUser(UpdateUserRequest request) async {
     try {
       _logger.i('✏️  Updating user profile');
 
-      await _apiClient.patch<Map<String, dynamic>>(
+      final response = await _apiClient.patch<Map<String, dynamic>>(
         ApiEndpoints.users.updateCurrentUser(),
         data: request.toJson(),
       );
 
       _logger.i('✅ User profile updated successfully');
+      return MyProfile.fromJson(response);
     } on ValidationException catch (e) {
       _logger.w('⚠️  Validation error: ${e.message}');
       throw ProfileValidationException(
