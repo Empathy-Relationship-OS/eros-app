@@ -2,6 +2,7 @@ import 'package:eros_app/features/profile/domain/enums/personality.dart';
 import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/core/constants/languages.dart';
+import 'package:eros_app/features/profile/domain/models/profile_field_limits.dart';
 
 /// Request model for updating an existing user profile
 /// All fields are optional — only non-null fields are applied to the existing profile
@@ -118,12 +119,14 @@ class UpdateUserRequest {
       throw ArgumentError('City cannot be empty');
     }
     if (brainDescription?.field != null &&
-        brainDescription!.field!.length > 100) {
-      throw ArgumentError('Brain description must not exceed 100 characters');
+        brainDescription!.field!.length > ProfileFieldLimits.maxDescriptionLength) {
+      throw ArgumentError(
+          'Brain description must not exceed ${ProfileFieldLimits.maxDescriptionLength} characters');
     }
     if (bodyDescription?.field != null &&
-        bodyDescription!.field!.length > 100) {
-      throw ArgumentError('Body description must not exceed 100 characters');
+        bodyDescription!.field!.length > ProfileFieldLimits.maxDescriptionLength) {
+      throw ArgumentError(
+          'Body description must not exceed ${ProfileFieldLimits.maxDescriptionLength} characters');
     }
     if (ethnicity?.field != null && ethnicity!.field.isEmpty) {
       throw ArgumentError('Ethnicity must not be empty if provided');
