@@ -107,8 +107,8 @@ void main() {
 
     // Known gap: the backend's Language enum has 34 languages, the app's LanguageCode 12. The
     // app can only send its own 12, but a profile holding any of the other 22 can't be read.
-    // Raised for a product decision on PE-F1's PR.
-    const knownGaps = {'language': 'Backend offers 22 languages the app does not (see PE-F1 PR)'};
+    // Decided in RFC-004 D-15 (spoken languages match the backend). Remove this skip in #17.
+    const knownGaps = {'language': 'Backend has 22 languages the app lacks: eros-app#17'};
 
     for (final entry in parsers.entries) {
       test('${entry.key} parses in the app', skip: knownGaps[entry.key], () {
