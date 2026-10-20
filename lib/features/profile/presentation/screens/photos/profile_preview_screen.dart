@@ -164,7 +164,7 @@ class _ProfilePreviewScreenState extends ConsumerState<ProfilePreviewScreen> {
 /// Content widget showing the profile preview
 class _ProfilePreviewContent extends StatelessWidget {
   final PublicProfileDTO profile;
-  final List<PhotoUploadDraft>? localPhotos; // Local photos with captions
+  final List<PhotoUploadDraft>? localPhotos; // Photos picked during onboarding, not yet uploaded
 
   const _ProfilePreviewContent({
     required this.profile,
@@ -178,26 +178,24 @@ class _ProfilePreviewContent extends StatelessWidget {
     // Determine which photos to use
     final bool useLocal = localPhotos != null && localPhotos!.isNotEmpty;
     final String? thumbnailPath;
-    final List<PhotoWithCaption> remainingPhotos;
+    final List<ProfilePhoto> remainingPhotos;
 
     if (useLocal) {
-      // Use local photos with captions
+      // Use local photos
       thumbnailPath = localPhotos!.first.localPath;
       remainingPhotos = localPhotos!.length > 1
-          ? localPhotos!.sublist(1).map((p) => PhotoWithCaption(
+          ? localPhotos!.sublist(1).map((p) => ProfilePhoto(
                 path: p.localPath,
-                caption: p.caption,
                 isLocal: true,
               )).toList()
           : [];
     } else {
-      // Use backend photos (no captions available yet)
+      // Use backend photos
       final backendPhotos = profile.profile.photos;
       thumbnailPath = backendPhotos.isNotEmpty ? backendPhotos.first : null;
       remainingPhotos = backendPhotos.length > 1
-          ? backendPhotos.sublist(1).map((p) => PhotoWithCaption(
+          ? backendPhotos.sublist(1).map((p) => ProfilePhoto(
                 path: p,
-                caption: null,
                 isLocal: false,
               )).toList()
           : [];

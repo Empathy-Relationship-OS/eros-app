@@ -190,7 +190,6 @@ class PhotoUploadDraft {
   final String localPath; // Local file path from image picker
   final int displayOrder;
   final bool isPrimary;
-  final String? caption; // Optional caption for the photo
 
   /// Content type accepted when the photo was picked. Upload reuses it so it can't reach a
   /// different answer. Null for drafts saved before this field existed.
@@ -202,7 +201,6 @@ class PhotoUploadDraft {
     required this.localPath,
     required this.displayOrder,
     this.isPrimary = false,
-    this.caption,
     this.contentType,
     this.objectKey,
     this.mediaId,
@@ -231,7 +229,6 @@ class PhotoUploadDraft {
     String? localPath,
     int? displayOrder,
     bool? isPrimary,
-    String? caption,
     String? contentType,
     String? objectKey,
     int? mediaId,
@@ -240,7 +237,6 @@ class PhotoUploadDraft {
       localPath: localPath ?? this.localPath,
       displayOrder: displayOrder ?? this.displayOrder,
       isPrimary: isPrimary ?? this.isPrimary,
-      caption: caption ?? this.caption,
       contentType: contentType ?? this.contentType,
       objectKey: objectKey ?? this.objectKey,
       mediaId: mediaId ?? this.mediaId,
@@ -252,7 +248,6 @@ class PhotoUploadDraft {
       'localPath': localPath,
       'displayOrder': displayOrder,
       'isPrimary': isPrimary,
-      if (caption != null) 'caption': caption,
       if (contentType != null) 'contentType': contentType,
       if (objectKey != null) 'objectKey': objectKey,
       if (mediaId != null) 'mediaId': mediaId,
@@ -264,7 +259,6 @@ class PhotoUploadDraft {
       localPath: json['localPath'] as String,
       displayOrder: json['displayOrder'] as int,
       isPrimary: json['isPrimary'] as bool? ?? false,
-      caption: json['caption'] as String?,
       contentType: json['contentType'] as String?,
       objectKey: json['objectKey'] as String?,
       mediaId: json['mediaId'] as int?,

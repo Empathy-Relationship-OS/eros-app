@@ -268,12 +268,11 @@ class _ProfileContent extends StatelessWidget {
     // Use backend photos (no local photos in this context)
     final String? thumbnailPath =
     backendPhotos.isNotEmpty ? backendPhotos.first : null;
-    final List<PhotoWithCaption> remainingPhotos = backendPhotos.length > 1
+    final List<ProfilePhoto> remainingPhotos = backendPhotos.length > 1
         ? backendPhotos
         .sublist(1)
-        .map((p) => PhotoWithCaption(
+        .map((p) => ProfilePhoto(
       path: p,
-      caption: null,
       isLocal: false,
     ))
         .toList()

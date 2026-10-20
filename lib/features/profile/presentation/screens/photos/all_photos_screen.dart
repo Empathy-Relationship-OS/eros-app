@@ -239,7 +239,6 @@ class AllPhotosScreen extends ConsumerWidget {
           builder: (context) => PhotoSelectionScreen(
             imageFile: existingFile,
             existingPhotoIndex: index,
-            existingCaption: existingPhoto.caption,
           ),
         ),
       );

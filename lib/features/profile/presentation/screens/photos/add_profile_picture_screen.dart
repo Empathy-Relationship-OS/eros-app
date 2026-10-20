@@ -227,7 +227,7 @@ class AddProfilePictureScreen extends ConsumerWidget {
 
     if (!context.mounted) return;
 
-    // Navigate to photo selection screen to add caption
+    // Navigate to photo selection screen to preview the photo
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => PhotoSelectionScreen(
