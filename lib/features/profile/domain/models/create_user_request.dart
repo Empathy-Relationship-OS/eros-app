@@ -3,6 +3,7 @@ import 'package:eros_app/features/profile/domain/enums/personality.dart';
 import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/core/constants/languages.dart';
+import 'package:eros_app/features/profile/domain/models/profile_field_limits.dart';
 
 /// Request model for creating a new user profile
 /// Matches backend CreateUserRequest structure
@@ -44,9 +45,9 @@ class CreateUserRequest {
   final DisplayableField<StarSign?> starSign;
   final DisplayableField<List<Ethnicity>> ethnicity;
   final DisplayableField<List<BrainAttribute>?> brainAttributes;
-  final DisplayableField<String?> brainDescription; // max 200 chars
+  final DisplayableField<String?> brainDescription; // max ProfileFieldLimits.maxDescriptionLength chars
   final DisplayableField<List<BodyAttribute>?> bodyAttributes;
-  final DisplayableField<String?> bodyDescription; // max 200 chars
+  final DisplayableField<String?> bodyDescription; // max ProfileFieldLimits.maxDescriptionLength chars
 
   CreateUserRequest({
     required this.userId,
@@ -118,11 +119,15 @@ class CreateUserRequest {
     if (city.trim().isEmpty) {
       throw ArgumentError('City is required');
     }
-    if (brainDescription.field != null && brainDescription.field!.length > 200) {
-      throw ArgumentError('Brain description must not exceed 200 characters');
+    if (brainDescription.field != null &&
+        brainDescription.field!.length > ProfileFieldLimits.maxDescriptionLength) {
+      throw ArgumentError(
+          'Brain description must not exceed ${ProfileFieldLimits.maxDescriptionLength} characters');
     }
-    if (bodyDescription.field != null && bodyDescription.field!.length > 200) {
-      throw ArgumentError('Body description must not exceed 200 characters');
+    if (bodyDescription.field != null &&
+        bodyDescription.field!.length > ProfileFieldLimits.maxDescriptionLength) {
+      throw ArgumentError(
+          'Body description must not exceed ${ProfileFieldLimits.maxDescriptionLength} characters');
     }
   }
 

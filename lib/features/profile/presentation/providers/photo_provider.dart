@@ -5,6 +5,7 @@ import 'package:logger/logger.dart';
 import 'package:eros_app/features/profile/data/repositories/photo_repository.dart';
 import 'package:eros_app/features/profile/domain/models/photo_models.dart';
 import 'package:eros_app/core/constants/media_constants.dart';
+import 'package:eros_app/core/utils/image_content_type.dart';
 import 'package:path/path.dart' as path;
 
 /// Provider for ImagePicker
@@ -61,6 +62,11 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
   final ImagePicker _imagePicker;
   final Logger _logger;
 
+  /// Content type accepted for each picked file, keyed by its local path. Picking can use the
+  /// picker's reported MIME type, which isn't available later, so [addPhoto] and
+  /// [replacePhoto] copy it onto the draft for upload to reuse.
+  final Map<String, String> _acceptedContentTypes = {};
+
   PhotoUploadNotifier({
     required PhotoRepository photoRepository,
     required ImagePicker imagePicker,
@@ -102,13 +108,23 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
       _logger.i('Image selected: ${pickedFile.name}');
       _logger.i('File size: ${MediaConstants.formatBytes(fileSize)}');
 
-      // Validate file size
-      if (!MediaConstants.isFileSizeValid(fileSize)) {
-        state = state.copyWith(
-          error: 'Photo must be between ${MediaConstants.formatBytes(MediaConstants.minFileSizeBytes)} and ${MediaConstants.formatBytes(MediaConstants.maxFileSizeBytes)}',
-        );
+      // Validate file type
+      final contentType = await detectFileContentType(
+        file,
+        reportedMimeType: pickedFile.mimeType,
+      );
+      if (contentType == null) {
+        state = state.copyWith(error: MediaConstants.unsupportedTypeMessage);
         return null;
       }
+
+      // Validate file size
+      if (!MediaConstants.isFileSizeValid(fileSize)) {
+        state = state.copyWith(error: MediaConstants.invalidSizeMessage);
+        return null;
+      }
+
+      _acceptedContentTypes[file.path] = contentType;
 
       return file;
     } catch (e, stackTrace) {
@@ -141,6 +157,7 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
       displayOrder: displayOrder,
       isPrimary: isPrimary,
       caption: caption,
+      contentType: _acceptedContentTypes[localPath],
     );
 
     state = state.copyWith(
@@ -211,6 +228,7 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
       displayOrder: oldPhoto.displayOrder,
       isPrimary: oldPhoto.isPrimary,
       caption: oldPhoto.caption,
+      contentType: _acceptedContentTypes[newLocalPath],
     );
 
     state = state.copyWith(
@@ -303,26 +321,12 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
         // Get file metadata
         final fileName = path.basename(file.path);
         final fileSize = await file.length();
-        final extension = path.extension(fileName).toLowerCase();
 
-        // Determine content type
-        String contentType;
-        switch (extension) {
-          case '.jpg':
-          case '.jpeg':
-            contentType = 'image/jpeg';
-            break;
-          case '.png':
-            contentType = 'image/png';
-            break;
-          case '.heic':
-            contentType = 'image/heic';
-            break;
-          case '.heif':
-            contentType = 'image/heif';
-            break;
-          default:
-            contentType = 'image/jpeg';
+        // Reuse the type accepted at selection; otherwise detect it from the file itself,
+        // never by guessing
+        final contentType = photo.acceptedContentType ?? await detectFileContentType(file);
+        if (contentType == null) {
+          throw PhotoRepositoryException(MediaConstants.unsupportedTypeMessage);
         }
 
         // Upload photo
@@ -377,6 +381,7 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
   /// Reset all photos (useful when starting over)
   void reset() {
     state = PhotoUploadState();
+    _acceptedContentTypes.clear();
     _logger.i('Photo upload state reset');
   }
 

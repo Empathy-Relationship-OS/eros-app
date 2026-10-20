@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import '../auth/auth_service.dart';
@@ -14,7 +16,12 @@ class ApiClient {
   final Dio _dio;
   final Logger _logger = Logger();
 
-  ApiClient(AuthService authService) : _dio = Dio() {
+  /// Builds the interceptor-free Dio used for S3 uploads. Tests pass one with a fake adapter.
+  final Dio Function()? _s3DioFactory;
+
+  ApiClient(AuthService authService, {Dio Function()? s3DioFactory})
+      : _dio = Dio(),
+        _s3DioFactory = s3DioFactory {
     // Configure base options
     _dio.options = BaseOptions(
       baseUrl: ApiConfig.baseUrl,
@@ -109,22 +116,33 @@ class ApiClient {
   }
 
   /// PUT request (for S3 uploads)
+  ///
+  /// [extraHeaders] are the presign response's `requiredHeaders`. They are signed into
+  /// [presignedUrl], so they are sent exactly as given (they win over the defaults on a
+  /// clash), and nothing extra is added when there are none.
   Future<void> uploadToS3({
     required String presignedUrl,
     required List<int> fileBytes,
     required String contentType,
+    Map<String, String> extraHeaders = const {},
   }) async {
     try {
       _logger.d('📤 Uploading to S3: ${fileBytes.length} bytes');
 
-      final dio = Dio(); // Separate Dio instance for S3 (no interceptors)
+      // Dio sends only a Uint8List as raw bytes. Any other List<int> goes through the request
+      // transformer and is uploaded as its text form, corrupting the image.
+      final body = fileBytes is Uint8List ? fileBytes : Uint8List.fromList(fileBytes);
+
+      // Separate Dio instance for S3 (no interceptors)
+      final dio = _s3DioFactory?.call() ?? Dio();
       final response = await dio.put(
         presignedUrl,
-        data: fileBytes,
+        data: body,
         options: Options(
           headers: {
             'Content-Type': contentType,
             'Content-Length': fileBytes.length.toString(),
+            ...extraHeaders,
           },
           validateStatus: (status) => status != null && status < 300,
         ),

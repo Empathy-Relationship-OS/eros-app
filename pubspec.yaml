@@ -64,6 +64,7 @@ dependencies:
   intl: ^0.20.1
   logger: ^2.5.0
   path: ^1.9.0
+  mime: ^2.0.0 # recognise photo formats from file bytes (RFC-004 PE-F6)
   uuid: ^4.5.1
 
   # Payments

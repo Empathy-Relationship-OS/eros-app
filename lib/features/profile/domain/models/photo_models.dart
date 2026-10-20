@@ -85,17 +85,26 @@ class PresignedUploadResponse {
   final String objectKey; // S3 object key — send this back in ConfirmUploadRequest
   final int expiresInMinutes;
 
+  /// Headers the S3 PUT must send exactly as given, because they are signed into
+  /// [uploadUrl] (e.g. `x-amz-tagging`). Empty when the backend lists none.
+  final Map<String, String> requiredHeaders;
+
   PresignedUploadResponse({
     required this.uploadUrl,
     required this.objectKey,
     required this.expiresInMinutes,
+    this.requiredHeaders = const {},
   });
 
   factory PresignedUploadResponse.fromJson(Map<String, dynamic> json) {
+    final headers = json['requiredHeaders'] as Map<String, dynamic>?;
     return PresignedUploadResponse(
       uploadUrl: json['uploadUrl'] as String,
       objectKey: json['objectKey'] as String,
       expiresInMinutes: json['expiresInMinutes'] as int,
+      requiredHeaders: headers == null
+          ? const {}
+          : headers.map((key, value) => MapEntry(key, value as String)),
     );
   }
 }
@@ -182,6 +191,10 @@ class PhotoUploadDraft {
   final int displayOrder;
   final bool isPrimary;
   final String? caption; // Optional caption for the photo
+
+  /// Content type accepted when the photo was picked. Upload reuses it so it can't reach a
+  /// different answer. Null for drafts saved before this field existed.
+  final String? contentType;
   final String? objectKey; // S3 object key after upload (null if not uploaded yet)
   final int? mediaId; // Backend media ID after confirmation (null if not confirmed)
 
@@ -190,9 +203,18 @@ class PhotoUploadDraft {
     required this.displayOrder,
     this.isPrimary = false,
     this.caption,
+    this.contentType,
     this.objectKey,
     this.mediaId,
   });
+
+  /// [contentType] if it is still an allowed upload type, normalised; otherwise null, so the
+  /// caller detects the type from the file instead.
+  String? get acceptedContentType {
+    final stored = contentType?.toLowerCase();
+    if (stored == null || !MediaConstants.isContentTypeAllowed(stored)) return null;
+    return stored == 'image/jpg' ? 'image/jpeg' : stored;
+  }
 
   /// Check if photo has been uploaded to S3
   bool get isUploaded => objectKey != null;
@@ -205,27 +227,12 @@ class PhotoUploadDraft {
     return localPath.split('/').last;
   }
 
-  /// Get content type based on file extension
-  String get contentType {
-    final extension = localPath.toLowerCase().split('.').last;
-    switch (extension) {
-      case 'jpg':
-      case 'jpeg':
-        return 'image/jpeg';
-      case 'png':
-        return 'image/png';
-      case 'heic':
-        return 'image/heic';
-      default:
-        return 'image/jpeg'; // Default fallback
-    }
-  }
-
   PhotoUploadDraft copyWith({
     String? localPath,
     int? displayOrder,
     bool? isPrimary,
     String? caption,
+    String? contentType,
     String? objectKey,
     int? mediaId,
   }) {
@@ -234,6 +241,7 @@ class PhotoUploadDraft {
       displayOrder: displayOrder ?? this.displayOrder,
       isPrimary: isPrimary ?? this.isPrimary,
       caption: caption ?? this.caption,
+      contentType: contentType ?? this.contentType,
       objectKey: objectKey ?? this.objectKey,
       mediaId: mediaId ?? this.mediaId,
     );
@@ -245,6 +253,7 @@ class PhotoUploadDraft {
       'displayOrder': displayOrder,
       'isPrimary': isPrimary,
       if (caption != null) 'caption': caption,
+      if (contentType != null) 'contentType': contentType,
       if (objectKey != null) 'objectKey': objectKey,
       if (mediaId != null) 'mediaId': mediaId,
     };
@@ -256,6 +265,7 @@ class PhotoUploadDraft {
       displayOrder: json['displayOrder'] as int,
       isPrimary: json['isPrimary'] as bool? ?? false,
       caption: json['caption'] as String?,
+      contentType: json['contentType'] as String?,
       objectKey: json['objectKey'] as String?,
       mediaId: json['mediaId'] as int?,
     );
