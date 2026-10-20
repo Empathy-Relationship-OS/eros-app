@@ -1,4 +1,9 @@
 /// Constants for media uploads (photos, videos, etc.)
+///
+/// These must match the backend's `MediaConstants`
+/// (`eros-backend/users/src/main/kotlin/com/eros/users/models/UserMedia.kt`) exactly. The
+/// backend is the source of truth (RFC-004 D-12). Change both together, and never hard-code a
+/// type, size or count anywhere else.
 class MediaConstants {
   MediaConstants._();
 
@@ -9,10 +14,11 @@ class MediaConstants {
     'image/png',
     'image/heic',
     'image/heif',
+    'image/webp',
   ];
 
-  /// Minimum file size in bytes (10 KB)
-  static const int minFileSizeBytes = 10 * 1024;
+  /// Minimum file size in bytes (100 KB)
+  static const int minFileSizeBytes = 100 * 1024;
 
   /// Maximum file size in bytes (10 MB)
   static const int maxFileSizeBytes = 10 * 1024 * 1024;
@@ -47,4 +53,12 @@ class MediaConstants {
   static bool isFileSizeValid(int bytes) {
     return bytes >= minFileSizeBytes && bytes <= maxFileSizeBytes;
   }
+
+  /// User-facing message for a photo whose format isn't allowed.
+  static const String unsupportedTypeMessage =
+      'This photo format isn\'t supported. Please choose a JPEG, PNG, HEIC or WebP photo.';
+
+  /// User-facing message for a photo outside the size limits.
+  static String get invalidSizeMessage =>
+      'Photo must be between ${formatBytes(minFileSizeBytes)} and ${formatBytes(maxFileSizeBytes)}';
 }

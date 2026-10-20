@@ -85,17 +85,26 @@ class PresignedUploadResponse {
   final String objectKey; // S3 object key — send this back in ConfirmUploadRequest
   final int expiresInMinutes;
 
+  /// Headers the S3 PUT must send exactly as given, because they are signed into
+  /// [uploadUrl] (e.g. `x-amz-tagging`). Empty when the backend lists none.
+  final Map<String, String> requiredHeaders;
+
   PresignedUploadResponse({
     required this.uploadUrl,
     required this.objectKey,
     required this.expiresInMinutes,
+    this.requiredHeaders = const {},
   });
 
   factory PresignedUploadResponse.fromJson(Map<String, dynamic> json) {
+    final headers = json['requiredHeaders'] as Map<String, dynamic>?;
     return PresignedUploadResponse(
       uploadUrl: json['uploadUrl'] as String,
       objectKey: json['objectKey'] as String,
       expiresInMinutes: json['expiresInMinutes'] as int,
+      requiredHeaders: headers == null
+          ? const {}
+          : headers.map((key, value) => MapEntry(key, value as String)),
     );
   }
 }
@@ -203,22 +212,6 @@ class PhotoUploadDraft {
   /// Get file name from local path
   String get fileName {
     return localPath.split('/').last;
-  }
-
-  /// Get content type based on file extension
-  String get contentType {
-    final extension = localPath.toLowerCase().split('.').last;
-    switch (extension) {
-      case 'jpg':
-      case 'jpeg':
-        return 'image/jpeg';
-      case 'png':
-        return 'image/png';
-      case 'heic':
-        return 'image/heic';
-      default:
-        return 'image/jpeg'; // Default fallback
-    }
   }
 
   PhotoUploadDraft copyWith({

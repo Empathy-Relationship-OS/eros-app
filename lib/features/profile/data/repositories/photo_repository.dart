@@ -6,6 +6,8 @@ import 'package:eros_app/core/network/api_client_provider.dart';
 import 'package:eros_app/core/network/api_endpoints.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
+import 'package:eros_app/core/constants/media_constants.dart';
+import 'package:eros_app/core/utils/image_content_type.dart';
 import 'package:eros_app/features/profile/domain/models/photo_models.dart';
 
 /// Repository for photo upload operations
@@ -73,11 +75,13 @@ class PhotoRepository {
   }
 
   /// Step 2: Upload file directly to S3 using presigned URL
-  /// This bypasses the backend and uploads directly to AWS S3
+  /// This bypasses the backend and uploads directly to AWS S3.
+  /// [requiredHeaders] come from [PresignedUploadResponse.requiredHeaders] and are sent as-is.
   Future<void> uploadToS3({
     required String presignedUrl,
     required File file,
     required String contentType,
+    Map<String, String> requiredHeaders = const {},
   }) async {
     try {
       _logger.i('📤 Uploading to S3');
@@ -92,6 +96,7 @@ class PhotoRepository {
         presignedUrl: presignedUrl,
         fileBytes: fileBytes,
         contentType: contentType,
+        extraHeaders: requiredHeaders,
       );
 
       _logger.i('✅ File uploaded to S3 successfully');
@@ -218,6 +223,7 @@ class PhotoRepository {
         presignedUrl: presignedResponse.uploadUrl,
         file: file,
         contentType: contentType,
+        requiredHeaders: presignedResponse.requiredHeaders,
       );
 
       // Step 3: Confirm with backend
@@ -259,11 +265,18 @@ class PhotoRepository {
 
         final file = File(photo.localPath);
         final fileBytes = await file.readAsBytes();
+        final contentType = detectImageContentType(
+          path: photo.localPath,
+          headerBytes: fileBytes.take(imageHeaderBytesLength).toList(),
+        );
+        if (contentType == null) {
+          throw PhotoRepositoryException(MediaConstants.unsupportedTypeMessage);
+        }
 
         final mediaItem = await uploadPhoto(
           file: file,
           fileName: photo.fileName,
-          contentType: photo.contentType,
+          contentType: contentType,
           fileSizeBytes: fileBytes.length,
           displayOrder: i + 1, // Display order is 1-indexed (1-6)
           isPrimary: i == 0, // First photo is always primary

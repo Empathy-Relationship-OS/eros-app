@@ -5,6 +5,7 @@ import 'package:logger/logger.dart';
 import 'package:eros_app/features/profile/data/repositories/photo_repository.dart';
 import 'package:eros_app/features/profile/domain/models/photo_models.dart';
 import 'package:eros_app/core/constants/media_constants.dart';
+import 'package:eros_app/core/utils/image_content_type.dart';
 import 'package:path/path.dart' as path;
 
 /// Provider for ImagePicker
@@ -102,11 +103,19 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
       _logger.i('Image selected: ${pickedFile.name}');
       _logger.i('File size: ${MediaConstants.formatBytes(fileSize)}');
 
+      // Validate file type
+      final contentType = await detectFileContentType(
+        file,
+        reportedMimeType: pickedFile.mimeType,
+      );
+      if (contentType == null) {
+        state = state.copyWith(error: MediaConstants.unsupportedTypeMessage);
+        return null;
+      }
+
       // Validate file size
       if (!MediaConstants.isFileSizeValid(fileSize)) {
-        state = state.copyWith(
-          error: 'Photo must be between ${MediaConstants.formatBytes(MediaConstants.minFileSizeBytes)} and ${MediaConstants.formatBytes(MediaConstants.maxFileSizeBytes)}',
-        );
+        state = state.copyWith(error: MediaConstants.invalidSizeMessage);
         return null;
       }
 
@@ -303,26 +312,11 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
         // Get file metadata
         final fileName = path.basename(file.path);
         final fileSize = await file.length();
-        final extension = path.extension(fileName).toLowerCase();
 
-        // Determine content type
-        String contentType;
-        switch (extension) {
-          case '.jpg':
-          case '.jpeg':
-            contentType = 'image/jpeg';
-            break;
-          case '.png':
-            contentType = 'image/png';
-            break;
-          case '.heic':
-            contentType = 'image/heic';
-            break;
-          case '.heif':
-            contentType = 'image/heif';
-            break;
-          default:
-            contentType = 'image/jpeg';
+        // Determine content type from the file itself, never by guessing
+        final contentType = await detectFileContentType(file);
+        if (contentType == null) {
+          throw PhotoRepositoryException(MediaConstants.unsupportedTypeMessage);
         }
 
         // Upload photo
