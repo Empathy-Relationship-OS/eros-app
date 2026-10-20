@@ -191,6 +191,10 @@ class PhotoUploadDraft {
   final int displayOrder;
   final bool isPrimary;
   final String? caption; // Optional caption for the photo
+
+  /// Content type accepted when the photo was picked. Upload reuses it so it can't reach a
+  /// different answer. Null for drafts saved before this field existed.
+  final String? contentType;
   final String? objectKey; // S3 object key after upload (null if not uploaded yet)
   final int? mediaId; // Backend media ID after confirmation (null if not confirmed)
 
@@ -199,9 +203,18 @@ class PhotoUploadDraft {
     required this.displayOrder,
     this.isPrimary = false,
     this.caption,
+    this.contentType,
     this.objectKey,
     this.mediaId,
   });
+
+  /// [contentType] if it is still an allowed upload type, normalised; otherwise null, so the
+  /// caller detects the type from the file instead.
+  String? get acceptedContentType {
+    final stored = contentType?.toLowerCase();
+    if (stored == null || !MediaConstants.isContentTypeAllowed(stored)) return null;
+    return stored == 'image/jpg' ? 'image/jpeg' : stored;
+  }
 
   /// Check if photo has been uploaded to S3
   bool get isUploaded => objectKey != null;
@@ -219,6 +232,7 @@ class PhotoUploadDraft {
     int? displayOrder,
     bool? isPrimary,
     String? caption,
+    String? contentType,
     String? objectKey,
     int? mediaId,
   }) {
@@ -227,6 +241,7 @@ class PhotoUploadDraft {
       displayOrder: displayOrder ?? this.displayOrder,
       isPrimary: isPrimary ?? this.isPrimary,
       caption: caption ?? this.caption,
+      contentType: contentType ?? this.contentType,
       objectKey: objectKey ?? this.objectKey,
       mediaId: mediaId ?? this.mediaId,
     );
@@ -238,6 +253,7 @@ class PhotoUploadDraft {
       'displayOrder': displayOrder,
       'isPrimary': isPrimary,
       if (caption != null) 'caption': caption,
+      if (contentType != null) 'contentType': contentType,
       if (objectKey != null) 'objectKey': objectKey,
       if (mediaId != null) 'mediaId': mediaId,
     };
@@ -249,6 +265,7 @@ class PhotoUploadDraft {
       displayOrder: json['displayOrder'] as int,
       isPrimary: json['isPrimary'] as bool? ?? false,
       caption: json['caption'] as String?,
+      contentType: json['contentType'] as String?,
       objectKey: json['objectKey'] as String?,
       mediaId: json['mediaId'] as int?,
     );

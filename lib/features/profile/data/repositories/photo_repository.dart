@@ -265,10 +265,11 @@ class PhotoRepository {
 
         final file = File(photo.localPath);
         final fileBytes = await file.readAsBytes();
-        final contentType = detectImageContentType(
-          path: photo.localPath,
-          headerBytes: fileBytes.take(imageHeaderBytesLength).toList(),
-        );
+        final contentType = photo.acceptedContentType ??
+            detectImageContentType(
+              path: photo.localPath,
+              headerBytes: fileBytes.take(imageHeaderBytesLength).toList(),
+            );
         if (contentType == null) {
           throw PhotoRepositoryException(MediaConstants.unsupportedTypeMessage);
         }

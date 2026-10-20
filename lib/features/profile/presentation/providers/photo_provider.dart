@@ -62,6 +62,11 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
   final ImagePicker _imagePicker;
   final Logger _logger;
 
+  /// Content type accepted for each picked file, keyed by its local path. Picking can use the
+  /// picker's reported MIME type, which isn't available later, so [addPhoto] and
+  /// [replacePhoto] copy it onto the draft for upload to reuse.
+  final Map<String, String> _acceptedContentTypes = {};
+
   PhotoUploadNotifier({
     required PhotoRepository photoRepository,
     required ImagePicker imagePicker,
@@ -119,6 +124,8 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
         return null;
       }
 
+      _acceptedContentTypes[file.path] = contentType;
+
       return file;
     } catch (e, stackTrace) {
       _logger.e('Error picking image', error: e, stackTrace: stackTrace);
@@ -150,6 +157,7 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
       displayOrder: displayOrder,
       isPrimary: isPrimary,
       caption: caption,
+      contentType: _acceptedContentTypes[localPath],
     );
 
     state = state.copyWith(
@@ -220,6 +228,7 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
       displayOrder: oldPhoto.displayOrder,
       isPrimary: oldPhoto.isPrimary,
       caption: oldPhoto.caption,
+      contentType: _acceptedContentTypes[newLocalPath],
     );
 
     state = state.copyWith(
@@ -313,8 +322,9 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
         final fileName = path.basename(file.path);
         final fileSize = await file.length();
 
-        // Determine content type from the file itself, never by guessing
-        final contentType = await detectFileContentType(file);
+        // Reuse the type accepted at selection; otherwise detect it from the file itself,
+        // never by guessing
+        final contentType = photo.acceptedContentType ?? await detectFileContentType(file);
         if (contentType == null) {
           throw PhotoRepositoryException(MediaConstants.unsupportedTypeMessage);
         }
@@ -371,6 +381,7 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
   /// Reset all photos (useful when starting over)
   void reset() {
     state = PhotoUploadState();
+    _acceptedContentTypes.clear();
     _logger.i('Photo upload state reset');
   }
 
