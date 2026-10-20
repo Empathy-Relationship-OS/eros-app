@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import '../auth/auth_service.dart';
@@ -127,11 +129,15 @@ class ApiClient {
     try {
       _logger.d('📤 Uploading to S3: ${fileBytes.length} bytes');
 
+      // Dio sends only a Uint8List as raw bytes. Any other List<int> goes through the request
+      // transformer and is uploaded as its text form, corrupting the image.
+      final body = fileBytes is Uint8List ? fileBytes : Uint8List.fromList(fileBytes);
+
       // Separate Dio instance for S3 (no interceptors)
       final dio = _s3DioFactory?.call() ?? Dio();
       final response = await dio.put(
         presignedUrl,
-        data: fileBytes,
+        data: body,
         options: Options(
           headers: {
             'Content-Type': contentType,
