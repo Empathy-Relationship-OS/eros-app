@@ -6,6 +6,7 @@ import 'package:eros_app/core/network/api_endpoints.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/profile/domain/models/create_user_request.dart';
+import 'package:eros_app/features/profile/domain/models/my_profile.dart';
 import 'package:eros_app/features/profile/domain/models/update_user_request.dart';
 import 'package:eros_app/features/profile/domain/models/public_profile.dart';
 
@@ -116,9 +117,9 @@ class ProfileRepository {
     }
   }
 
-  /// Get current user's profile
+  /// Get current user's profile, as values for editing
   /// GET /users/me
-  Future<Map<String, dynamic>> getCurrentUser() async {
+  Future<MyProfile> getCurrentUser() async {
     try {
       _logger.i('👤 Getting current user profile');
 
@@ -127,7 +128,10 @@ class ProfileRepository {
       );
 
       _logger.i('✅ User profile retrieved successfully');
-      return response;
+      return _parseMyProfile(
+        response,
+        'We couldn\'t load your profile. Please try again.',
+      );
     } on NotFoundException {
       _logger.w('⚠️  User profile not found (404)');
       throw ProfileRepositoryException(
@@ -153,16 +157,22 @@ class ProfileRepository {
 
   /// Update user profile with UpdateUserRequest
   /// PATCH /users/me
-  Future<void> updateUser(UpdateUserRequest request) async {
+  /// Returns the whole profile as the server stored it.
+  Future<MyProfile> updateUser(UpdateUserRequest request) async {
     try {
       _logger.i('✏️  Updating user profile');
 
-      await _apiClient.patch<Map<String, dynamic>>(
+      final response = await _apiClient.patch<Map<String, dynamic>>(
         ApiEndpoints.users.updateCurrentUser(),
         data: request.toJson(),
       );
 
       _logger.i('✅ User profile updated successfully');
+      // The PATCH has already been saved here, so a parse failure must not read as a failed save.
+      return _parseMyProfile(
+        response,
+        'Your changes were saved, but we couldn\'t show them. Please reload your profile.',
+      );
     } on ValidationException catch (e) {
       _logger.w('⚠️  Validation error: ${e.message}');
       throw ProfileValidationException(
@@ -194,6 +204,18 @@ class ProfileRepository {
       throw ProfileRepositoryException(
         'We couldn\'t update your profile. Please try again.',
       );
+    }
+  }
+
+  /// Parses a `UserDTO`. A body the app can't read (a missing field, an enum value it doesn't
+  /// know) throws a TypeError, ArgumentError or FormatException, none of which the `on`
+  /// clauses above catch, so it becomes a [ProfileRepositoryException] with [message] here.
+  MyProfile _parseMyProfile(Map<String, dynamic> json, String message) {
+    try {
+      return MyProfile.fromJson(json);
+    } catch (e, st) {
+      _logger.e('🧩 Could not parse the /users/me response', error: e, stackTrace: st);
+      throw ProfileRepositoryException(message);
     }
   }
 

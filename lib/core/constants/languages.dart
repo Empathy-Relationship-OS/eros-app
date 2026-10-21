@@ -207,7 +207,29 @@ class Language {
     );
   }
 
-  /// Convert to enum
+  /// Parses a backend display name. A backend language the app has no entry for yet
+  /// (eros-app#17) becomes [Language.unsupported] rather than failing the whole profile.
+  factory Language.fromBackend(String value) {
+    for (final languageCode in LanguageCode.values) {
+      if (languageCode.displayName == value) return Languages.getByCode(languageCode.code);
+    }
+    return Language.unsupported(value);
+  }
+
+  /// A backend language the app can't show properly yet. It keeps the backend's display name,
+  /// so saving the profile sends it back unchanged instead of dropping or replacing it.
+  factory Language.unsupported(String backendName) {
+    return Language(code: backendName, name: backendName, nativeName: backendName, flag: '🌐');
+  }
+
+  /// False for [Language.unsupported].
+  bool get isSupported => Languages.all.any((lang) => lang.code == code);
+
+  /// Backend wire value (display name).
+  String toBackend() => isSupported ? toEnum().toBackend() : name;
+
+  /// Convert to enum. An unsupported language has no enum value and maps to English, so use
+  /// [toBackend] for anything sent to the server.
   LanguageCode toEnum() {
     return LanguageCode.fromCode(code);
   }

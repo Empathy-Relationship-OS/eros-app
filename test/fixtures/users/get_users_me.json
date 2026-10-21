@@ -1,0 +1,110 @@
+{
+    "userId": "fixture-user",
+    "firstName": "Ada",
+    "lastName": "Lovelace",
+    "email": "ada@example.com",
+    "heightCm": 170,
+    "dateOfBirth": "1995-03-14",
+    "city": "London",
+    "educationLevel": "University",
+    "gender": "Female",
+    "preferredLanguage": "English",
+    "coordinatesLatitude": 51.5074,
+    "coordinatesLongitude": -0.1278,
+    "occupation": "Engineer",
+    "bio": "Likes long walks.",
+    "interests": [
+        "Hiking",
+        "Nature",
+        "Movies",
+        "Photography",
+        "Yoga",
+        "Afro Beats",
+        "BBQ"
+    ],
+    "traits": [
+        "Adventurous",
+        "Ambitious",
+        "Spontaneous",
+        "Energetic",
+        "Honest"
+    ],
+    "spokenLanguages": {
+        "field": [
+            "English",
+            "Spanish"
+        ],
+        "display": true
+    },
+    "religion": {
+        "field": "Christianity",
+        "display": false
+    },
+    "politicalView": {
+        "field": null,
+        "display": false
+    },
+    "alcoholConsumption": {
+        "field": "Never",
+        "display": true
+    },
+    "smokingStatus": {
+        "field": "Never",
+        "display": true
+    },
+    "diet": {
+        "field": "Omnivore",
+        "display": true
+    },
+    "dateIntentions": {
+        "field": "Serious Dating",
+        "display": true
+    },
+    "relationshipType": {
+        "field": "Monogamous",
+        "display": true
+    },
+    "kidsPreference": {
+        "field": "Open to Kids",
+        "display": false
+    },
+    "sexualOrientation": {
+        "field": "Straight",
+        "display": true
+    },
+    "pronouns": {
+        "field": "He/Him",
+        "display": true
+    },
+    "starSign": {
+        "field": "Aries",
+        "display": true
+    },
+    "ethnicity": {
+        "field": [
+            "Black/African Descent"
+        ],
+        "display": false
+    },
+    "brainAttributes": {
+        "field": [
+            "I have AD(H)D",
+            "I have a learning disability"
+        ],
+        "display": true
+    },
+    "brainDescription": {
+        "field": "Curious about everything.",
+        "display": true
+    },
+    "bodyAttributes": {
+        "field": null,
+        "display": false
+    },
+    "bodyDescription": {
+        "field": null,
+        "display": false
+    },
+    "profileCompleteness": 70,
+    "photoValidationStatus": "PENDING"
+}
