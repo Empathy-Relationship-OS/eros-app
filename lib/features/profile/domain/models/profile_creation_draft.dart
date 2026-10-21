@@ -260,7 +260,7 @@ class ProfileCreationDraft {
           ? EducationLevel.fromBackend(json['educationLevel'] as String)
           : null,
       gender: json['gender'] != null
-          ? Gender.fromBackend(json['gender'] as String)
+          ? Gender.fromStored(json['gender'] as String)
           : null,
       preferredLanguage: json['preferredLanguage'] != null
           ? Language.fromCode(json['preferredLanguage'] as String)

@@ -32,4 +32,10 @@ enum Gender {
       ),
     );
   }
+
+  /// Parses a value the app saved itself, such as an onboarding draft. Builds before the
+  /// 'Non-Binary' fix saved 'Non-binary', and a draft that fails to parse is thrown away, so
+  /// the old spelling is still accepted here. [fromBackend] stays exact for server values.
+  static Gender fromStored(String value) =>
+      value == 'Non-binary' ? Gender.nonBinary : fromBackend(value);
 }
