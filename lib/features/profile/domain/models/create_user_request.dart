@@ -143,7 +143,7 @@ class CreateUserRequest {
       'city': city,
       'educationLevel': educationLevel.toBackend(),
       'gender': gender.toBackend(),
-      'preferredLanguage': preferredLanguage.toEnum().toBackend(),
+      'preferredLanguage': preferredLanguage.toBackend(),
       'coordinatesLatitude': coordinatesLatitude,
       'coordinatesLongitude': coordinatesLongitude,
       'interests': interests,
@@ -151,7 +151,7 @@ class CreateUserRequest {
       if (occupation != null) 'occupation': occupation,
       'bio': bio,
       'spokenLanguages': spokenLanguages.toJson(
-        (langs) => langs.map((l) => l.toEnum().toBackend()).toList(),
+        (langs) => langs.map((l) => l.toBackend()).toList(),
       ),
       'religion': religion.toJson((r) => r?.toBackend()),
       'politicalView': politicalView.toJson((p) => p?.toBackend()),

@@ -148,7 +148,7 @@ class UpdateUserRequest {
     if (occupation != null) json['occupation'] = occupation;
     if (bio != null) json['bio'] = bio;
     if (preferredLanguage != null) {
-      json['preferredLanguage'] = preferredLanguage!.toEnum().toBackend();
+      json['preferredLanguage'] = preferredLanguage!.toBackend();
     }
     if (coordinatesLatitude != null) {
       json['coordinatesLatitude'] = coordinatesLatitude;
@@ -164,7 +164,7 @@ class UpdateUserRequest {
     // Displayable fields
     if (spokenLanguages != null) {
       json['spokenLanguages'] = spokenLanguages!.toJson(
-        (langs) => langs.map((l) => l.toEnum().toBackend()).toList(),
+        (langs) => langs.map((l) => l.toBackend()).toList(),
       );
     }
     if (religion != null) {

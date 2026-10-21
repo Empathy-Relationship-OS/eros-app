@@ -235,6 +235,5 @@ class MyProfile {
   static List<String> _strings(dynamic value) =>
       (value as List<dynamic>).map((e) => e as String).toList();
 
-  static Language _language(dynamic value) =>
-      Languages.getByCode(LanguageCode.fromBackend(value as String).code);
+  static Language _language(dynamic value) => Language.fromBackend(value as String);
 }
