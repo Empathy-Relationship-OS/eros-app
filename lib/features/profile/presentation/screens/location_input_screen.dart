@@ -4,6 +4,7 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/constants/profile_creation.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/city_editor.dart';
 
 /// Location input screen - allows GPS or manual city entry
 /// Matches screenshots:
@@ -17,29 +18,15 @@ class LocationInputScreen extends ConsumerStatefulWidget {
 }
 
 class _LocationInputScreenState extends ConsumerState<LocationInputScreen> {
-  final _cityController = TextEditingController();
   bool _isValid = false;
-  bool _useGps = true;
   String? _selectedCity;
   double? _selectedLat;
   double? _selectedLon;
-
-  // Mock cities for demo - in production, this would come from a geocoding API
-  final List<Map<String, dynamic>> _citySuggestions = [
-    {'name': 'London', 'lat': 51.5074, 'lon': -0.1278},
-    {'name': 'Manchester', 'lat': 53.4808, 'lon': -2.2426},
-    {'name': 'Birmingham', 'lat': 52.4862, 'lon': -1.8904},
-    {'name': 'Edinburgh', 'lat': 55.9533, 'lon': -3.1883},
-    {'name': 'Glasgow', 'lat': 55.8642, 'lon': -4.2518},
-  ];
-
-  List<Map<String, dynamic>> _filteredCities = [];
 
   @override
   void initState() {
     super.initState();
     _loadExistingData();
-    _cityController.addListener(_onSearchChanged);
   }
 
   void _loadExistingData() {
@@ -48,53 +35,17 @@ class _LocationInputScreenState extends ConsumerState<LocationInputScreen> {
       _selectedCity = draft.city;
       _selectedLat = draft.coordinatesLatitude;
       _selectedLon = draft.coordinatesLongitude;
-      _cityController.text = draft.city!;
       _isValid = true;
     }
   }
 
-  void _onSearchChanged() {
-    final query = _cityController.text.toLowerCase();
-    if (query.isEmpty) {
-      setState(() {
-        _filteredCities = [];
-        _isValid = false;
-      });
-      return;
-    }
-
+  void _selectCity(HomeCity city) {
     setState(() {
-      _filteredCities = _citySuggestions
-          .where((city) => city['name'].toLowerCase().contains(query))
-          .toList();
-    });
-  }
-
-  void _selectCity(Map<String, dynamic> city) {
-    setState(() {
-      _selectedCity = city['name'];
-      _selectedLat = city['lat'];
-      _selectedLon = city['lon'];
-      _cityController.text = city['name'];
-      _filteredCities = [];
+      _selectedCity = city.name;
+      _selectedLat = city.latitude;
+      _selectedLon = city.longitude;
       _isValid = true;
     });
-  }
-
-  Future<void> _requestGpsLocation() async {
-    // TODO: Implement actual GPS location request
-    // For now, show a message
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('GPS location feature coming soon. Please enter city manually.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-      setState(() {
-        _useGps = false;
-      });
-    }
   }
 
   Future<void> _continue() async {
@@ -113,12 +64,6 @@ class _LocationInputScreenState extends ConsumerState<LocationInputScreen> {
     if (mounted) {
       Navigator.pushNamed(context, '/profile-creation/dating-cities');
     }
-  }
-
-  @override
-  void dispose() {
-    _cityController.dispose();
-    super.dispose();
   }
 
   @override
@@ -164,98 +109,12 @@ class _LocationInputScreenState extends ConsumerState<LocationInputScreen> {
               const SizedBox(height: 24),
 
               // Location options
-              if (_useGps) ...[
-                Center(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.location_on,
-                        size: 64,
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: _requestGpsLocation,
-                        icon: const Icon(Icons.my_location),
-                        label: const Text('Use my location'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _useGps = false;
-                          });
-                        },
-                        child: const Text('Enter location manually'),
-                      ),
-                    ],
-                  ),
-                ),
-              ] else ...[
-                // Manual city input
-                TextField(
-                  controller: _cityController,
-                  decoration: InputDecoration(
-                    labelText: 'City',
-                    hintText: 'Start typing...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: AppColors.primary,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // City suggestions
-                if (_filteredCities.isNotEmpty) ...[
-                  Container(
-                    constraints: const BoxConstraints(maxHeight: 200),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey[300]!),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: _filteredCities.length,
-                      itemBuilder: (context, index) {
-                        final city = _filteredCities[index];
-                        return ListTile(
-                          leading: const Icon(Icons.location_city),
-                          title: Text(city['name']),
-                          onTap: () => _selectCity(city),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 16),
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _useGps = true;
-                      _cityController.clear();
-                      _filteredCities = [];
-                    });
-                  },
-                  icon: const Icon(Icons.my_location),
-                  label: const Text('Use GPS instead'),
-                ),
-              ],
+              CityEditor(
+                initialCity: _selectedCity,
+                onCitySelected: _selectCity,
+                // As before: emptying the field disables Continue but keeps the last pick.
+                onQueryCleared: () => setState(() => _isValid = false),
+              ),
 
               const Spacer(),
 

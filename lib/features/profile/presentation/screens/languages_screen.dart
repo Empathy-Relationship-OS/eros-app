@@ -6,6 +6,7 @@ import 'package:eros_app/core/constants/profile_creation.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/languages_editor.dart';
 
 /// Languages spoken selection screen
 /// Matches screenshot: @screenshots/login/create-user/3501077E-60FD-4AB1-BDE8-BBC133EA7E48.png
@@ -17,7 +18,7 @@ class LanguagesScreen extends ConsumerStatefulWidget {
 }
 
 class _LanguagesScreenState extends ConsumerState<LanguagesScreen> {
-  final Set<Language> _selectedLanguages = {};
+  List<Language> _selectedLanguages = [];
 
   @override
   void initState() {
@@ -29,25 +30,16 @@ class _LanguagesScreenState extends ConsumerState<LanguagesScreen> {
     final draft = ref.read(profileCreationProvider);
     if (draft.spokenLanguages != null) {
       setState(() {
-        _selectedLanguages.addAll(draft.spokenLanguages!.field);
+        // A set first, as before: duplicates in an old draft are dropped, order is kept.
+        _selectedLanguages = draft.spokenLanguages!.field.toSet().toList();
       });
     }
     // Set preferred language as default if no languages selected
     if (_selectedLanguages.isEmpty && draft.preferredLanguage != null) {
       setState(() {
-        _selectedLanguages.add(draft.preferredLanguage!);
+        _selectedLanguages = [draft.preferredLanguage!];
       });
     }
-  }
-
-  void _toggleLanguage(Language language) {
-    setState(() {
-      if (_selectedLanguages.contains(language)) {
-        _selectedLanguages.remove(language);
-      } else {
-        _selectedLanguages.add(language);
-      }
-    });
   }
 
   Future<void> _continue() async {
@@ -64,7 +56,7 @@ class _LanguagesScreenState extends ConsumerState<LanguagesScreen> {
     // Update the draft
     final currentDraft = ref.read(profileCreationProvider);
     final updatedDraft = currentDraft.copyWith(
-      spokenLanguages: DisplayableField.visible(_selectedLanguages.toList()),
+      spokenLanguages: DisplayableField.visible(_selectedLanguages),
       // Set preferred language to first selected if not set
       preferredLanguage: currentDraft.preferredLanguage ?? _selectedLanguages.first,
     );
@@ -119,74 +111,9 @@ class _LanguagesScreenState extends ConsumerState<LanguagesScreen> {
               const SizedBox(height: 32),
 
               // Languages list
-              Expanded(
-                child: ListView.builder(
-                  itemCount: Languages.all.length,
-                  itemBuilder: (context, index) {
-                    final language = Languages.all[index];
-                    final isSelected = _selectedLanguages.contains(language);
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: InkWell(
-                        onTap: () => _toggleLanguage(language),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primary.withValues(alpha: 0.1)
-                                : Colors.grey[100],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : Colors.grey[300]!,
-                              width: 2,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                language.flag,
-                                style: const TextStyle(fontSize: 24),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      language.name,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: isSelected
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                      ),
-                                    ),
-                                    Text(
-                                      language.nativeName,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (isSelected)
-                                Icon(
-                                  Icons.check_circle,
-                                  color: AppColors.primary,
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+              LanguagesEditor(
+                selected: _selectedLanguages,
+                onChanged: (selected) => setState(() => _selectedLanguages = selected),
               ),
 
               const SizedBox(height: 16),
