@@ -7,6 +7,7 @@ import 'package:eros_app/features/auth/presentation/providers/auth_state_provide
 import 'package:eros_app/features/profile/presentation/providers/user_profile_provider.dart';
 import 'package:eros_app/features/wallet/presentation/screens/wallet_screen.dart';
 import 'package:eros_app/features/settings/presentation/screens/app_settings_screen.dart';
+import 'package:eros_app/features/profile/presentation/screens/edit/edit_profile_screen.dart';
 
 /// Profile Screen - Displays user profile and settings
 class ProfileScreen extends ConsumerWidget {
@@ -77,8 +78,11 @@ class ProfileScreen extends ConsumerWidget {
                       icon: Icons.edit_outlined,
                       title: 'Edit profile',
                       onTap: () {
-                        // TODO: Navigate to edit profile screen
-                        _showComingSoon(context, 'Edit Profile');
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const EditProfileScreen(),
+                          ),
+                        );
                       },
                     ),
                     const Divider(height: 1, indent: 56),
