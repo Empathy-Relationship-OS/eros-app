@@ -345,15 +345,13 @@ class QACard extends StatelessWidget {
   }
 }
 
-/// Helper class to hold photo path and caption
-class PhotoWithCaption {
+/// A photo to show on a profile: a local file path or a network URL.
+class ProfilePhoto {
   final String path;
-  final String? caption;
   final bool isLocal;
 
-  PhotoWithCaption({
+  ProfilePhoto({
     required this.path,
-    this.caption,
     required this.isLocal,
   });
 }
@@ -366,7 +364,7 @@ class OrderedInterspersedContent extends StatelessWidget {
   final String? brainDescription;
   final List<String>? bodyAttribute;
   final String? bodyDescription;
-  final List<PhotoWithCaption> photos;
+  final List<ProfilePhoto> photos;
   final List<PublicQAItemDTO> qas;
 
   const OrderedInterspersedContent({
@@ -394,7 +392,6 @@ class OrderedInterspersedContent extends StatelessWidget {
         orderedWidgets.add(StackedPhoto(
           photoPath: photo.path,
           isLocal: photo.isLocal,
-          caption: photo.caption,
         ));
         orderedWidgets.add(const SizedBox(height: 24));
         photoIndex++;
@@ -627,13 +624,11 @@ class OrderedInterspersedContent extends StatelessWidget {
 class StackedPhoto extends StatelessWidget {
   final String photoPath;
   final bool isLocal;
-  final String? caption;
 
   const StackedPhoto({
     super.key,
     required this.photoPath,
     required this.isLocal,
-    this.caption,
   });
 
   @override
@@ -643,40 +638,8 @@ class StackedPhoto extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (caption != null && caption!.isNotEmpty)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.cardBackground,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.shadow,
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Text(
-                caption!,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
           ClipRRect(
-            borderRadius: caption != null && caption!.isNotEmpty
-                ? const BorderRadius.only(
-                    bottomLeft: Radius.circular(12),
-                    bottomRight: Radius.circular(12),
-                  )
-                : BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12),
             child: SizedBox(
               height: 400,
               width: double.infinity,

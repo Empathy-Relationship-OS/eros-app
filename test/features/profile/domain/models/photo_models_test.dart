@@ -25,6 +25,21 @@ void main() {
     });
   });
 
+  group('PhotoUploadDraft.fromJson', () {
+    test('loads a draft saved with a caption by an older build', () {
+      final draft = PhotoUploadDraft.fromJson({
+        'localPath': '/photos/a.jpg',
+        'displayOrder': 2,
+        'isPrimary': false,
+        'caption': 'Weekend vibes',
+      });
+
+      expect(draft.localPath, '/photos/a.jpg');
+      expect(draft.displayOrder, 2);
+      expect(draft.toJson().containsKey('caption'), isFalse);
+    });
+  });
+
   group('PresignedUploadRequest', () {
     PresignedUploadRequest build({required String contentType, required int size}) =>
         PresignedUploadRequest(

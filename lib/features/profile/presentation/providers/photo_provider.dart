@@ -140,7 +140,6 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
   /// Used during profile creation to queue photos for later upload
   void addPhoto({
     required String localPath,
-    String? caption,
   }) {
     if (state.hasMaximumPhotos) {
       state = state.copyWith(
@@ -156,7 +155,6 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
       localPath: localPath,
       displayOrder: displayOrder,
       isPrimary: isPrimary,
-      caption: caption,
       contentType: _acceptedContentTypes[localPath],
     );
 
@@ -197,22 +195,6 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
     _logger.i('Photo removed. Remaining: ${state.photos.length}');
   }
 
-  /// Update photo caption
-  void updatePhotoCaption(int index, String? caption) {
-    if (index < 0 || index >= state.photos.length) {
-      _logger.w('Invalid photo index: $index');
-      return;
-    }
-
-    final updatedPhotos = List<PhotoUploadDraft>.from(state.photos);
-    updatedPhotos[index] = updatedPhotos[index].copyWith(caption: caption);
-
-    state = state.copyWith(
-      photos: updatedPhotos,
-      clearError: true,
-    );
-  }
-
   /// Replace a photo at a specific index
   void replacePhoto(int index, String newLocalPath) {
     if (index < 0 || index >= state.photos.length) {
@@ -227,7 +209,6 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
       localPath: newLocalPath,
       displayOrder: oldPhoto.displayOrder,
       isPrimary: oldPhoto.isPrimary,
-      caption: oldPhoto.caption,
       contentType: _acceptedContentTypes[newLocalPath],
     );
 
