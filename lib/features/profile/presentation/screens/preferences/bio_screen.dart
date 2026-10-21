@@ -4,6 +4,7 @@ import 'package:eros_app/core/constants/profile_creation.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/utils/validators.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/text_field_editor.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 
 /// Bio input screen
@@ -102,29 +103,11 @@ class _BioScreenState extends ConsumerState<BioScreen> {
               const SizedBox(height: 32),
               Form(
                 key: _formKey,
-                child: TextFormField(
+                child: TextFieldEditor(
                   controller: _bioController,
-                  decoration: InputDecoration(
-                    hintText: 'e.g. Coffee enthusiast, loves hiking...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: AppColors.primary,
-                        width: 2,
-                      ),
-                    ),
-                    counterText: '${_bioController.text.length}/300',
-                  ),
                   maxLength: 300,
                   maxLines: 5,
-                  textInputAction: TextInputAction.done,
-                  onChanged: (value) {
-                    // Trigger rebuild to update character counter
-                    setState(() {});
-                  },
+                  hintText: 'e.g. Coffee enthusiast, loves hiking...',
                   validator: (value) {
                     if (value != null && value.isNotEmpty) {
                       if (value.length > 300) {
