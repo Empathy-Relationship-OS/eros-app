@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:eros_app/features/matching/presentation/screens/public_profile_view_screen.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 import 'package:eros_app/features/profile/domain/models/my_profile.dart';
 import 'package:eros_app/features/profile/domain/models/update_user_request.dart';
@@ -105,6 +106,19 @@ void main() {
       }
       // Politics, body attributes and body description are empty.
       expect(find.text('Add'), findsNWidgets(3));
+    });
+
+    testWidgets('Preview opens the user\'s own profile in preview mode', (tester) async {
+      await _pumpHub(tester);
+
+      await tester.tap(find.text('Preview'));
+      // The public profile never loads here (the fake never completes it), so don't settle.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      final preview = tester.widget<PublicProfileViewScreen>(find.byType(PublicProfileViewScreen));
+      expect(preview.previewMode, isTrue);
+      expect(preview.userId, MyProfile.fromJson(_fixture()).userId);
     });
 
     testWidgets('hides Photos and Q&A until their editors exist', (tester) async {
