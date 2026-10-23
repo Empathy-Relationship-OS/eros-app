@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:eros_app/core/utils/validators.dart';
 import 'package:eros_app/features/profile/domain/models/update_user_request.dart';
 import 'package:eros_app/features/profile/presentation/providers/my_profile_provider.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_section_scaffold.dart';
@@ -8,8 +7,10 @@ import 'package:eros_app/features/profile/presentation/widgets/editors/text_fiel
 
 /// Edits one optional text field (bio, occupation) with [TextFieldEditor].
 ///
-/// The text is sanitised as onboarding does before it's sent, and may be emptied: the empty
-/// string is sent, because the backend treats a missing field as "unchanged".
+/// The text is trimmed before it's sent, and nothing else is removed: apostrophes, quotes and
+/// the rest are ordinary writing (RFC-004 D-16; PE-F9 brings the full shared cleaning). It may
+/// be emptied: the empty string is sent, because the backend treats a missing field as
+/// "unchanged".
 class EditTextScreen extends ConsumerStatefulWidget {
   final String title;
   final String question;
@@ -47,11 +48,15 @@ class _EditTextScreenState extends ConsumerState<EditTextScreen> {
     super.dispose();
   }
 
-  String get _value => _controller.text.isEmpty ? '' : Validators.sanitizeInput(_controller.text);
+  /// What is compared and saved. PE-F9 replaces the trim with `UserText.clean`.
+  String get _value => _controller.text.trim();
 
   String? _validate(String? text) {
-    if (text == null || text.isEmpty) return null; // optional
-    return Validators.validateText(text, maxLength: widget.maxLength, fieldName: widget.fieldName);
+    final value = text?.trim() ?? '';
+    if (value.length > widget.maxLength) {
+      return '${widget.fieldName} must not exceed ${widget.maxLength} characters';
+    }
+    return null; // optional, so empty is fine
   }
 
   @override

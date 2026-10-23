@@ -287,6 +287,43 @@ void main() {
       expect(find.byType(EditSectionScaffold), findsNothing);
     });
 
+    testWidgets('text is saved as typed: apostrophes, quotes and the rest are kept', (tester) async {
+      final repository = await _pumpHub(tester);
+      await _openRow(tester, 'Likes long walks.');
+
+      await tester.enterText(find.byType(TextFormField), '  I\'m "Jo"; I <3 O\'Reilly\'s dogs -- really  ');
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(repository.requests.single, {'bio': 'I\'m "Jo"; I <3 O\'Reilly\'s dogs -- really'});
+    });
+
+    testWidgets('only surrounding spaces don\'t count as a change', (tester) async {
+      await _pumpHub(tester);
+      await _openRow(tester, 'Engineer');
+
+      await tester.enterText(find.byType(TextFormField), '  Engineer  ');
+      await tester.pump();
+
+      expect(_saveButton(tester).onPressed, isNull);
+    });
+
+    testWidgets('descriptions keep apostrophes too', (tester) async {
+      final repository = await _pumpHub(tester);
+      await _openRow(tester, 'Curious about everything.');
+
+      await tester.enterText(find.byType(TextFormField), "I'm curious; \"why?\"");
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(
+        (repository.requests.single['brainDescription'] as Map)['field'],
+        "I'm curious; \"why?\"",
+      );
+    });
+
     testWidgets('a choice saves the value with its visibility; "prefer not to say" saves hidden',
         (tester) async {
       final repository = await _pumpHub(tester);
