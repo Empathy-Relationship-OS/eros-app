@@ -266,6 +266,27 @@ void main() {
       expect(find.byType(EditSectionScaffold), findsOneWidget);
     });
 
+    testWidgets('an unexpected save error is reported, shown, and Save works again', (tester) async {
+      final repository = await _pumpHub(tester);
+      repository.updateError = StateError('something nobody expected');
+      await _openRow(tester, 'Likes long walks.');
+      await tester.enterText(find.byType(TextFormField), 'Something');
+      await tester.pump();
+
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isA<StateError>(), reason: 'reported through FlutterError');
+      expect(find.text('We couldn\'t save your changes. Please try again.'), findsOneWidget);
+      expect(find.byType(EditSectionScaffold), findsOneWidget);
+      expect(_saveButton(tester).onPressed, isNotNull, reason: 'not stuck saving');
+
+      repository.updateError = null;
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(find.byType(EditSectionScaffold), findsNothing);
+    });
+
     testWidgets('a choice saves the value with its visibility; "prefer not to say" saves hidden',
         (tester) async {
       final repository = await _pumpHub(tester);

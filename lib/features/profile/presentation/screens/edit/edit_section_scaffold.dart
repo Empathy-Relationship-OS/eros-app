@@ -8,7 +8,8 @@ import 'package:eros_app/features/profile/data/repositories/profile_repository.d
 /// - **Save** is enabled when [canSave] (the value is valid and has changed) and calls
 ///   [onSave]. On success the screen pops. A failure stays on the screen and shows in the banner:
 ///   the server's validation message, a repository error, or a local `ArgumentError` from
-///   `UpdateUserRequest`.
+///   `UpdateUserRequest`. Any other error is reported through `FlutterError.reportError` and
+///   shown as a generic message, so Save is always usable again.
 /// - **Back** with [isDirty] asks before throwing the change away.
 ///
 /// [body] fills the space under the banner. Editors that return an `Expanded` (the choice and
@@ -56,6 +57,15 @@ class _EditSectionScaffoldState extends State<EditSectionScaffold> {
       _fail(e.message);
     } on ArgumentError catch (e) {
       _fail(e.message?.toString() ?? 'Please check your changes and try again.');
+    } catch (e, stack) {
+      // Anything else is a bug. Report it, and never leave Save disabled and back blocked.
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: e,
+        stack: stack,
+        library: 'profile editor',
+        context: ErrorDescription('while saving "${widget.title}"'),
+      ));
+      _fail('We couldn\'t save your changes. Please try again.');
     }
   }
 
