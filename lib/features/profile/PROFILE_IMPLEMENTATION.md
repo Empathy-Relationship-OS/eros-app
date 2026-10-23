@@ -52,9 +52,11 @@ All backend enums and models have been created with full parity to the Kotlin ba
 ### 4. Core Utilities
 **Validation** (`lib/core/utils/validators.dart`):
 - ✅ Email validation with regex
-- ✅ SQL injection prevention (sanitizeInput)
-- ✅ XSS prevention (HTML/script tag removal)
-- ✅ Name validation
+- ✅ Free text cleaned with `UserText` (`lib/core/utils/user_text.dart`, RFC-004 D-16): NFC,
+  invisible and control characters removed, spaces collapsed. Nothing people write is stripped.
+  SQL injection is prevented by the backend's parameterised queries, and text is shown in plain
+  `Text` widgets, so nothing is escaped.
+- ✅ Name validation (any script, accents and apostrophes)
 - ✅ Age validation (18-120)
 - ✅ Height validation (3-9 ft)
 
@@ -192,7 +194,7 @@ class _SomeInputScreenState extends ConsumerState<SomeInputScreen> {
 7. Final screen converts draft to `CreateUserRequest` and submits
 
 ### Validation Best Practices
-- Use `Validators.sanitizeInput()` on all text inputs before saving
+- Save `UserText.clean(...)` of every free-text input, and validate with `UserText.validate` (limits in `UserTextLimits`)
 - Validate on every keystroke (via controller listener)
 - Disable "Continue" button until valid
 - Show inline error messages via `TextFormField.validator`

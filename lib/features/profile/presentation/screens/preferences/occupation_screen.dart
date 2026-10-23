@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/constants/profile_creation.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
-import 'package:eros_app/core/utils/validators.dart';
+import 'package:eros_app/core/constants/user_text_limits.dart';
+import 'package:eros_app/core/utils/user_text.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 import 'package:eros_app/features/profile/presentation/widgets/editors/text_field_editor.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
@@ -31,10 +32,11 @@ class _OccupationScreenState extends ConsumerState<OccupationScreen> {
   }
 
   Future<void> _continue() async {
-    // Sanitize input
-    final occupation = _jobController.text.isNotEmpty
-        ? Validators.sanitizeInput(_jobController.text)
-        : null;
+    if (!_formKey.currentState!.validate()) return;
+
+    // Cleaned, never stripped (RFC-004 D-16). Optional, so empty is saved as no occupation.
+    final cleaned = UserText.clean(_jobController.text);
+    final occupation = cleaned.isEmpty ? null : cleaned;
 
     final currentDraft = ref.read(profileCreationProvider);
     final updatedDraft = currentDraft.copyWith(
@@ -96,19 +98,14 @@ class _OccupationScreenState extends ConsumerState<OccupationScreen> {
                 key: _formKey,
                 child: TextFieldEditor(
                   controller: _jobController,
-                  maxLength: 50,
+                  maxLength: UserTextLimits.occupation,
                   labelText: 'Job / Occupation',
                   hintText: 'e.g. Software Engineer',
-                  validator: (value) {
-                    if (value != null && value.isNotEmpty) {
-                      return Validators.validateText(
-                        value,
-                        maxLength: 50,
-                        fieldName: 'Occupation',
-                      );
-                    }
-                    return null;
-                  },
+                  validator: (value) => UserText.validate(
+                    value,
+                    name: 'Occupation',
+                    maxLength: UserTextLimits.occupation,
+                  ),
                 ),
               ),
               const Spacer(),

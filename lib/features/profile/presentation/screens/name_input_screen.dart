@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/utils/user_text.dart';
 import 'package:eros_app/core/utils/validators.dart';
 import 'package:eros_app/core/constants/profile_creation.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
@@ -41,8 +42,11 @@ class _NameInputScreenState extends ConsumerState<NameInputScreen> {
   }
 
   void _validateForm() {
+    // Checks the controllers, not the form: this listener runs before the fields see the new
+    // text, so the form would validate the previous keystroke.
     setState(() {
-      _isValid = _formKey.currentState?.validate() ?? false;
+      _isValid = Validators.validateName(_firstNameController.text) == null &&
+          Validators.validateName(_lastNameController.text) == null;
     });
   }
 
@@ -51,8 +55,9 @@ class _NameInputScreenState extends ConsumerState<NameInputScreen> {
       return;
     }
 
-    final firstName = Validators.sanitizeInput(_firstNameController.text);
-    final lastName = Validators.sanitizeInput(_lastNameController.text);
+    // Cleaned, never stripped: "O'Brien" and "José" are saved as typed (RFC-004 D-16).
+    final firstName = UserText.clean(_firstNameController.text);
+    final lastName = UserText.clean(_lastNameController.text);
 
     // Update the draft
     await ref.read(profileCreationProvider.notifier).updateFields(
@@ -155,6 +160,7 @@ class _NameInputScreenState extends ConsumerState<NameInputScreen> {
               // Form
               Form(
                 key: _formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: Column(
                   children: [
                     // First name

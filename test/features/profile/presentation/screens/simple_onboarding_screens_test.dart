@@ -150,18 +150,28 @@ void main() {
   });
 
   group('BioScreen', () {
-    testWidgets('saves the sanitized bio and moves on', (tester) async {
+    testWidgets('saves the bio as typed and moves on (RFC-004 D-16)', (tester) async {
       final harness = OnboardingHarness();
       await harness.pump(tester, const BioScreen());
 
       expect(find.text('0/300'), findsOneWidget);
-      await tester.enterText(find.byType(TextFormField), 'Loves "hiking"; coffee');
+      await tester.enterText(find.byType(TextFormField), 'Loves "hiking"; coffee & <3 dogs');
       await tester.pump();
-      expect(find.text('22/300'), findsOneWidget);
+      expect(find.text('32/300'), findsOneWidget);
       await harness.tapContinue(tester);
 
-      expect(harness.draft.bio, 'Loves hiking coffee');
+      expect(harness.draft.bio, 'Loves "hiking"; coffee & <3 dogs');
       expect(harness.pushed, ['$route/pronouns']);
+    });
+
+    testWidgets('cleans the bio, keeping one blank line', (tester) async {
+      final harness = OnboardingHarness();
+      await harness.pump(tester, const BioScreen());
+
+      await tester.enterText(find.byType(TextFormField), '  Hi  there\n\n\n\nsecond\u202e ');
+      await harness.tapContinue(tester);
+
+      expect(harness.draft.bio, 'Hi there\n\nsecond');
     });
 
     testWidgets('Skip saves an empty bio', (tester) async {
@@ -187,6 +197,40 @@ void main() {
 
       expect(harness.draft.occupation, 'Engineer');
       expect(harness.pushed, ['$route/relationship-type']);
+    });
+
+    testWidgets('saves it cleaned, apostrophes kept', (tester) async {
+      final harness = OnboardingHarness();
+      await harness.pump(tester, const OccupationScreen());
+
+      await tester.enterText(find.byType(TextFormField), "  Children's   nurse ");
+      await harness.tapContinue(tester);
+
+      expect(harness.draft.occupation, "Children's nurse");
+    });
+
+    testWidgets('over 100 code points shows the limit and saves nothing', (tester) async {
+      final harness = OnboardingHarness();
+      await harness.pump(tester, const OccupationScreen());
+
+      // 51 flags fit the field's 100-character counter but are 102 code points, which the
+      // backend counts.
+      await tester.enterText(find.byType(TextFormField), '\u{1F1EC}\u{1F1E7}' * 51);
+      await harness.tapContinue(tester);
+
+      expect(find.text('Occupation must not exceed 100 characters'), findsOneWidget);
+      expect(harness.draft.occupation, isNull);
+      expect(harness.pushed, isEmpty);
+    });
+
+    testWidgets('the field allows 100 characters', (tester) async {
+      final harness = OnboardingHarness();
+      await harness.pump(tester, const OccupationScreen());
+
+      await tester.enterText(find.byType(TextFormField), 'a' * 101);
+      await harness.tapContinue(tester);
+
+      expect(harness.draft.occupation, 'a' * 100);
     });
 
     testWidgets('an empty occupation is saved as null', (tester) async {

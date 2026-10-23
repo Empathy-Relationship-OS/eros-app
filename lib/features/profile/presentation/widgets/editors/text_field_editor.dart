@@ -3,7 +3,9 @@ import 'package:eros_app/core/theme/app_colors.dart';
 
 /// A text field with a live `n/maxLength` counter (RFC-004 §6.2).
 ///
-/// Used for the bio (300), occupation (50) and the brain and body descriptions (100, D-11).
+/// Used for the bio, occupation and the brain and body descriptions (limits in `UserTextLimits`).
+/// The counter counts what people see as characters; screens add a `UserText.validate` validator
+/// for the backend's code-point limit (RFC-004 D-16).
 /// The wrapping screen owns [controller] and reads the text from it when saving. [maxLength]
 /// is enforced as the user types. [validator] runs when an enclosing `Form` validates.
 class TextFieldEditor extends StatelessWidget {

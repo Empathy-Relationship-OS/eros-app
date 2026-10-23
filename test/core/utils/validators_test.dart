@@ -33,41 +33,6 @@ void main() {
     });
   });
 
-  group('Validators - Input Sanitization', () {
-    test('sanitizeInput removes SQL injection characters', () {
-      expect(Validators.sanitizeInput("test'; DROP TABLE users;"), "test DROP TABLE users");
-      expect(Validators.sanitizeInput('test" OR 1=1--'), "test OR 1=1");
-      expect(Validators.sanitizeInput('test/* comment */'), "test comment");
-      expect(Validators.sanitizeInput('test\\nvalue'), "testnvalue");
-    });
-
-    test('sanitizeInput removes XSS attack patterns', () {
-      expect(
-        Validators.sanitizeInput('<script>alert("XSS")</script>'),
-        '',
-      );
-      expect(
-        Validators.sanitizeInput('Hello <b>World</b>'),
-        'Hello World',
-      );
-      expect(
-        Validators.sanitizeInput('<img src=x onerror=alert(1)>'),
-        '',
-      );
-    });
-
-    test('sanitizeInput trims whitespace', () {
-      expect(Validators.sanitizeInput('  test  '), 'test');
-      expect(Validators.sanitizeInput('\ntest\n'), 'test');
-    });
-
-    test('sanitizeInput handles clean input correctly', () {
-      expect(Validators.sanitizeInput('John Doe'), 'John Doe');
-      expect(Validators.sanitizeInput('test123'), 'test123');
-      expect(Validators.sanitizeInput('Hello World!'), 'Hello World!');
-    });
-  });
-
   group('Validators - Text Validation', () {
     test('validateText returns null for valid text', () {
       expect(
@@ -106,6 +71,22 @@ void main() {
       );
     });
 
+    test('validateText cleans before checking (RFC-004 D-16)', () {
+      expect(Validators.validateText('   ', fieldName: 'Bio'), 'Bio is required');
+      expect(Validators.validateText('\u200b\u2060', fieldName: 'Bio'), 'Bio is required');
+      expect(Validators.validateText('  ab  ', maxLength: 2), null);
+    });
+
+    test('validateText counts code points', () {
+      expect(Validators.validateText('\u{1F642}' * 5, maxLength: 5), null);
+      expect(Validators.validateText('\u{1F642}' * 6, maxLength: 5), 'Field must not exceed 5 characters');
+    });
+
+    test('validateText accepts text that only looks like SQL or HTML', () {
+      expect(Validators.validateText("I'd select pizza from the menu; drop table tennis"), null);
+      expect(Validators.validateText('<b>bold</b> moves only, one = two'), null);
+    });
+
     test('validateText checks maximum length', () {
       expect(
         Validators.validateText('12345678901', maxLength: 10),
@@ -127,6 +108,22 @@ void main() {
       expect(Validators.validateName('Jean-Luc'), null);
     });
 
+    test('validateName accepts any script, accents and curly apostrophes (RFC-004 D-16)', () {
+      expect(Validators.validateName('José'), null);
+      expect(Validators.validateName('Zoë'), null);
+      expect(Validators.validateName('李雷'), null);
+      expect(Validators.validateName('Ελένη'), null);
+      expect(Validators.validateName('O\u2019Brien'), null);
+      // An accent written as a combining mark, before and after NFC.
+      expect(Validators.validateName('Zoe\u0308'), null);
+    });
+
+    test('validateName cleans before checking', () {
+      expect(Validators.validateName('  Jo  '), null);
+      expect(Validators.validateName(' \u200b '), 'Name is required');
+      expect(Validators.validateName('A\u202e'), 'Name must be at least 2 characters');
+    });
+
     test('validateName returns error for invalid names', () {
       expect(Validators.validateName(null), 'Name is required');
       expect(Validators.validateName(''), 'Name is required');
@@ -134,10 +131,11 @@ void main() {
     });
 
     test('validateName rejects names that are too long', () {
-      final longName = 'A' * 51;
+      expect(Validators.validateName('A' * 100), null);
+      final longName = 'A' * 101;
       expect(
         Validators.validateName(longName),
-        'Name must not exceed 50 characters',
+        'Name must not exceed 100 characters',
       );
     });
 

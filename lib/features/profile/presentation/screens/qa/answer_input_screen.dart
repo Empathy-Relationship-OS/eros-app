@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
-import 'package:eros_app/core/utils/validators.dart';
+import 'package:eros_app/core/constants/user_text_limits.dart';
+import 'package:eros_app/core/utils/user_text.dart';
 import 'package:eros_app/features/profile/domain/models/question_dto.dart';
 import 'package:eros_app/features/profile/domain/models/qa_draft.dart';
 import 'package:eros_app/features/profile/presentation/providers/qa_provider.dart';
@@ -25,7 +26,7 @@ class _AnswerInputScreenState extends ConsumerState<AnswerInputScreen> {
   late TextEditingController _answerController;
   String? _errorMessage;
 
-  static const int maxLength = 200;
+  static const int maxLength = UserTextLimits.qaAnswer;
   static const int minLength = 2;
 
   @override
@@ -47,26 +48,23 @@ class _AnswerInputScreenState extends ConsumerState<AnswerInputScreen> {
     });
   }
 
-  void _validateAnswer() {
-    final answer = _answerController.text;
+  /// The answer as it will be saved: cleaned by D-16, line breaks kept. Text that only looks
+  /// like SQL or HTML is ordinary writing and is accepted.
+  String get _answer => UserText.clean(_answerController.text, multiline: true);
 
-    if (answer.isEmpty) {
+  void _validateAnswer() {
+    if (_answerController.text.isEmpty) {
       _errorMessage = null;
       return;
     }
 
-    // Validate against SQL injection and XSS
-    if (!Validators.isSafeText(answer)) {
-      _errorMessage = 'Invalid characters detected';
-      return;
-    }
-
-    if (answer.trim().length < minLength) {
+    final length = UserText.length(_answer);
+    if (length < minLength) {
       _errorMessage = 'This answer is not long enough';
       return;
     }
 
-    if (answer.length > maxLength) {
+    if (length > maxLength) {
       _errorMessage = 'Answer exceeds maximum length';
       return;
     }
@@ -75,11 +73,8 @@ class _AnswerInputScreenState extends ConsumerState<AnswerInputScreen> {
   }
 
   bool get _canSave {
-    final answer = _answerController.text;
-    return answer.trim().length >= minLength &&
-        answer.length <= maxLength &&
-        _errorMessage == null &&
-        Validators.isSafeText(answer);
+    final length = UserText.length(_answer);
+    return length >= minLength && length <= maxLength && _errorMessage == null;
   }
 
   @override
@@ -268,7 +263,7 @@ class _AnswerInputScreenState extends ConsumerState<AnswerInputScreen> {
       return;
     }
 
-    final answer = _answerController.text.trim();
+    final answer = _answer;
 
     // Create Q&A draft
     final qaDraft = QADraft(
