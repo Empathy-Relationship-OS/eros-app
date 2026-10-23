@@ -4,6 +4,7 @@ import 'package:eros_app/core/constants/profile_creation.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/utils/validators.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/text_field_editor.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 
 /// Occupation and study screen
@@ -93,38 +94,21 @@ class _OccupationScreenState extends ConsumerState<OccupationScreen> {
               const SizedBox(height: 32),
               Form(
                 key: _formKey,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _jobController,
-                      decoration: InputDecoration(
-                        labelText: 'Job / Occupation',
-                        hintText: 'e.g. Software Engineer',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: AppColors.primary,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                      maxLength: 50,
-                      textInputAction: TextInputAction.done,
-                      validator: (value) {
-                        if (value != null && value.isNotEmpty) {
-                          return Validators.validateText(
-                            value,
-                            maxLength: 50,
-                            fieldName: 'Occupation',
-                          );
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
+                child: TextFieldEditor(
+                  controller: _jobController,
+                  maxLength: 50,
+                  labelText: 'Job / Occupation',
+                  hintText: 'e.g. Software Engineer',
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      return Validators.validateText(
+                        value,
+                        maxLength: 50,
+                        fieldName: 'Occupation',
+                      );
+                    }
+                    return null;
+                  },
                 ),
               ),
               const Spacer(),

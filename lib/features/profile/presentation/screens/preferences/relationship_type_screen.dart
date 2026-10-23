@@ -5,6 +5,7 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/displayable_choice_editor.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 
 /// Relationship type preference screen
@@ -91,63 +92,14 @@ class _RelationshipTypeScreenState
                     ),
               ),
               const SizedBox(height: 32),
-              Expanded(
-                child: ListView(
-                  children: RelationshipType.values.map((type) {
-                    final isSelected = _selected == type;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: InkWell(
-                        onTap: () => setState(() => _selected = type),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primary.withValues(alpha: 0.1)
-                                : Colors.grey[100],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected ? AppColors.primary : Colors.grey[300]!,
-                              width: 2,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                isSelected
-                                    ? Icons.radio_button_checked
-                                    : Icons.radio_button_unchecked,
-                                color: isSelected ? AppColors.primary : Colors.grey[400],
-                              ),
-                              const SizedBox(width: 16),
-                              Text(
-                                type.displayName,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight:
-                                      isSelected ? FontWeight.bold : FontWeight.normal,
-                                  color: isSelected ? AppColors.primary : Colors.black,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
+              DisplayableChoiceEditor<RelationshipType>(
+                values: RelationshipType.values,
+                selected: _selected,
+                visible: _isVisible,
+                labelOf: (value) => value.displayName,
+                onSelected: (value) => setState(() => _selected = value),
+                onVisibleChanged: (value) => setState(() => _isVisible = value),
               ),
-              const SizedBox(height: 16),
-              CheckboxListTile(
-                value: _isVisible,
-                onChanged: (value) => setState(() => _isVisible = value ?? true),
-                title: const Text('Show on my profile'),
-                controlAffinity: ListTileControlAffinity.leading,
-                activeColor: AppColors.primary,
-                contentPadding: EdgeInsets.zero,
-              ),
-              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 height: 56,

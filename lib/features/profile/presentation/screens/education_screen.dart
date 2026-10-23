@@ -5,6 +5,7 @@ import 'package:eros_app/core/constants/profile_creation.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/single_choice_editor.dart';
 
 /// Education level selection screen
 /// Matches screenshot: @screenshots/login/create-user/278ED7CB-8AA4-4990-A13B-1D0F12431AC6.png
@@ -72,49 +73,12 @@ class _EducationScreenState extends ConsumerState<EducationScreen> {
                     ),
               ),
               const SizedBox(height: 32),
-              ...EducationLevel.values.map((level) {
-                final isSelected = _selectedEducation == level;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: InkWell(
-                    onTap: () => setState(() => _selectedEducation = level),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.primary.withValues(alpha: 0.1)
-                            : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected ? AppColors.primary : Colors.grey[300]!,
-                          width: 2,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            isSelected
-                                ? Icons.radio_button_checked
-                                : Icons.radio_button_unchecked,
-                            color: isSelected ? AppColors.primary : Colors.grey[400],
-                          ),
-                          const SizedBox(width: 16),
-                          Text(
-                            level.displayName,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight:
-                                  isSelected ? FontWeight.bold : FontWeight.normal,
-                              color: isSelected ? AppColors.primary : Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }),
+              SingleChoiceEditor<EducationLevel>(
+                values: EducationLevel.values,
+                selected: _selectedEducation,
+                labelOf: (level) => level.displayName,
+                onSelected: (level) => setState(() => _selectedEducation = level),
+              ),
               const Spacer(),
               SizedBox(
                 width: double.infinity,
