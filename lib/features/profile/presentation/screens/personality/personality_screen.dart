@@ -5,6 +5,8 @@ import 'package:eros_app/features/profile/domain/enums/personality.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/multi_choice_editor.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/star_sign_editor.dart';
 
 /// Personality traits and star sign selector
 /// Matches screenshot: @screenshots/users/create-profile/F385FEFE-708E-434A-9D6F-DCC3B230A2E2.png
@@ -19,11 +21,9 @@ class PersonalityScreen extends ConsumerStatefulWidget {
 class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final Set<Trait> _selectedTraits = {};
+  List<Trait> _selectedTraits = [];
   StarSign? _selectedStarSign;
   bool _showStarSign = true;
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
 
   static const int minTraits = 3;
   static const int maxTraits = 10;
@@ -33,18 +33,14 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadExistingData();
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.toLowerCase();
-      });
-    });
   }
 
   void _loadExistingData() {
     final draft = ref.read(profileCreationProvider);
     if (draft.traits != null) {
       setState(() {
-        _selectedTraits.addAll(draft.traits!);
+        // A set first, as before: duplicates in an old draft are dropped, order is kept.
+        _selectedTraits = draft.traits!.toSet().toList();
       });
     }
     if (draft.starSign != null) {
@@ -53,25 +49,6 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
         _showStarSign = draft.starSign!.visible;
       });
     }
-  }
-
-  void _toggleTrait(Trait trait) {
-    setState(() {
-      if (_selectedTraits.contains(trait)) {
-        _selectedTraits.remove(trait);
-      } else {
-        if (_selectedTraits.length < maxTraits) {
-          _selectedTraits.add(trait);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Maximum $maxTraits traits allowed'),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
-      }
-    });
   }
 
   Future<void> _continue() async {
@@ -87,7 +64,7 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
 
     final currentDraft = ref.read(profileCreationProvider);
     final updatedDraft = currentDraft.copyWith(
-      traits: _selectedTraits.toList(),
+      traits: _selectedTraits,
       starSign: _selectedStarSign != null
           ? DisplayableField(field: _selectedStarSign, visible: _showStarSign)
           : DisplayableField(field: null, visible: false),
@@ -127,14 +104,12 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
   @override
   void dispose() {
     _tabController.dispose();
-    _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final canContinue = _selectedTraits.length >= minTraits &&
-        _selectedTraits.length <= maxTraits;
+    final canContinue = MultiChoiceEditor.isValidCount(_selectedTraits.length, minTraits, maxTraits);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -145,24 +120,31 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        bottom: TabBar(
+        bottom: multiChoiceTabBar(
           controller: _tabController,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: Colors.grey[600],
-          indicatorColor: AppColors.primary,
-          tabs: const [
-            Tab(text: 'Personality Traits'),
-            Tab(text: 'Star Sign'),
-          ],
+          labels: const ['Personality Traits', 'Star Sign'],
         ),
       ),
       body: SafeArea(
         child: Column(
           children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
+            MultiChoiceEditor<Trait>(
+              groups: const [MultiChoiceGroup('Personality Traits', Trait.values)],
+              tabController: _tabController,
+              extraTabViews: [
+                StarSignEditor(
+                  selected: _selectedStarSign,
+                  visible: _showStarSign,
+                  onSelected: (sign) => setState(() => _selectedStarSign = sign),
+                  onVisibleChanged: (visible) => setState(() => _showStarSign = visible),
+                ),
+              ],
+              selected: _selectedTraits,
+              labelOf: (trait) => trait.displayName,
+              min: minTraits,
+              max: maxTraits,
+              onChanged: (selected) => setState(() => _selectedTraits = selected),
+              header: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -180,63 +162,11 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
                         ),
                   ),
                   const SizedBox(height: 16),
-
-                  // Search bar
-                  TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search traits...',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.primary, width: 2),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Selection count
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${_selectedTraits.length}/$maxTraits selected',
-                        style: TextStyle(
-                          color: canContinue ? AppColors.primary : Colors.grey[600],
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (_selectedTraits.isNotEmpty)
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _selectedTraits.clear();
-                            });
-                          },
-                          child: const Text('Clear all'),
-                        ),
-                    ],
-                  ),
                 ],
               ),
-            ),
-
-            // Tab content
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildTraitsGrid(),
-                  _buildStarSignSelector(),
-                ],
-              ),
+              searchHint: 'Search traits...',
+              showCounter: true,
+              emptyText: 'No traits found',
             ),
 
             // Bottom bar
@@ -257,25 +187,11 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
                 children: [
                   // Selected traits chips
                   if (_selectedTraits.isNotEmpty) ...[
-                    SizedBox(
-                      height: 60,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: _selectedTraits.map((trait) {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Chip(
-                              label: Text(trait.displayName),
-                              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                              deleteIcon: const Icon(Icons.close, size: 18),
-                              onDeleted: () => _toggleTrait(trait),
-                              labelStyle: TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                    SelectedChipsBar<Trait>(
+                      selected: _selectedTraits,
+                      labelOf: (trait) => trait.displayName,
+                      onRemove: (trait) => setState(
+                        () => _selectedTraits = [..._selectedTraits]..remove(trait),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -312,150 +228,6 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildTraitsGrid() {
-    // Filter by search query
-    final filteredTraits = _searchQuery.isEmpty
-        ? Trait.values
-        : Trait.values
-            .where((t) => t.displayName.toLowerCase().contains(_searchQuery))
-            .toList();
-
-    if (filteredTraits.isEmpty) {
-      return Center(
-        child: Text(
-          'No traits found',
-          style: TextStyle(color: Colors.grey[600]),
-        ),
-      );
-    }
-
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 2.5,
-      ),
-      itemCount: filteredTraits.length,
-      itemBuilder: (context, index) {
-        final trait = filteredTraits[index];
-        final isSelected = _selectedTraits.contains(trait);
-        final isMaxed = _selectedTraits.length >= maxTraits && !isSelected;
-
-        return InkWell(
-          onTap: isMaxed ? null : () => _toggleTrait(trait),
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.primary
-                  : isMaxed
-                      ? Colors.grey[200]
-                      : Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? AppColors.primary : Colors.grey[300]!,
-                width: 2,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                trait.displayName,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.black,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildStarSignSelector() {
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      children: [
-        Text(
-          'What\'s your star sign?',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Optional - skip if you prefer',
-          style: TextStyle(color: Colors.grey[600]),
-        ),
-        const SizedBox(height: 24),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 2,
-          ),
-          itemCount: StarSign.values.length,
-          itemBuilder: (context, index) {
-            final sign = StarSign.values[index];
-            final isSelected = _selectedStarSign == sign;
-
-            return InkWell(
-              onTap: () {
-                setState(() {
-                  _selectedStarSign = isSelected ? null : sign;
-                });
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primary
-                      : Colors.grey[100],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected ? AppColors.primary : Colors.grey[300]!,
-                    width: 2,
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    sign.displayName,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-        if (_selectedStarSign != null) ...[
-          const SizedBox(height: 24),
-          CheckboxListTile(
-            value: _showStarSign,
-            onChanged: (value) => setState(() => _showStarSign = value ?? true),
-            title: const Text('Show on my profile'),
-            controlAffinity: ListTileControlAffinity.leading,
-            activeColor: AppColors.primary,
-            contentPadding: EdgeInsets.zero,
-          ),
-        ],
-      ],
     );
   }
 }

@@ -1,7 +1,6 @@
 import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/domain/models/profile_creation_draft.dart';
-import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 import 'package:eros_app/features/profile/presentation/screens/education_screen.dart';
 import 'package:eros_app/features/profile/presentation/screens/preferences/alcohol_screen.dart';
 import 'package:eros_app/features/profile/presentation/screens/preferences/bio_screen.dart';
@@ -16,44 +15,9 @@ import 'package:eros_app/features/profile/presentation/screens/preferences/relig
 import 'package:eros_app/features/profile/presentation/screens/preferences/sexual_orientation_screen.dart';
 import 'package:eros_app/features/profile/presentation/screens/preferences/smoking_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-/// Pumps an onboarding screen with an empty draft, recording the routes it pushes.
-class _Harness {
-  late final ProviderContainer container;
-  final pushed = <String?>[];
-
-  ProfileCreationDraft get draft => container.read(profileCreationProvider);
-
-  Future<void> pump(WidgetTester tester, Widget screen) async {
-    tester.view.physicalSize = const Size(800, 3000);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-
-    SharedPreferences.setMockInitialValues({});
-    final prefs = await SharedPreferences.getInstance();
-    container = ProviderContainer(overrides: [sharedPreferencesProvider.overrideWithValue(prefs)]);
-    addTearDown(container.dispose);
-
-    await tester.pumpWidget(UncontrolledProviderScope(
-      container: container,
-      child: MaterialApp(
-        home: screen,
-        onGenerateRoute: (settings) {
-          pushed.add(settings.name);
-          return MaterialPageRoute(builder: (_) => const Scaffold());
-        },
-      ),
-    ));
-  }
-
-  Future<void> tapContinue(WidgetTester tester) async {
-    await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
-  }
-}
+import 'onboarding_harness.dart';
 
 /// One `DisplayableChoiceEditor` screen and what it writes.
 class _ChoiceScreen<T extends Enum> {
@@ -78,7 +42,7 @@ class _ChoiceScreen<T extends Enum> {
   void define() {
     group(name, () {
       testWidgets('saves the choice, shown by default, and moves on', (tester) async {
-        final harness = _Harness();
+        final harness = OnboardingHarness();
         await harness.pump(tester, build());
 
         await tester.tap(find.text(labelOf(values.first)));
@@ -91,7 +55,7 @@ class _ChoiceScreen<T extends Enum> {
       });
 
       testWidgets('saves it hidden when "Show on my profile" is unticked', (tester) async {
-        final harness = _Harness();
+        final harness = OnboardingHarness();
         await harness.pump(tester, build());
 
         await tester.tap(find.text(labelOf(values.first)));
@@ -106,7 +70,7 @@ class _ChoiceScreen<T extends Enum> {
 
       if (preferNotToSay != null) {
         testWidgets('"prefer not to say" hides the checkbox and saves hidden', (tester) async {
-          final harness = _Harness();
+          final harness = OnboardingHarness();
           await harness.pump(tester, build());
 
           await tester.tap(find.text(labelOf(preferNotToSay as T)));
@@ -163,7 +127,7 @@ void main() {
 
   group('EducationScreen', () {
     testWidgets('saves the choice and moves on', (tester) async {
-      final harness = _Harness();
+      final harness = OnboardingHarness();
       await harness.pump(tester, const EducationScreen());
 
       await tester.tap(find.text(EducationLevel.college.displayName));
@@ -175,7 +139,7 @@ void main() {
     });
 
     testWidgets('Continue does nothing until a level is chosen', (tester) async {
-      final harness = _Harness();
+      final harness = OnboardingHarness();
       await harness.pump(tester, const EducationScreen());
 
       await harness.tapContinue(tester);
@@ -187,7 +151,7 @@ void main() {
 
   group('BioScreen', () {
     testWidgets('saves the sanitized bio and moves on', (tester) async {
-      final harness = _Harness();
+      final harness = OnboardingHarness();
       await harness.pump(tester, const BioScreen());
 
       expect(find.text('0/300'), findsOneWidget);
@@ -201,7 +165,7 @@ void main() {
     });
 
     testWidgets('Skip saves an empty bio', (tester) async {
-      final harness = _Harness();
+      final harness = OnboardingHarness();
       await harness.pump(tester, const BioScreen());
 
       await tester.tap(find.text('Skip for now'));
@@ -214,7 +178,7 @@ void main() {
 
   group('OccupationScreen', () {
     testWidgets('saves the occupation and moves on', (tester) async {
-      final harness = _Harness();
+      final harness = OnboardingHarness();
       await harness.pump(tester, const OccupationScreen());
 
       expect(find.text('Job / Occupation'), findsOneWidget);
@@ -226,7 +190,7 @@ void main() {
     });
 
     testWidgets('an empty occupation is saved as null', (tester) async {
-      final harness = _Harness();
+      final harness = OnboardingHarness();
       await harness.pump(tester, const OccupationScreen());
 
       await tester.tap(find.text('Skip for now'));

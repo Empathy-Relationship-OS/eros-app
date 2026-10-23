@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
-import 'package:eros_app/core/utils/validators.dart';
 import 'package:eros_app/core/constants/profile_creation.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/height_editor.dart';
 
 /// Height input screen in profile creation flow
 /// Matches screenshots:
@@ -18,87 +18,22 @@ class HeightInputScreen extends ConsumerStatefulWidget {
 }
 
 class _HeightInputScreenState extends ConsumerState<HeightInputScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _feetController = TextEditingController();
-  final _inchesController = TextEditingController();
-  final _cmController = TextEditingController();
+  late final int? _initialHeightCm;
 
-  bool _useFeet = true; // true for Feet, false for CM
-  bool _isValid = false;
+  // Null until the user enters a valid height (the editor reports nothing for the initial value).
+  int? _heightCm;
 
   @override
   void initState() {
     super.initState();
-    _loadExistingData();
-    _feetController.addListener(_validateForm);
-    _inchesController.addListener(_validateForm);
-    _cmController.addListener(_validateForm);
-  }
-
-  void _loadExistingData() {
-    final draft = ref.read(profileCreationProvider);
-    if (draft.heightCm != null) {
-      _cmController.text = draft.heightCm.toString();
-      // Convert to feet and inches
-      final totalInches = draft.heightCm! / 2.54;
-      final feet = totalInches ~/ 12;
-      final inches = (totalInches % 12).round();
-      _feetController.text = feet.toString();
-      _inchesController.text = inches.toString();
-    }
-  }
-
-  void _validateForm() {
-    if (_useFeet) {
-      final feetText = _feetController.text;
-      final inchesText = _inchesController.text;
-      if (feetText.isNotEmpty && inchesText.isNotEmpty) {
-        final feet = int.tryParse(feetText);
-        final inches = int.tryParse(inchesText);
-        if (feet != null && inches != null) {
-          final heightFeet = feet + (inches / 12);
-          final error = Validators.validateHeightFeet(heightFeet);
-          setState(() {
-            _isValid = error == null && inches >= 0 && inches < 12;
-          });
-          return;
-        }
-      }
-    } else {
-      final cmText = _cmController.text;
-      if (cmText.isNotEmpty) {
-        final cm = int.tryParse(cmText);
-        if (cm != null) {
-          // Min 3ft = ~91cm, Max 9ft = ~274cm
-          setState(() {
-            _isValid = cm >= 91 && cm <= 274;
-          });
-          return;
-        }
-      }
-    }
-    setState(() {
-      _isValid = false;
-    });
-  }
-
-  int _getHeightInCm() {
-    if (_useFeet) {
-      final feet = int.parse(_feetController.text);
-      final inches = int.parse(_inchesController.text);
-      final totalInches = (feet * 12) + inches;
-      return (totalInches * 2.54).round();
-    } else {
-      return int.parse(_cmController.text);
-    }
+    _initialHeightCm = ref.read(profileCreationProvider).heightCm;
   }
 
   Future<void> _continue() async {
-    if (!_isValid) {
+    final heightCm = _heightCm;
+    if (heightCm == null) {
       return;
     }
-
-    final heightCm = _getHeightInCm();
 
     // Update the draft
     await ref.read(profileCreationProvider.notifier).updateFields(
@@ -109,37 +44,6 @@ class _HeightInputScreenState extends ConsumerState<HeightInputScreen> {
     if (mounted) {
       Navigator.pushNamed(context, '/profile-creation/education');
     }
-  }
-
-  void _toggleUnit() {
-    setState(() {
-      // Store the current unit before toggling
-      final wasUsingFeet = _useFeet;
-
-      if (wasUsingFeet && _feetController.text.isNotEmpty && _inchesController.text.isNotEmpty) {
-        // Convert from Feet to CM
-        final heightCm = _getHeightInCm();
-        _cmController.text = heightCm.toString();
-      } else if (!wasUsingFeet && _cmController.text.isNotEmpty) {
-        // Convert from CM to Feet
-        final cm = int.parse(_cmController.text);
-        final totalInches = cm / 2.54;
-        final feet = totalInches ~/ 12;
-        final inches = (totalInches % 12).round();
-        _feetController.text = feet.toString();
-        _inchesController.text = inches.toString();
-      }
-      _useFeet = !_useFeet;
-      _validateForm();
-    });
-  }
-
-  @override
-  void dispose() {
-    _feetController.dispose();
-    _inchesController.dispose();
-    _cmController.dispose();
-    super.dispose();
   }
 
   @override
@@ -184,43 +88,10 @@ class _HeightInputScreenState extends ConsumerState<HeightInputScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Unit toggle
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ChoiceChip(
-                    label: const Text('Feet'),
-                    selected: _useFeet,
-                    onSelected: (selected) {
-                      if (selected && !_useFeet) _toggleUnit();
-                    },
-                    selectedColor: AppColors.primary,
-                    labelStyle: TextStyle(
-                      color: _useFeet ? Colors.white : Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  ChoiceChip(
-                    label: const Text('CM'),
-                    selected: !_useFeet,
-                    onSelected: (selected) {
-                      if (selected && _useFeet) _toggleUnit();
-                    },
-                    selectedColor: AppColors.primary,
-                    labelStyle: TextStyle(
-                      color: !_useFeet ? Colors.white : Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              // Input fields
-              Form(
-                key: _formKey,
-                child: _useFeet ? _buildFeetInput() : _buildCmInput(),
+              HeightEditor(
+                initialHeightCm: _initialHeightCm,
+                onChanged: (heightCm) => setState(() => _heightCm = heightCm),
+                onSubmitted: (_) => _continue(),
               ),
 
               const Spacer(),
@@ -230,7 +101,7 @@ class _HeightInputScreenState extends ConsumerState<HeightInputScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _isValid ? _continue : null,
+                  onPressed: _heightCm != null ? _continue : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     disabledBackgroundColor: Colors.grey[300],
@@ -252,85 +123,6 @@ class _HeightInputScreenState extends ConsumerState<HeightInputScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildFeetInput() {
-    return Row(
-      children: [
-        Expanded(
-          child: TextFormField(
-            controller: _feetController,
-            decoration: InputDecoration(
-              labelText: 'Feet',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: AppColors.primary,
-                  width: 2,
-                ),
-              ),
-            ),
-            keyboardType: TextInputType.number,
-            textInputAction: TextInputAction.next,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: TextFormField(
-            controller: _inchesController,
-            decoration: InputDecoration(
-              labelText: 'Inches',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: AppColors.primary,
-                  width: 2,
-                ),
-              ),
-            ),
-            keyboardType: TextInputType.number,
-            textInputAction: TextInputAction.done,
-            onFieldSubmitted: (_) {
-              if (_isValid) {
-                _continue();
-              }
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCmInput() {
-    return TextFormField(
-      controller: _cmController,
-      decoration: InputDecoration(
-        labelText: 'Height (cm)',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: AppColors.primary,
-            width: 2,
-          ),
-        ),
-      ),
-      keyboardType: TextInputType.number,
-      textInputAction: TextInputAction.done,
-      onFieldSubmitted: (_) {
-        if (_isValid) {
-          _continue();
-        }
-      },
     );
   }
 }
