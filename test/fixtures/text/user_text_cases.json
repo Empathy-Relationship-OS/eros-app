@@ -1,0 +1,134 @@
+{
+  "_doc": "Shared cases for user free text (RFC-004 D-16). The backend (PE-B10) and the app (PE-F9) both run every case: clean(input, multiline) must equal expected. Length is counted in Unicode code points after cleaning.",
+  "clean": [
+    {
+      "name": "keeps punctuation people write",
+      "multiline": false,
+      "input": "I'm \"Jo\"; I <3 dogs & cats -- really",
+      "expected": "I'm \"Jo\"; I <3 dogs & cats -- really"
+    },
+    {
+      "name": "keeps an apostrophe in a name",
+      "multiline": false,
+      "input": "O'Brien",
+      "expected": "O'Brien"
+    },
+    {
+      "name": "keeps text that looks like SQL",
+      "multiline": false,
+      "input": "I'd select pizza from the menu; drop table tennis",
+      "expected": "I'd select pizza from the menu; drop table tennis"
+    },
+    {
+      "name": "keeps text that looks like HTML",
+      "multiline": false,
+      "input": "<b>bold</b> moves only",
+      "expected": "<b>bold</b> moves only"
+    },
+    {
+      "name": "keeps accents and other scripts",
+      "multiline": false,
+      "input": "Jos\u00e9, Zo\u00eb, \u674e\u96f7, \u0395\u03bb\u03ad\u03bd\u03b7",
+      "expected": "Jos\u00e9, Zo\u00eb, \u674e\u96f7, \u0395\u03bb\u03ad\u03bd\u03b7"
+    },
+    {
+      "name": "trims and collapses spaces",
+      "multiline": false,
+      "input": "  London    City  ",
+      "expected": "London City"
+    },
+    {
+      "name": "single line: newlines and tabs become spaces",
+      "multiline": false,
+      "input": "Software\nEngineer\tLead",
+      "expected": "Software Engineer Lead"
+    },
+    {
+      "name": "multi-line keeps line breaks, at most one blank line",
+      "multiline": true,
+      "input": "Hi\r\n\r\n\r\n\r\nthere",
+      "expected": "Hi\n\nthere"
+    },
+    {
+      "name": "multi-line trims spaces at the ends of each line",
+      "multiline": true,
+      "input": "  Hi   there  \n  second line ",
+      "expected": "Hi there\nsecond line"
+    },
+    {
+      "name": "removes control characters",
+      "multiline": false,
+      "input": "Hel\u0000lo\u0007\u009f",
+      "expected": "Hello"
+    },
+    {
+      "name": "removes text-direction overrides (spoofing)",
+      "multiline": false,
+      "input": "invoice\u202egpj.exe",
+      "expected": "invoicegpj.exe"
+    },
+    {
+      "name": "removes directional isolates",
+      "multiline": false,
+      "input": "a\u2066b\u2069c",
+      "expected": "abc"
+    },
+    {
+      "name": "removes zero-width space, word joiner and BOM",
+      "multiline": false,
+      "input": "\ufeffZero\u200bwidth\u2060",
+      "expected": "Zerowidth"
+    },
+    {
+      "name": "keeps emoji joined with ZWJ",
+      "multiline": false,
+      "input": "Family \ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67",
+      "expected": "Family \ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67"
+    },
+    {
+      "name": "keeps left-to-right and right-to-left marks",
+      "multiline": false,
+      "input": "abc\u200fdef\u200e",
+      "expected": "abc\u200fdef\u200e"
+    },
+    {
+      "name": "normalises to NFC",
+      "multiline": false,
+      "input": "Cafe\u0301",
+      "expected": "Caf\u00e9"
+    },
+    {
+      "name": "only whitespace becomes empty",
+      "multiline": true,
+      "input": " \n\t \r\n ",
+      "expected": ""
+    }
+  ],
+  "length": [
+    {
+      "name": "plain text",
+      "text": "hello",
+      "codePoints": 5
+    },
+    {
+      "name": "an emoji is one code point",
+      "text": "\ud83d\udc4d",
+      "codePoints": 1
+    },
+    {
+      "name": "a flag is two code points",
+      "text": "\ud83c\uddec\ud83c\udde7",
+      "codePoints": 2
+    },
+    {
+      "name": "a ZWJ family is five code points",
+      "text": "\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67",
+      "codePoints": 5
+    },
+    {
+      "name": "an accented letter after NFC is one",
+      "text": "\u00e9",
+      "codePoints": 1
+    }
+  ]
+}

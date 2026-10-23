@@ -309,6 +309,41 @@ void main() {
       expect(_saveButton(tester).onPressed, isNull);
     });
 
+    testWidgets('invisible characters alone don\'t count as a change', (tester) async {
+      await _pumpHub(tester);
+      await _openRow(tester, 'Engineer');
+
+      await tester.enterText(find.byType(TextFormField), 'Engineer\u200b\u202e');
+      await tester.pump();
+
+      expect(_saveButton(tester).onPressed, isNull);
+    });
+
+    testWidgets('the bio is cleaned, keeping one blank line (RFC-004 D-16)', (tester) async {
+      final repository = await _pumpHub(tester);
+      await _openRow(tester, 'Likes long walks.');
+
+      await tester.enterText(find.byType(TextFormField), '  Hi  there\n\n\n\nsecond \u{1F642}\u200b ');
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(repository.requests.single, {'bio': 'Hi there\n\nsecond \u{1F642}'});
+    });
+
+    testWidgets('an occupation over 100 code points shows the limit and can\'t be saved', (tester) async {
+      final repository = await _pumpHub(tester);
+      await _openRow(tester, 'Engineer');
+
+      // 51 flags fit the 100-character counter but are 102 code points.
+      await tester.enterText(find.byType(TextFormField), '\u{1F1EC}\u{1F1E7}' * 51);
+      await tester.pump();
+
+      expect(find.text('Occupation must not exceed 100 characters'), findsOneWidget);
+      expect(_saveButton(tester).onPressed, isNull);
+      expect(repository.requests, isEmpty);
+    });
+
     testWidgets('descriptions keep apostrophes too', (tester) async {
       final repository = await _pumpHub(tester);
       await _openRow(tester, 'Curious about everything.');

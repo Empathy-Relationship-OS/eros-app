@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:eros_app/core/constants/user_text_limits.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/time/server_clock.dart';
-import 'package:eros_app/core/utils/validators.dart';
+import 'package:eros_app/core/utils/user_text.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/cancel_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/date_detail_provider.dart';
@@ -94,13 +95,17 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
   }
 
   void _handleCancel() async {
-    final reason = _reasonController.text.trim();
-
-    // Validate reason if provided
-    if (reason.isNotEmpty && !Validators.isSafeText(reason)) {
+    // Cleaned by D-16 (line breaks become spaces) and checked against the backend's limit.
+    final reason = UserText.clean(_reasonController.text);
+    final error = UserText.validate(
+      reason,
+      name: 'Cancellation note',
+      maxLength: UserTextLimits.cancellationReason,
+    );
+    if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cancellation note contains invalid characters'),
+        SnackBar(
+          content: Text(error),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.error,
         ),
@@ -200,7 +205,7 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
               border: OutlineInputBorder(),
             ),
             maxLines: 2,
-            maxLength: 150,
+            maxLength: UserTextLimits.cancellationReason,
             enabled: !cancelState.isLoading,
           ),
         ],

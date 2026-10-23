@@ -1,3 +1,6 @@
+import 'package:eros_app/core/constants/user_text_limits.dart';
+import 'package:eros_app/core/utils/user_text.dart';
+
 /// Input validation utilities
 class Validators {
   Validators._();
@@ -24,96 +27,55 @@ class Validators {
     return null;
   }
 
-  /// Check if text is safe (no SQL injection or XSS attempts)
-  /// This is a more lenient check that allows common punctuation
-  /// but blocks actual SQL injection and script tags
-  static bool isSafeText(String text) {
-    // Block obvious SQL injection patterns (multiple dangerous keywords together)
-    final dangerousPatterns = [
-      RegExp(r'\bDROP\s+TABLE\b', caseSensitive: false),
-      RegExp(r'\bDELETE\s+FROM\b', caseSensitive: false),
-      RegExp(r'\bINSERT\s+INTO\b', caseSensitive: false),
-      RegExp(r'\bUPDATE\s+\w+\s+SET\b', caseSensitive: false), // UPDATE tablename SET
-      RegExp(r'\bSELECT\s+.+\s+FROM\b', caseSensitive: false),
-      RegExp(r'\bUNION\s+SELECT\b', caseSensitive: false),
-      RegExp(r'--\s*$', caseSensitive: false), // SQL comment at end
-      RegExp(r'/\*|\*/', caseSensitive: false), // SQL block comments
-      RegExp(r'<script[^>]*>', caseSensitive: false), // Script tags
-      RegExp(r'javascript:', caseSensitive: false), // JavaScript protocol
-      RegExp(r'on\w+\s*=', caseSensitive: false), // Event handlers like onclick=
-    ];
-
-    for (final pattern in dangerousPatterns) {
-      if (pattern.hasMatch(text)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /// Sanitize text input to prevent SQL injection and XSS
-  static String sanitizeInput(String input) {
-    // Remove potential SQL injection characters
-    String sanitized = input
-        .replaceAll(';', '')
-        .replaceAll("'", '')
-        .replaceAll('"', '')
-        .replaceAll('\\', '')
-        .replaceAll('--', '')
-        .replaceAll('/*', '')
-        .replaceAll('*/', '');
-
-    // Remove HTML/script tags for XSS prevention
-    sanitized = sanitized
-        .replaceAll(RegExp(r'<script.*?</script>', caseSensitive: false), '')
-        .replaceAll(RegExp(r'<.*?>'), '');
-
-    return sanitized.trim();
-  }
-
-  /// Validate text input with length constraints
+  /// Validate free text after cleaning it with [UserText.clean] (RFC-004 D-16). Lengths are
+  /// counted in code points, as the backend counts them.
   static String? validateText(
     String? value, {
     int? minLength,
     int? maxLength,
     String? fieldName,
+    bool multiline = false,
   }) {
-    if (value == null || value.isEmpty) {
-      return '${fieldName ?? 'Field'} is required';
+    final name = fieldName ?? 'Field';
+    final cleaned = UserText.clean(value ?? '', multiline: multiline);
+    if (cleaned.isEmpty) {
+      return '$name is required';
     }
 
-    final sanitized = sanitizeInput(value);
-
-    if (minLength != null && sanitized.length < minLength) {
-      return '${fieldName ?? 'Field'} must be at least $minLength characters';
+    final length = UserText.length(cleaned);
+    if (minLength != null && length < minLength) {
+      return '$name must be at least $minLength characters';
     }
 
-    if (maxLength != null && sanitized.length > maxLength) {
-      return '${fieldName ?? 'Field'} must not exceed $maxLength characters';
+    if (maxLength != null && length > maxLength) {
+      return '$name must not exceed $maxLength characters';
     }
 
     return null;
   }
 
-  /// Validate name input
+  /// Letters from any script with their accents, spaces, hyphens, and straight and curly
+  /// apostrophes.
+  static final RegExp _nameCharacters = RegExp(r"^[\p{L}\p{M}\s\-'\u2019]+$", unicode: true);
+
+  /// Validate a first or last name (RFC-004 D-16): at least 2 and at most
+  /// [UserTextLimits.name] characters after cleaning, in any script.
   static String? validateName(String? value) {
-    if (value == null || value.isEmpty) {
+    final cleaned = UserText.clean(value ?? '');
+    if (cleaned.isEmpty) {
       return 'Name is required';
     }
 
-    final sanitized = sanitizeInput(value);
-
-    if (sanitized.length < 2) {
+    final length = UserText.length(cleaned);
+    if (length < 2) {
       return 'Name must be at least 2 characters';
     }
 
-    if (sanitized.length > 50) {
-      return 'Name must not exceed 50 characters';
+    if (length > UserTextLimits.name) {
+      return 'Name must not exceed ${UserTextLimits.name} characters';
     }
 
-    // Check if name contains only letters, spaces, hyphens, and apostrophes
-    if (!RegExp(r"^[a-zA-Z\s\-']+$").hasMatch(sanitized)) {
+    if (!_nameCharacters.hasMatch(cleaned)) {
       return 'Name can only contain letters, spaces, hyphens, and apostrophes';
     }
 
