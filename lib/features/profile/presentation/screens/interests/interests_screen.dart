@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
-import 'package:eros_app/features/profile/domain/enums/interests.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/interest_groups.dart';
 import 'package:eros_app/features/profile/presentation/widgets/editors/multi_choice_editor.dart';
 
 /// Interests selector screen with multi-tab UI
@@ -30,15 +30,7 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
     _loadExistingData();
   }
 
-  static final List<MultiChoiceGroup<String>> _groups = [
-    MultiChoiceGroup('Sports', Sport.values.map((e) => e.displayName).toList()),
-    MultiChoiceGroup('Food & Drink', FoodAndDrink.values.map((e) => e.displayName).toList()),
-    MultiChoiceGroup('Creative', Creative.values.map((e) => e.displayName).toList()),
-    MultiChoiceGroup('Entertainment', Entertainment.values.map((e) => e.displayName).toList()),
-    MultiChoiceGroup('Music', MusicGenre.values.map((e) => e.displayName).toList()),
-    MultiChoiceGroup('Activities', Activity.values.map((e) => e.displayName).toList()),
-    MultiChoiceGroup('Interests', Interest.values.map((e) => e.displayName).toList()),
-  ];
+  static final List<MultiChoiceGroup<String>> _groups = interestGroups;
 
   void _loadExistingData() {
     final draft = ref.read(profileCreationProvider);

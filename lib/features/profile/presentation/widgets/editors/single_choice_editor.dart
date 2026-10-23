@@ -77,12 +77,16 @@ class ChoiceOptionCard extends StatelessWidget {
                 color: isSelected ? AppColors.primary : Colors.grey[400],
               ),
               const SizedBox(width: 16),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? AppColors.primary : Colors.black,
+              // Flexible: a long label wraps instead of overflowing. It changes nothing when the
+              // label fits.
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected ? AppColors.primary : Colors.black,
+                  ),
                 ),
               ),
             ],
