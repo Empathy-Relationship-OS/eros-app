@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/constants/languages.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/features/matching/presentation/screens/public_profile_view_screen.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 import 'package:eros_app/features/profile/domain/enums/personality.dart';
 import 'package:eros_app/features/profile/domain/enums/preferences.dart';
@@ -28,7 +29,8 @@ const bool qaEditorEnabled = false;
 /// Edit profile (RFC-004 §6.2): the whole profile in sections, from `GET /users/me`
 /// ([myProfileProvider]). Tapping a row opens that field's editor; each save is a small PATCH
 /// of just that field (D-1). The eye icon on a show/hide field flips its visibility straight
-/// away. Name, date of birth and gender are locked (D-6).
+/// away. Name, date of birth and gender are locked (D-6). **Preview** shows the profile as
+/// others see it (PE-F5).
 class EditProfileScreen extends ConsumerWidget {
   const EditProfileScreen({super.key});
 
@@ -47,6 +49,16 @@ class EditProfileScreen extends ConsumerWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text('Edit profile', style: TextStyle(color: Colors.black)),
+        actions: [
+          // Opens a fresh read of the public profile, so it shows what was just saved.
+          if (profile.valueOrNull case final p?)
+            TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => PublicProfileViewScreen.preview(userId: p.userId)),
+              ),
+              child: const Text('Preview', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+            ),
+        ],
       ),
       body: profile.when(
         skipLoadingOnRefresh: true,
