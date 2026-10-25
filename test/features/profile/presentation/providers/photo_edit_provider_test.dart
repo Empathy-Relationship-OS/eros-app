@@ -89,6 +89,7 @@ class FakePhotoPicker extends PhotoPicker {
   Future<PickedPhoto?> pick() async {
     final next = queue.removeAt(0);
     if (next is PhotoPickException) throw next;
+    if (next is Future<PickedPhoto?>) return next;
     return next as PickedPhoto?;
   }
 }
@@ -230,6 +231,46 @@ void main() {
       expect(state().canSave, isFalse);
       pending.complete(collection([12, 11, 13], revision: 'rev-2'));
       await future;
+    });
+  });
+
+  group('while saving', () {
+    test('remove, reorder and add are ignored', () async {
+      repository.stored = collection([11, 12, 13, 14]);
+      await loaded();
+      notifier().remove(3);
+      final pending = Completer<MyPhotoCollection>();
+      repository.heldCommit = pending;
+      final saving = notifier().save();
+
+      notifier().remove(0);
+      notifier().reorder(0, 1);
+      picker.queue.add(picked('late'));
+      await notifier().add();
+
+      expect(state().entries, const [PhotoSetEntry.saved(11), PhotoSetEntry.saved(12), PhotoSetEntry.saved(13)]);
+      expect(repository.uploads, isEmpty);
+      pending.complete(collection([11, 12, 13], revision: 'rev-2'));
+      await saving;
+    });
+
+    test('a pick that finishes after Save started is dropped', () async {
+      await loaded();
+      notifier().reorder(0, 1);
+      final pick = Completer<PickedPhoto?>();
+      picker.queue.add(pick.future);
+      final adding = notifier().add();
+      final pending = Completer<MyPhotoCollection>();
+      repository.heldCommit = pending;
+      final saving = notifier().save();
+
+      pick.complete(picked('late'));
+      await adding;
+
+      expect(state().photos.whereType<StagedPhoto>(), isEmpty);
+      expect(repository.uploads, isEmpty);
+      pending.complete(collection([12, 11, 13], revision: 'rev-2'));
+      await saving;
     });
   });
 

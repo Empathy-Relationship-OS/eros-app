@@ -239,11 +239,14 @@ class PhotoEditNotifier extends StateNotifier<PhotoEditState> {
     }
   }
 
+  // Edits are ignored while a save runs: its result replaces the whole list, so an edit made
+  // meanwhile would be lost without a word. A pick that finishes during a save is dropped too.
+
   /// Picks a photo and adds it at the end, uploading it in the background.
   Future<void> add() async {
-    if (state.photos.length >= MediaConstants.maxPhotos) return;
+    if (state.isSaving || state.photos.length >= MediaConstants.maxPhotos) return;
     final picked = await _pick();
-    if (picked == null || !mounted) return;
+    if (picked == null || !mounted || state.isSaving) return;
     final staged = _stage(picked);
     state = state.copyWith(photos: [...state.photos, staged], clearError: true);
     _upload(staged);
@@ -251,23 +254,23 @@ class PhotoEditNotifier extends StateNotifier<PhotoEditState> {
 
   /// Picks a photo and puts it in place of the one at [index], uploading it in the background.
   Future<void> replace(int index) async {
-    if (index < 0 || index >= state.photos.length) return;
+    if (state.isSaving || index < 0 || index >= state.photos.length) return;
     final picked = await _pick();
-    if (picked == null || !mounted || index >= state.photos.length) return;
+    if (picked == null || !mounted || state.isSaving || index >= state.photos.length) return;
     final staged = _stage(picked);
     state = state.copyWith(photos: [...state.photos]..[index] = staged, clearError: true);
     _upload(staged);
   }
 
   void remove(int index) {
-    if (index < 0 || index >= state.photos.length) return;
+    if (state.isSaving || index < 0 || index >= state.photos.length) return;
     state = state.copyWith(photos: [...state.photos]..removeAt(index), clearError: true);
   }
 
   /// Moves the photo at [from] to [to]; position 1 is the main photo.
   void reorder(int from, int to) {
     final count = state.photos.length;
-    if (from < 0 || from >= count || to < 0 || to >= count || from == to) return;
+    if (state.isSaving || from < 0 || from >= count || to < 0 || to >= count || from == to) return;
     final photos = [...state.photos];
     photos.insert(to, photos.removeAt(from));
     state = state.copyWith(photos: photos);
