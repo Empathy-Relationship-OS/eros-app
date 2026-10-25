@@ -20,13 +20,26 @@ class PublicProfileViewScreen extends ConsumerStatefulWidget {
   /// If true, hide action buttons entirely (used when viewing already matched dates)
   final bool hideActionButtons;
 
+  /// If true, the user is previewing their own profile (RFC-004 PE-F5): every action is hidden
+  /// and a "This is how others see you" banner is shown instead.
+  final bool previewMode;
+
   const PublicProfileViewScreen({
     super.key,
     required this.userId,
     required this.matchId,
     this.isFromLast24Hours = false,
     this.hideActionButtons = false,
+    this.previewMode = false,
   });
+
+  /// The user's own profile as others see it, from the profile editor. There is no match, so
+  /// [matchId] is unused.
+  const PublicProfileViewScreen.preview({super.key, required this.userId})
+      : matchId = 0,
+        isFromLast24Hours = false,
+        hideActionButtons = true,
+        previewMode = true;
 
   @override
   ConsumerState<PublicProfileViewScreen> createState() =>
@@ -42,7 +55,8 @@ class _PublicProfileViewScreenState
   @override
   void initState() {
     super.initState();
-    // Fetch profile once during initialization
+    // Fetch profile once during initialization. It is never cached, so a preview opened after
+    // an edit shows the saved change.
     _profileFuture =
         ref.read(profileRepositoryProvider).getPublicProfile(widget.userId);
 
@@ -212,8 +226,16 @@ class _PublicProfileViewScreenState
                 child: _ProfileContent(profile: profile),
               ),
 
+              if (widget.previewMode)
+                const Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: SafeArea(top: false, child: _PreviewBanner()),
+                ),
+
               // Floating action buttons at bottom
-              if (!widget.hideActionButtons)
+              if (!widget.hideActionButtons && !widget.previewMode)
                 Positioned(
                   left: 0,
                   right: 0,
@@ -249,6 +271,34 @@ class _PublicProfileViewScreenState
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Says the user is looking at their own profile as others see it.
+class _PreviewBanner extends StatelessWidget {
+  const _PreviewBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        key: const Key('preview-banner'),
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.75),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.visibility_outlined, color: Colors.white, size: 18),
+            SizedBox(width: 8),
+            Text('This is how others see you', style: TextStyle(color: Colors.white, fontSize: 14)),
+          ],
+        ),
       ),
     );
   }
