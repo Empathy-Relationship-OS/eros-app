@@ -5,6 +5,7 @@ import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/presentation/providers/photo_provider.dart';
 import 'package:eros_app/features/profile/presentation/screens/photos/photo_selection_screen.dart';
+import 'package:eros_app/features/profile/presentation/widgets/photo_slot_tile.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 import 'package:eros_app/core/constants/profile_creation.dart' as constants;
 import 'package:eros_app/core/constants/media_constants.dart';
@@ -274,6 +275,7 @@ class AllPhotosScreen extends ConsumerWidget {
   }
 }
 
+/// Onboarding's photo slot: the local file in a [PhotoSlotTile].
 class _PhotoSlot extends StatelessWidget {
   final int index;
   final bool hasPhoto;
@@ -296,125 +298,19 @@ class _PhotoSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return PhotoSlotTile(
+      index: index,
+      image: hasPhoto && photoPath != null
+          ? Image.file(
+              File(photoPath!),
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            )
+          : null,
+      isPrimary: isPrimary,
       onTap: onTap,
-      child: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.cardBackground,
-              borderRadius: BorderRadius.circular(16),
-              border: isPrimary
-                  ? Border.all(color: AppColors.primary, width: 2)
-                  : null,
-            ),
-            child: hasPhoto && photoPath != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: Image.file(
-                      File(photoPath!),
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                    ),
-                  )
-                : Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.add_photo_alternate_outlined,
-                          size: 48,
-                          color: AppColors.textSecondary.withValues(alpha: 0.5),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          isPrimary ? 'Profile\nPicture' : 'Add\nPhoto',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary.withValues(alpha: 0.7),
-                            fontWeight: isPrimary ? FontWeight.w600 : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-          ),
-
-          // Primary badge
-          if (isPrimary && hasPhoto)
-            Positioned(
-              top: 8,
-              left: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'Primary',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-
-          // Remove button
-          if (hasPhoto && onRemove != null)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: GestureDetector(
-                onTap: onRemove,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ),
-              ),
-            ),
-
-          // Photo number indicator
-          if (!hasPhoto)
-            Positioned(
-              bottom: 8,
-              right: 8,
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: AppColors.textSecondary.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    '${index + 1}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
+      onRemove: hasPhoto ? onRemove : null,
     );
   }
 }

@@ -265,3 +265,92 @@ class PhotoUploadDraft {
     );
   }
 }
+
+/// One of the user's photos as the photo editor reads it from `GET /users/me/photos`
+/// (RFC-004 §5).
+class MyPhotoDTO {
+  final int id;
+
+  /// Time-limited signed URL. It changes on every fetch, so cache images by [id], not by URL
+  /// (primer rule 12).
+  final String mediaUrl;
+  final String? thumbnailUrl;
+  final int displayOrder;
+  final bool isPrimary;
+
+  /// True for the photo the user's verification was checked against (RFC-004 §4.4).
+  final bool isVerificationPhoto;
+
+  const MyPhotoDTO({
+    required this.id,
+    required this.mediaUrl,
+    this.thumbnailUrl,
+    required this.displayOrder,
+    required this.isPrimary,
+    this.isVerificationPhoto = false,
+  });
+
+  factory MyPhotoDTO.fromJson(Map<String, dynamic> json) => MyPhotoDTO(
+        id: json['id'] as int,
+        mediaUrl: json['mediaUrl'] as String,
+        thumbnailUrl: json['thumbnailUrl'] as String?,
+        displayOrder: json['displayOrder'] as int,
+        isPrimary: json['isPrimary'] as bool,
+        isVerificationPhoto: json['isVerificationPhoto'] as bool? ?? false,
+      );
+}
+
+/// The user's photo set, from `GET /users/me/photos`, `PUT /users/me/photos` or
+/// `DELETE /users/me/photos/{id}`.
+class MyPhotoCollection {
+  /// In position order; position 1 is the main photo.
+  final List<MyPhotoDTO> photos;
+
+  /// Identifies this exact set. A commit sends it back and gets a 409 if the set has changed
+  /// since (RFC-004 D-4).
+  final String revision;
+
+  /// True when the write that produced this set removed the verification photo and so reset
+  /// the user's verification. Always false on reads.
+  final bool verificationReset;
+
+  const MyPhotoCollection({
+    required this.photos,
+    required this.revision,
+    this.verificationReset = false,
+  });
+
+  factory MyPhotoCollection.fromJson(Map<String, dynamic> json) {
+    final photos = (json['media'] as List)
+        .map((item) => MyPhotoDTO.fromJson(item as Map<String, dynamic>))
+        .toList()
+      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+    return MyPhotoCollection(
+      photos: photos,
+      revision: json['revision'] as String,
+      verificationReset: json['verificationReset'] as bool? ?? false,
+    );
+  }
+}
+
+/// One entry of a photo-set commit: an existing photo by [photoId] or a staged upload by
+/// [objectKey], never both.
+class PhotoSetEntry {
+  final int? photoId;
+  final String? objectKey;
+
+  const PhotoSetEntry.saved(int this.photoId) : objectKey = null;
+  const PhotoSetEntry.staged(String this.objectKey) : photoId = null;
+
+  Map<String, dynamic> toJson() => photoId != null ? {'photoId': photoId} : {'objectKey': objectKey};
+
+  @override
+  bool operator ==(Object other) =>
+      other is PhotoSetEntry && other.photoId == photoId && other.objectKey == objectKey;
+
+  @override
+  int get hashCode => Object.hash(photoId, objectKey);
+
+  @override
+  String toString() => photoId != null ? 'saved($photoId)' : 'staged($objectKey)';
+}

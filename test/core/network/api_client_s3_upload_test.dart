@@ -86,4 +86,18 @@ void main() {
     final headers = adapter.lastRequest!.headers;
     expect(headers['content-length'] ?? headers['Content-Length'], '${bytes.length}');
   });
+
+  test('reports upload progress up to 1', () async {
+    final progress = <double>[];
+
+    await client.uploadToS3(
+      presignedUrl: 'https://bucket.s3.amazonaws.com/photos/u/1.jpg?X-Amz-Signature=abc',
+      fileBytes: List.filled(200000, 1),
+      contentType: 'image/jpeg',
+      onProgress: progress.add,
+    );
+
+    expect(progress, isNotEmpty);
+    expect(progress.last, 1.0);
+  });
 }
