@@ -300,6 +300,8 @@ class PhotoEditNotifier extends StateNotifier<PhotoEditState> {
       return saved;
     } on PhotoSetConflictException catch (e) {
       if (mounted) {
+        // Before reloading: a failed reload keeps the rest of the state.
+        state = state.copyWith(isSaving: false);
         await load();
         if (mounted) state = state.copyWith(error: e.message);
       }

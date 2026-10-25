@@ -43,9 +43,13 @@ class FakePhotoRepository implements PhotoRepository {
   /// When set, the commit waits for this.
   Completer<MyPhotoCollection>? heldCommit;
 
+  /// When set, every load after the first throws it.
+  Object? loadError;
+
   @override
   Future<MyPhotoCollection> getMyPhotos() async {
     loads++;
+    if (loadError != null && loads > 1) throw loadError!;
     return stored;
   }
 
@@ -331,6 +335,19 @@ void main() {
       expect(state().revision, 'rev-other-device');
       expect(state().error, 'Your photos were changed on another device. Please check and try again.');
       expect(state().isSaving, isFalse);
+    });
+
+    test('a 409 whose reload also fails leaves Save usable and says why', () async {
+      await loaded();
+      notifier().reorder(0, 1);
+      repository.commitError = PhotoSetConflictException();
+      repository.loadError = PhotoRepositoryException('We couldn\'t load your photos. Please try again.');
+
+      await expectLater(notifier().save(), throwsA(isA<PhotoSetConflictException>()));
+
+      expect(state().isSaving, isFalse);
+      expect(state().isLoading, isFalse);
+      expect(state().error, 'Your photos were changed on another device. Please check and try again.');
     });
 
     test('a 400 keeps the edits and shows the server\'s message', () async {
