@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/constants/profile_creation.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
-import 'package:eros_app/core/utils/validators.dart';
+import 'package:eros_app/core/constants/user_text_limits.dart';
+import 'package:eros_app/core/utils/user_text.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 import 'package:eros_app/features/profile/presentation/widgets/editors/text_field_editor.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
@@ -32,18 +33,10 @@ class _BioScreenState extends ConsumerState<BioScreen> {
   }
 
   Future<void> _continue() async {
-    // Sanitize input
-    final bio = _bioController.text.isNotEmpty
-        ? Validators.sanitizeInput(_bioController.text)
-        : '';
+    if (!_formKey.currentState!.validate()) return;
 
-    // Validate max length
-    if (bio.length > 300) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bio must not exceed 300 characters')),
-      );
-      return;
-    }
+    // Cleaned, never stripped: line breaks are kept, quotes and `<3` too (RFC-004 D-16).
+    final bio = UserText.clean(_bioController.text, multiline: true);
 
     final currentDraft = ref.read(profileCreationProvider);
     final updatedDraft = currentDraft.copyWith(
@@ -105,22 +98,15 @@ class _BioScreenState extends ConsumerState<BioScreen> {
                 key: _formKey,
                 child: TextFieldEditor(
                   controller: _bioController,
-                  maxLength: 300,
+                  maxLength: UserTextLimits.bio,
                   maxLines: 5,
                   hintText: 'e.g. Coffee enthusiast, loves hiking...',
-                  validator: (value) {
-                    if (value != null && value.isNotEmpty) {
-                      if (value.length > 300) {
-                        return 'Bio must not exceed 300 characters';
-                      }
-                      return Validators.validateText(
-                        value,
-                        maxLength: 300,
-                        fieldName: 'Bio',
-                      );
-                    }
-                    return null;
-                  },
+                  validator: (value) => UserText.validate(
+                    value,
+                    name: 'Bio',
+                    maxLength: UserTextLimits.bio,
+                    multiline: true,
+                  ),
                 ),
               ),
               const Spacer(),

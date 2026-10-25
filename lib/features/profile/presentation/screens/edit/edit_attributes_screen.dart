@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:eros_app/core/utils/user_text.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/domain/models/profile_field_limits.dart';
 import 'package:eros_app/features/profile/domain/models/update_user_request.dart';
@@ -51,21 +52,21 @@ class _EditAttributesScreenState<T> extends ConsumerState<EditAttributesScreen<T
 
   List<T>? get _attributes => _selected.isEmpty ? null : _selected;
 
-  /// Trimmed, nothing removed (D-16). PE-F9 replaces the trim with `UserText.clean`.
-  String? get _descriptionValue {
-    final text = _description.text.trim();
-    return text.isEmpty ? null : text;
+  /// Cleaned by D-16, so nothing the user wrote is removed. Empty is sent as null.
+  String? get _descriptionValue => _cleanDescription(_description.text);
+
+  static String? _cleanDescription(String? text) {
+    final cleaned = UserText.clean(text ?? '');
+    return cleaned.isEmpty ? null : cleaned;
   }
 
   bool get _isDirty =>
       !listEquals(_attributes, widget.initialAttributes.field) ||
-      _descriptionValue != (widget.initialDescription.field?.isEmpty == true ? null : widget.initialDescription.field);
+      _descriptionValue != _cleanDescription(widget.initialDescription.field);
 
-  String? _validateDescription(String? text) {
-    const max = ProfileFieldLimits.maxDescriptionLength;
-    if ((text?.trim() ?? '').length > max) return 'Description must not exceed $max characters';
-    return null; // optional, so empty is fine
-  }
+  // Optional, so empty is fine.
+  String? _validateDescription(String? text) =>
+      UserText.validate(text, name: 'Description', maxLength: ProfileFieldLimits.maxDescriptionLength);
 
   @override
   Widget build(BuildContext context) {

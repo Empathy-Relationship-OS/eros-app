@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/constants/languages.dart';
+import 'package:eros_app/core/constants/user_text_limits.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 import 'package:eros_app/features/profile/domain/enums/personality.dart';
@@ -160,8 +161,9 @@ class _Hub extends ConsumerWidget {
                 question: 'Tell us about yourself',
                 fieldName: 'Bio',
                 initial: p.bio,
-                maxLength: 300,
+                maxLength: UserTextLimits.bio,
                 maxLines: 5,
+                multiline: true,
                 hintText: 'e.g. Coffee enthusiast, loves hiking...',
                 buildRequest: (text) => UpdateUserRequest(bio: text),
               ),
@@ -177,7 +179,7 @@ class _Hub extends ConsumerWidget {
                 question: 'What do you do?',
                 fieldName: 'Occupation',
                 initial: p.occupation ?? '',
-                maxLength: 50,
+                maxLength: UserTextLimits.occupation,
                 labelText: 'Job / Occupation',
                 hintText: 'e.g. Software Engineer',
                 buildRequest: (text) => UpdateUserRequest(occupation: text),

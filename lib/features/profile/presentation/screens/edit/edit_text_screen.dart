@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:eros_app/core/utils/user_text.dart';
 import 'package:eros_app/features/profile/domain/models/update_user_request.dart';
 import 'package:eros_app/features/profile/presentation/providers/my_profile_provider.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_section_scaffold.dart';
@@ -7,10 +8,10 @@ import 'package:eros_app/features/profile/presentation/widgets/editors/text_fiel
 
 /// Edits one optional text field (bio, occupation) with [TextFieldEditor].
 ///
-/// The text is trimmed before it's sent, and nothing else is removed: apostrophes, quotes and
-/// the rest are ordinary writing (RFC-004 D-16; PE-F9 brings the full shared cleaning). It may
-/// be emptied: the empty string is sent, because the backend treats a missing field as
-/// "unchanged".
+/// The text is cleaned with [UserText.clean] before it's compared and sent (RFC-004 D-16):
+/// apostrophes, quotes and the rest are kept as typed, so the hub shows exactly what was
+/// written. [multiline] keeps line breaks (the bio). It may be emptied: the empty string is
+/// sent, because the backend treats a missing field as "unchanged".
 class EditTextScreen extends ConsumerStatefulWidget {
   final String title;
   final String question;
@@ -18,6 +19,7 @@ class EditTextScreen extends ConsumerStatefulWidget {
   final String initial;
   final int maxLength;
   final int maxLines;
+  final bool multiline;
   final String? hintText;
   final String? labelText;
   final UpdateUserRequest Function(String text) buildRequest;
@@ -31,6 +33,7 @@ class EditTextScreen extends ConsumerStatefulWidget {
     required this.maxLength,
     required this.buildRequest,
     this.maxLines = 1,
+    this.multiline = false,
     this.hintText,
     this.labelText,
   });
@@ -48,20 +51,17 @@ class _EditTextScreenState extends ConsumerState<EditTextScreen> {
     super.dispose();
   }
 
-  /// What is compared and saved. PE-F9 replaces the trim with `UserText.clean`.
-  String get _value => _controller.text.trim();
+  /// What is compared and saved.
+  String get _value => UserText.clean(_controller.text, multiline: widget.multiline);
 
-  String? _validate(String? text) {
-    final value = text?.trim() ?? '';
-    if (value.length > widget.maxLength) {
-      return '${widget.fieldName} must not exceed ${widget.maxLength} characters';
-    }
-    return null; // optional, so empty is fine
-  }
+  // Optional, so empty is fine.
+  String? _validate(String? text) =>
+      UserText.validate(text, name: widget.fieldName, maxLength: widget.maxLength, multiline: widget.multiline);
 
   @override
   Widget build(BuildContext context) {
-    final isDirty = _value != widget.initial;
+    // Against the saved value cleaned the same way, so spaces alone don't enable Save.
+    final isDirty = _value != UserText.clean(widget.initial, multiline: widget.multiline);
     return EditSectionScaffold(
       title: widget.title,
       isDirty: isDirty,
