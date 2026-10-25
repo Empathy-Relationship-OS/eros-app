@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
-import 'package:eros_app/features/profile/data/repositories/photo_repository.dart';
+import 'package:eros_app/core/constants/media_constants.dart';
 import 'package:eros_app/features/profile/presentation/providers/photo_provider.dart';
 
 /// Loading screen shown while uploading photos and completing profile setup
 /// Based on Screenshot_Catalogue.md line 659-662
-/// Handles batch photo upload with progress indication
+/// Uploads the photos, then saves them all at once, with progress (PhotoUploadNotifier.submitPhotos)
 class ProfileCompletionLoadingScreen extends ConsumerStatefulWidget {
   const ProfileCompletionLoadingScreen({super.key});
 
@@ -32,68 +32,57 @@ class _ProfileCompletionLoadingScreenState
   }
 
   Future<void> _startProfileCompletion() async {
-    try {
-      final photoState = ref.read(photoUploadProvider);
-      final photoRepo = ref.read(photoRepositoryProvider);
-
-      if (!photoState.hasMinimumPhotos) {
-        setState(() {
-          _hasError = true;
-          _errorMessage = 'Please add at least ${photoState.photos.length} photos before continuing.';
-        });
-        return;
-      }
-
-      // Step 1: Upload photos to S3
-      setState(() {
-        _statusMessage = 'Uploading your photos...';
-        _uploadProgress = 0.0;
-      });
-
-      await photoRepo.batchUploadPhotos(
-        photos: photoState.photos,
-        onProgress: (current, total) {
-          setState(() {
-            _uploadProgress = current / total;
-            _statusMessage = 'Uploading photo $current of $total...';
-          });
-        },
-      );
-
-      // Step 2: Finalizing profile
-      setState(() {
-        _statusMessage = 'Setting up your profile...';
-        _uploadProgress = 1.0;
-      });
-
-      // Add a small delay to show the completion message
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      setState(() {
-        _statusMessage = 'Getting your matches ready...';
-      });
-
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Navigate to welcome/onboarding screen
-      if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed('/profile/welcome');
-    } on BatchPhotoUploadException catch (e) {
+    final notifier = ref.read(photoUploadProvider.notifier);
+    if (!ref.read(photoUploadProvider).hasMinimumPhotos) {
       setState(() {
         _hasError = true;
-        _errorMessage = e.getUserMessage();
+        _errorMessage = 'Please add at least ${MediaConstants.minPhotos} photos before continuing.';
       });
-    } on PhotoRepositoryException catch (e) {
-      setState(() {
-        _hasError = true;
-        _errorMessage = e.message;
-      });
-    } catch (e) {
-      setState(() {
-        _hasError = true;
-        _errorMessage = 'Something went wrong. Please try again.';
-      });
+      return;
     }
+
+    // Step 1: upload every photo, then save them all at once (RFC-004 D-8). A retry uploads only
+    // the photos that failed.
+    setState(() {
+      _statusMessage = 'Uploading your photos...';
+      _uploadProgress = 0.0;
+    });
+    final saved = await notifier.submitPhotos(
+      onProgress: (uploaded, total) {
+        if (!mounted) return;
+        setState(() {
+          _uploadProgress = uploaded / total;
+          _statusMessage = 'Uploading photo ${uploaded < total ? uploaded + 1 : total} of $total...';
+        });
+      },
+    );
+    if (!mounted) return;
+    if (!saved) {
+      setState(() {
+        _hasError = true;
+        _errorMessage = ref.read(photoUploadProvider).error ?? 'Something went wrong. Please try again.';
+      });
+      return;
+    }
+
+    // Step 2: finalising the profile
+    setState(() {
+      _statusMessage = 'Setting up your profile...';
+      _uploadProgress = 1.0;
+    });
+
+    // Add a small delay to show the completion message
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+    setState(() {
+      _statusMessage = 'Getting your matches ready...';
+    });
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    // Navigate to welcome/onboarding screen
+    if (!mounted) return;
+    Navigator.of(context).pushReplacementNamed('/profile/welcome');
   }
 
   @override
