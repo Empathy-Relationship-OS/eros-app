@@ -4,13 +4,17 @@ import 'dart:io';
 
 import 'package:eros_app/features/matching/presentation/screens/public_profile_view_screen.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
+import 'package:eros_app/features/profile/data/repositories/qa_repository.dart';
 import 'package:eros_app/features/profile/domain/models/my_profile.dart';
 import 'package:eros_app/features/profile/domain/models/update_user_request.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_profile_screen.dart';
+import 'package:eros_app/features/profile/presentation/screens/edit/edit_qa_screen.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_section_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../providers/qa_edit_provider_test.dart' show FakeQARepository;
 
 Map<String, dynamic> _fixture() =>
     jsonDecode(File('test/fixtures/users/get_users_me.json').readAsStringSync()) as Map<String, dynamic>;
@@ -49,7 +53,10 @@ Future<_FakeProfileRepository> _pumpHub(WidgetTester tester) async {
 
   final repository = _FakeProfileRepository();
   await tester.pumpWidget(ProviderScope(
-    overrides: [profileRepositoryProvider.overrideWithValue(repository)],
+    overrides: [
+      profileRepositoryProvider.overrideWithValue(repository),
+      qaRepositoryProvider.overrideWithValue(FakeQARepository()),
+    ],
     child: const MaterialApp(home: EditProfileScreen()),
   ));
   await tester.pumpAndSettle();
@@ -121,13 +128,21 @@ void main() {
       expect(preview.userId, MyProfile.fromJson(_fixture()).userId);
     });
 
-    testWidgets('hides Photos and Q&A until their editors exist', (tester) async {
+    testWidgets('hides Photos until its editor exists', (tester) async {
       await _pumpHub(tester);
 
       expect(photosEditorEnabled, isFalse);
-      expect(qaEditorEnabled, isFalse);
       expect(find.text('Photos'), findsNothing);
-      expect(find.text('Q&A'), findsNothing);
+    });
+
+    testWidgets('the Q&A row lists the answered questions and opens the editor', (tester) async {
+      await _pumpHub(tester);
+
+      expect(find.text('Q&A'), findsOneWidget);
+      expect(find.text('What makes you laugh?\nPerfect Sunday?'), findsOneWidget);
+      await tester.tap(find.text('Your answers'));
+      await tester.pumpAndSettle();
+      expect(find.byType(EditQAScreen), findsOneWidget);
     });
 
     testWidgets('locked rows say why and open nothing', (tester) async {

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
+import 'package:eros_app/features/profile/data/repositories/qa_repository.dart';
 
 /// The frame around every profile-editor screen (RFC-004 §6.2): the section title, a Save
 /// button, an error banner and a discard-changes guard.
 ///
 /// - **Save** is enabled when [canSave] (the value is valid and has changed) and calls
 ///   [onSave]. On success the screen pops. A failure stays on the screen and shows in the banner:
-///   the server's validation message, a repository error, or a local `ArgumentError` from
-///   `UpdateUserRequest`. Any other error is reported through `FlutterError.reportError` and
+///   the server's validation message, a repository error (profile or Q&A), or a local
+///   `ArgumentError` from `UpdateUserRequest`. Any other error is reported through `FlutterError.reportError` and
 ///   shown as a generic message, so Save is always usable again.
 /// - **Back** with [isDirty] asks before throwing the change away.
 ///
@@ -57,6 +58,8 @@ class _EditSectionScaffoldState extends State<EditSectionScaffold> {
       _fail(e.message);
     } on ArgumentError catch (e) {
       _fail(e.message?.toString() ?? 'Please check your changes and try again.');
+    } on QARepositoryException catch (e) {
+      _fail(e.message);
     } catch (e, stack) {
       // Anything else is a bug. Report it, and never leave Save disabled and back blocked.
       FlutterError.reportError(FlutterErrorDetails(

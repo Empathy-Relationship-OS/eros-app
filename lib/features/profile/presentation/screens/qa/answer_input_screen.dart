@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/constants/user_text_limits.dart';
-import 'package:eros_app/core/utils/user_text.dart';
 import 'package:eros_app/features/profile/domain/models/question_dto.dart';
 import 'package:eros_app/features/profile/domain/models/qa_draft.dart';
 import 'package:eros_app/features/profile/presentation/providers/qa_provider.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/qa_answer_rules.dart';
 
 /// Answer input screen
 /// Matches screenshot: @screenshots/users/create-profile/CCD90428-DCE2-455B-A3A7-2EC6DC21F1C8.png
@@ -27,7 +27,7 @@ class _AnswerInputScreenState extends ConsumerState<AnswerInputScreen> {
   String? _errorMessage;
 
   static const int maxLength = UserTextLimits.qaAnswer;
-  static const int minLength = 2;
+  static const int minLength = qaAnswerMinLength;
 
   @override
   void initState() {
@@ -48,34 +48,14 @@ class _AnswerInputScreenState extends ConsumerState<AnswerInputScreen> {
     });
   }
 
-  /// The answer as it will be saved: cleaned by D-16, line breaks kept. Text that only looks
-  /// like SQL or HTML is ordinary writing and is accepted.
-  String get _answer => UserText.clean(_answerController.text, multiline: true);
+  /// The answer as it will be saved (see [qaAnswerError]).
+  String get _answer => cleanQAAnswer(_answerController.text);
 
   void _validateAnswer() {
-    if (_answerController.text.isEmpty) {
-      _errorMessage = null;
-      return;
-    }
-
-    final length = UserText.length(_answer);
-    if (length < minLength) {
-      _errorMessage = 'This answer is not long enough';
-      return;
-    }
-
-    if (length > maxLength) {
-      _errorMessage = 'Answer exceeds maximum length';
-      return;
-    }
-
-    _errorMessage = null;
+    _errorMessage = _answerController.text.isEmpty ? null : qaAnswerError(_answerController.text);
   }
 
-  bool get _canSave {
-    final length = UserText.length(_answer);
-    return length >= minLength && length <= maxLength && _errorMessage == null;
-  }
+  bool get _canSave => qaAnswerError(_answerController.text) == null;
 
   @override
   Widget build(BuildContext context) {
