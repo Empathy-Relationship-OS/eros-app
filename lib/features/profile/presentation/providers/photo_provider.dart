@@ -6,7 +6,6 @@ import 'package:eros_app/features/profile/data/repositories/photo_repository.dar
 import 'package:eros_app/features/profile/domain/models/photo_models.dart';
 import 'package:eros_app/core/constants/media_constants.dart';
 import 'package:eros_app/core/utils/image_content_type.dart';
-import 'package:path/path.dart' as path;
 
 /// Provider for ImagePicker
 final imagePickerProvider = Provider<ImagePicker>((ref) {
@@ -259,99 +258,147 @@ class PhotoUploadNotifier extends StateNotifier<PhotoUploadState> {
     _logger.i('Photo reordered: $oldIndex -> $newIndex');
   }
 
-  /// Upload all photos to backend
-  /// This should be called when user completes profile creation
-  Future<bool> uploadAllPhotos() async {
-    if (state.photos.isEmpty) {
-      _logger.w('No photos to upload');
-      return false;
-    }
-
+  /// Puts the onboarding photos on the profile: stage every photo, then commit them all at once
+  /// (RFC-004 D-8, PE-F7).
+  ///
+  /// 1. Every photo not yet uploaded is presigned and PUT to S3 ([PhotoRepository.stageUpload]),
+  ///    at most [maxParallelUploads] at a time. Each success keeps its object key on its draft,
+  ///    so a later call uploads only the photos that failed.
+  /// 2. Only when every photo is uploaded, one `PUT /users/me/photos` commits them in order with
+  ///    the (empty) set's current revision. Position 1 becomes the main photo.
+  ///
+  /// So the server never holds part of the set: a failure leaves it with no photos, and the
+  /// staged uploads expire on their own. [onProgress] gets how many photos are uploaded so far.
+  ///
+  /// Returns true when the photos are saved. On failure, sets [PhotoUploadState.error] and returns
+  /// false.
+  Future<bool> submitPhotos({void Function(int uploaded, int total)? onProgress}) async {
     if (!state.hasMinimumPhotos) {
-      state = state.copyWith(
-        error: 'At least ${MediaConstants.minPhotos} photos required',
-      );
+      state = state.copyWith(error: 'At least ${MediaConstants.minPhotos} photos required');
       return false;
     }
 
-    state = state.copyWith(
-      isUploading: true,
-      uploadProgress: 0.0,
-      clearError: true,
-    );
+    state = state.copyWith(isUploading: true, uploadProgress: 0.0, clearError: true);
+    final total = state.photos.length;
+    void report() {
+      final uploaded = state.photos.where((p) => p.isUploaded).length;
+      state = state.copyWith(uploadProgress: uploaded / total);
+      onProgress?.call(uploaded, total);
+    }
 
     try {
-      final uploadedPhotos = <PhotoUploadDraft>[];
-      final totalPhotos = state.photos.length;
-
-      for (var i = 0; i < state.photos.length; i++) {
-        final photo = state.photos[i];
-        _logger.i('Uploading photo ${i + 1}/$totalPhotos...');
-
-        // Update progress
+      report();
+      final failures = await _stageMissing(report);
+      if (failures.isNotEmpty) {
         state = state.copyWith(
-          uploadProgress: (i / totalPhotos),
+          isUploading: false,
+          error: failures.length == 1
+              ? 'One photo didn\'t upload. Please try again.'
+              : '${failures.length} photos didn\'t upload. Please try again.',
         );
-
-        final file = File(photo.localPath);
-        if (!await file.exists()) {
-          _logger.e('File not found: ${photo.localPath}');
-          throw Exception('Photo file not found. Please try selecting again.');
-        }
-
-        // Get file metadata
-        final fileName = path.basename(file.path);
-        final fileSize = await file.length();
-
-        // Reuse the type accepted at selection; otherwise detect it from the file itself,
-        // never by guessing
-        final contentType = photo.acceptedContentType ?? await detectFileContentType(file);
-        if (contentType == null) {
-          throw PhotoRepositoryException(MediaConstants.unsupportedTypeMessage);
-        }
-
-        // Upload photo
-        final mediaItem = await _photoRepository.uploadPhoto(
-          file: file,
-          fileName: fileName,
-          contentType: contentType,
-          fileSizeBytes: fileSize,
-          displayOrder: photo.displayOrder,
-          isPrimary: photo.isPrimary,
-        );
-
-        // Update photo with backend IDs
-        uploadedPhotos.add(
-          photo.copyWith(
-            objectKey: mediaItem.mediaUrl, // Store media URL as objectKey for reference
-            mediaId: mediaItem.id,
-          ),
-        );
-
-        _logger.i('✅ Photo ${i + 1}/$totalPhotos uploaded successfully');
+        return false;
       }
 
-      // Update state with uploaded photos
+      final keys = state.photos.map((p) => p.objectKey!).toList();
+      final current = await _photoRepository.getMyPhotos();
+      final saved = _alreadyCommitted(current, keys)
+          ? current
+          : await _photoRepository.commitPhotoSet(
+              current.revision,
+              keys.map(PhotoSetEntry.staged).toList(),
+            );
+
       state = state.copyWith(
-        photos: uploadedPhotos,
+        photos: [
+          for (var i = 0; i < state.photos.length; i++)
+            state.photos[i].copyWith(mediaId: saved.photos[i].id),
+        ],
         isUploading: false,
         uploadProgress: 1.0,
         clearError: true,
       );
-
-      _logger.i('✅ All photos uploaded successfully');
+      _logger.i('✅ ${saved.photos.length} onboarding photos committed');
       return true;
-    } catch (e, stackTrace) {
-      _logger.e('Failed to upload photos', error: e, stackTrace: stackTrace);
+    } on PhotoSetConflictException catch (e) {
+      state = state.copyWith(isUploading: false, error: e.message);
+      return false;
+    } on PhotoRepositoryException catch (e) {
+      // The server refused the set, for example because a staged upload expired: upload them
+      // all again next time.
       state = state.copyWith(
+        photos: [for (final p in state.photos) p.withoutUpload()],
         isUploading: false,
-        uploadProgress: null,
-        error: e is PhotoRepositoryException
-            ? e.message
-            : 'Failed to upload photos. Please try again.',
+        error: e.message,
       );
       return false;
+    } catch (e, stackTrace) {
+      _logger.e('Failed to submit photos', error: e, stackTrace: stackTrace);
+      state = state.copyWith(isUploading: false, error: 'Failed to upload photos. Please try again.');
+      return false;
     }
+  }
+
+  /// How many photos upload at once.
+  static const maxParallelUploads = 3;
+
+  /// Stages every photo without an object key, [maxParallelUploads] at a time. Returns the local
+  /// paths that failed; the rest now carry their object keys.
+  Future<List<String>> _stageMissing(void Function() onEachDone) async {
+    final pending = state.photos.where((p) => !p.isUploaded).map((p) => p.localPath).toList();
+    final failures = <String>[];
+    var next = 0;
+
+    Future<void> worker() async {
+      while (next < pending.length) {
+        final path = pending[next++];
+        try {
+          final key = await _stageOne(path);
+          _setObjectKey(path, key);
+        } catch (e) {
+          _logger.w('Staging $path failed', error: e);
+          failures.add(path);
+        }
+        onEachDone();
+      }
+    }
+
+    await Future.wait(List.generate(maxParallelUploads, (_) => worker()));
+    return failures;
+  }
+
+  Future<String> _stageOne(String localPath) async {
+    final index = state.photos.indexWhere((p) => p.localPath == localPath);
+    final photo = state.photos[index];
+    final file = File(photo.localPath);
+    if (!await file.exists()) {
+      throw PhotoRepositoryException('Photo file not found. Please try selecting again.');
+    }
+    // Reuse the type accepted at selection; otherwise detect it from the file, never guess.
+    final contentType = photo.acceptedContentType ?? await detectFileContentType(file);
+    if (contentType == null) throw PhotoRepositoryException(MediaConstants.unsupportedTypeMessage);
+    return _photoRepository.stageUpload(
+      file: file,
+      contentType: contentType,
+      sizeBytes: await file.length(),
+      displayOrder: index + 1,
+    );
+  }
+
+  void _setObjectKey(String localPath, String objectKey) {
+    state = state.copyWith(photos: [
+      for (final p in state.photos) p.localPath == localPath ? p.copyWith(objectKey: objectKey) : p,
+    ]);
+  }
+
+  /// True when [current] already holds exactly [keys], in order: an earlier commit succeeded but
+  /// its response was lost. Committing the same keys again would replace those rows with new
+  /// ones pointing at the same objects.
+  bool _alreadyCommitted(MyPhotoCollection current, List<String> keys) {
+    if (current.photos.length != keys.length) return false;
+    for (var i = 0; i < keys.length; i++) {
+      if (!Uri.parse(current.photos[i].mediaUrl).path.endsWith('/${keys[i]}')) return false;
+    }
+    return true;
   }
 
   /// Clear error message

@@ -17,13 +17,12 @@ import 'package:eros_app/features/profile/presentation/screens/edit/edit_attribu
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_basics_screens.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_choice_screens.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_multi_choice_screen.dart';
+import 'package:eros_app/features/profile/presentation/screens/edit/edit_photos_screen.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_qa_screen.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_text_screen.dart';
 import 'package:eros_app/features/profile/presentation/widgets/editors/interest_groups.dart';
 import 'package:eros_app/features/profile/presentation/widgets/editors/languages_editor.dart';
 
-/// The photo editor arrives with PE-F4. Until then the Photos row is hidden.
-const bool photosEditorEnabled = false;
 
 /// Edit profile (RFC-004 §6.2): the whole profile in sections, from `GET /users/me`
 /// ([myProfileProvider]). Tapping a row opens that field's editor; each save is a small PATCH
@@ -155,10 +154,13 @@ class _Hub extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       children: [
         if (p.profileCompleteness != null) _CompletenessBar(percent: p.profileCompleteness!),
-        if (photosEditorEnabled)
-          _Section(title: 'Photos', rows: [
-            _EditRow(label: 'Photos', value: 'Edit your photos', onTap: () {}),
-          ]),
+        _Section(title: 'Photos', rows: [
+          _EditRow(
+            label: 'Photos',
+            value: 'Add, remove and reorder your photos',
+            onTap: () => _open(context, const EditPhotosScreen()),
+          ),
+        ]),
         _Section(title: 'About me', rows: [
           _EditRow(
             label: 'Bio',

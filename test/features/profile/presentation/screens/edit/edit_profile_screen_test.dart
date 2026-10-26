@@ -128,11 +128,10 @@ void main() {
       expect(preview.userId, MyProfile.fromJson(_fixture()).userId);
     });
 
-    testWidgets('hides Photos until its editor exists', (tester) async {
+    testWidgets('shows the Photos row', (tester) async {
       await _pumpHub(tester);
 
-      expect(photosEditorEnabled, isFalse);
-      expect(find.text('Photos'), findsNothing);
+      expect(find.text('Add, remove and reorder your photos'), findsOneWidget);
     });
 
     testWidgets('the Q&A row lists the answered questions and opens the editor', (tester) async {
