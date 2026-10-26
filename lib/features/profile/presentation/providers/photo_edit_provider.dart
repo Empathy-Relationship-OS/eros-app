@@ -223,6 +223,10 @@ class PhotoEditNotifier extends StateNotifier<PhotoEditState> {
   final Ref _ref;
   var _nextLocalId = 0;
 
+  /// Bumped whenever the list is replaced from the server (a save, or a reload after a
+  /// conflict). A pick started before that belongs to a list that no longer exists.
+  var _generation = 0;
+
   PhotoEditNotifier(this._ref) : super(const PhotoEditState()) {
     load();
   }
@@ -240,13 +244,16 @@ class PhotoEditNotifier extends StateNotifier<PhotoEditState> {
   }
 
   // Edits are ignored while a save runs: its result replaces the whole list, so an edit made
-  // meanwhile would be lost without a word. A pick that finishes during a save is dropped too.
+  // meanwhile would be lost without a word. A pick that finishes during a save, or after the
+  // list was replaced from the server, is dropped too: image_picker resizes the photo after it
+  // is chosen, and Save can be tapped meanwhile.
 
   /// Picks a photo and adds it at the end, uploading it in the background.
   Future<void> add() async {
     if (state.isSaving || state.photos.length >= MediaConstants.maxPhotos) return;
+    final generation = _generation;
     final picked = await _pick();
-    if (picked == null || !mounted || state.isSaving) return;
+    if (picked == null || !mounted || state.isSaving || generation != _generation) return;
     final staged = _stage(picked);
     state = state.copyWith(photos: [...state.photos, staged], clearError: true);
     _upload(staged);
@@ -255,8 +262,11 @@ class PhotoEditNotifier extends StateNotifier<PhotoEditState> {
   /// Picks a photo and puts it in place of the one at [index], uploading it in the background.
   Future<void> replace(int index) async {
     if (state.isSaving || index < 0 || index >= state.photos.length) return;
+    final generation = _generation;
     final picked = await _pick();
-    if (picked == null || !mounted || state.isSaving || index >= state.photos.length) return;
+    if (picked == null || !mounted || state.isSaving || generation != _generation || index >= state.photos.length) {
+      return;
+    }
     final staged = _stage(picked);
     state = state.copyWith(photos: [...state.photos]..[index] = staged, clearError: true);
     _upload(staged);
@@ -324,6 +334,7 @@ class PhotoEditNotifier extends StateNotifier<PhotoEditState> {
 
   void _apply(MyPhotoCollection collection) {
     if (!mounted) return;
+    _generation++;
     final photos = collection.photos.map(SavedPhoto.fromDTO).toList();
     state = PhotoEditState(photos: photos, original: photos, revision: collection.revision, isLoading: false);
   }

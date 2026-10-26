@@ -254,6 +254,38 @@ void main() {
       await saving;
     });
 
+    test('a pick that finishes after a save completed is dropped', () async {
+      await loaded();
+      notifier().reorder(0, 1);
+      final pick = Completer<PickedPhoto?>();
+      picker.queue.add(pick.future);
+      final adding = notifier().add();
+      repository.commitResult = collection([12, 11, 13], revision: 'rev-2');
+      await notifier().save();
+
+      pick.complete(picked('late'));
+      await adding;
+
+      expect(state().photos.whereType<StagedPhoto>(), isEmpty);
+      expect(repository.uploads, isEmpty);
+    });
+
+    test('a replace whose pick finishes after a conflict reload is dropped', () async {
+      await loaded();
+      notifier().reorder(0, 1);
+      final pick = Completer<PickedPhoto?>();
+      picker.queue.add(pick.future);
+      final replacing = notifier().replace(2);
+      repository.stored = collection([21, 22, 23], revision: 'rev-other');
+      repository.commitError = PhotoSetConflictException();
+      await expectLater(notifier().save(), throwsA(isA<PhotoSetConflictException>()));
+
+      pick.complete(picked('late'));
+      await replacing;
+
+      expect(state().photos.map((p) => (p as SavedPhoto).id), [21, 22, 23], reason: 'photo 23 is untouched');
+    });
+
     test('a pick that finishes after Save started is dropped', () async {
       await loaded();
       notifier().reorder(0, 1);
