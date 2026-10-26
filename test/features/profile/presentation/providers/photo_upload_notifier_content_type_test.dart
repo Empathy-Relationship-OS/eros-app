@@ -18,25 +18,36 @@ class _FakeImagePicker implements ImagePicker {
   }
 }
 
-/// Records the content type of every `uploadPhoto` call.
+/// Records the content type of every staged upload, then commits onto an empty set.
 class _RecordingPhotoRepository implements PhotoRepository {
   final uploadedContentTypes = <String>[];
 
   @override
-  dynamic noSuchMethod(Invocation invocation) {
-    if (invocation.memberName == #uploadPhoto) {
-      uploadedContentTypes.add(invocation.namedArguments[#contentType] as String);
-      return Future<UserMediaItemDTO>.value(UserMediaItemDTO(
-        id: uploadedContentTypes.length,
-        mediaUrl: 'https://cdn.example.com/p.heic',
-        thumbnailUrl: null,
-        mediaType: MediaType.photo,
-        displayOrder: invocation.namedArguments[#displayOrder] as int,
-        isPrimary: invocation.namedArguments[#isPrimary] as bool,
-      ));
-    }
-    return super.noSuchMethod(invocation);
+  Future<String> stageUpload({
+    required File file,
+    required String contentType,
+    required int sizeBytes,
+    required int displayOrder,
+    void Function(double progress)? onProgress,
+  }) async {
+    uploadedContentTypes.add(contentType);
+    return 'photos/u/${file.path.split('/').last}';
   }
+
+  @override
+  Future<MyPhotoCollection> getMyPhotos() async => const MyPhotoCollection(photos: [], revision: 'e3b0c44298fc1c14');
+
+  @override
+  Future<MyPhotoCollection> commitPhotoSet(String revision, List<PhotoSetEntry> entries) async => MyPhotoCollection(
+        photos: [
+          for (var i = 0; i < entries.length; i++)
+            MyPhotoDTO(id: i + 1, mediaUrl: 'https://cdn/${entries[i].objectKey}', displayOrder: i + 1, isPrimary: i == 0),
+        ],
+        revision: 'rev-1',
+      );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 // An HEIF 'ftyp' box with the 'heim' brand, which the mime package doesn't recognise.
@@ -77,7 +88,7 @@ void main() {
     }
 
     expect(notifier.state.photos.map((p) => p.contentType), everyElement('image/heic'));
-    expect(await notifier.uploadAllPhotos(), isTrue, reason: notifier.state.error);
+    expect(await notifier.submitPhotos(), isTrue, reason: notifier.state.error);
     expect(repository.uploadedContentTypes, ['image/heic', 'image/heic', 'image/heic']);
   });
 

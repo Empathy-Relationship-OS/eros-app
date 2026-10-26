@@ -43,9 +43,6 @@ class _PhotosEndpoints {
   /// POST /users/me/photos/presigned-url - Get S3 presigned upload URL
   String getPresignedUrl() => '/users/me/photos/presigned-url';
 
-  /// POST /users/me/photos - Confirm photo upload to S3
-  String confirmUpload() => '/users/me/photos';
-
   /// DELETE /users/me/photos/{photoId} - Delete photo
   String delete(String photoId) => '/users/me/photos/$photoId';
 
