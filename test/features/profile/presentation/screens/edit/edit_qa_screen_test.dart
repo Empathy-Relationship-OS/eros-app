@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:eros_app/features/profile/data/repositories/qa_repository.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_qa_screen.dart';
 import 'package:flutter/material.dart';
@@ -170,6 +172,30 @@ void main() {
     await tester.tap(find.text('Try again'));
     await tester.pumpAndSettle();
     expect(find.text('Puns'), findsOneWidget);
+  });
+
+  testWidgets('while saving, answers can\'t be removed or edited and keep working afterwards', (tester) async {
+    final repository = await _pump(tester);
+    repository
+      ..heldSubmit = Completer<void>()
+      ..submitError = QARepositoryException('Duplicate questions are not allowed.');
+    await tester.enterText(_field(0), 'Puns, mostly');
+    await tester.pump();
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+
+    expect(tester.widget<IconButton>(find.widgetWithIcon(IconButton, Icons.delete_outline).first).onPressed, isNull);
+    expect(tester.widget<TextField>(find.byType(TextField).first).enabled, isFalse);
+    await tester.tap(find.byTooltip('Remove answer').first, warnIfMissed: false);
+    await tester.pump();
+
+    repository.heldSubmit!.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Puns, mostly'), findsOneWidget);
+    await tester.enterText(_field(0), 'Puns, really');
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Puns, really'), findsOneWidget);
   });
 
   testWidgets('back with changes asks before discarding them', (tester) async {

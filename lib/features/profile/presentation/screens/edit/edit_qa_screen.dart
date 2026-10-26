@@ -93,6 +93,8 @@ class _EditQAScreenState extends ConsumerState<EditQAScreen> {
                             question: state.answers[i].question,
                             controller: _controllerFor(state.answers[i]),
                             onChanged: (text) => notifier.setAnswer(i, text),
+                            // A save replaces the list, so nothing changes while it runs.
+                            enabled: !state.isSaving,
                             onRemove: () => _remove(i, state.answers[i].question.questionId),
                           ),
                       ],
@@ -107,7 +109,7 @@ class _EditQAScreenState extends ConsumerState<EditQAScreen> {
                       ),
                     if (state.canAddMore)
                       OutlinedButton.icon(
-                        onPressed: () => _pickQuestion(context, state.answeredQuestionIds),
+                        onPressed: state.isSaving ? null : () => _pickQuestion(context, state.answeredQuestionIds),
                         icon: const Icon(Icons.add),
                         label: const Text('Add an answer'),
                       ),
@@ -120,6 +122,8 @@ class _EditQAScreenState extends ConsumerState<EditQAScreen> {
 
   /// Removes answer [index] and forgets its field, so adding the question back starts empty.
   void _remove(int index, int questionId) {
+    // The notifier ignores a remove during a save; the field must keep its controller then.
+    if (ref.read(qaEditProvider).isSaving) return;
     ref.read(qaEditProvider.notifier).remove(index);
     final controller = _controllers.remove(questionId);
     // The field still uses it until the next frame has rebuilt without it.
@@ -202,6 +206,7 @@ class _AnswerCard extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final VoidCallback onRemove;
+  final bool enabled;
 
   const _AnswerCard({
     super.key,
@@ -210,6 +215,7 @@ class _AnswerCard extends StatelessWidget {
     required this.controller,
     required this.onChanged,
     required this.onRemove,
+    required this.enabled,
   });
 
   @override
@@ -235,10 +241,11 @@ class _AnswerCard extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.delete_outline),
                 tooltip: 'Remove answer',
-                onPressed: onRemove,
+                onPressed: enabled ? onRemove : null,
               ),
               ReorderableDragStartListener(
                 index: index,
+                enabled: enabled,
                 child: const Padding(
                   padding: EdgeInsets.all(8),
                   child: Icon(Icons.drag_handle, semanticLabel: 'Drag to reorder'),
@@ -256,6 +263,7 @@ class _AnswerCard extends StatelessWidget {
               hintText: 'Type your answer here...',
               validator: (text) => qaAnswerError(text ?? ''),
               onChanged: onChanged,
+              enabled: enabled,
             ),
           ),
         ],
