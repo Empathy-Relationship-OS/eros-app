@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/features/profile/data/repositories/qa_repository.dart';
 import 'package:eros_app/features/profile/domain/models/question_dto.dart';
@@ -119,6 +120,11 @@ class QAEditNotifier extends StateNotifier<QAEditState> {
       _apply(await _repository.getMyQAs());
     } on QARepositoryException catch (e) {
       if (mounted) state = state.copyWith(isLoading: false, error: e.message);
+    } catch (e, stack) {
+      // Anything else (an unreadable response, say) is a bug: report it, and never leave the
+      // screen on its spinner with no way to retry.
+      FlutterError.reportError(FlutterErrorDetails(exception: e, stack: stack, library: 'Q&A editor'));
+      if (mounted) state = state.copyWith(isLoading: false, error: 'We couldn\'t load your answers. Please try again.');
     }
   }
 

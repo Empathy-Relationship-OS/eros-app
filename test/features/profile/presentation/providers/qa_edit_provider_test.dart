@@ -11,6 +11,7 @@ import 'package:eros_app/features/profile/domain/models/user_qa_item_dto.dart';
 import 'package:eros_app/features/profile/presentation/providers/my_profile_provider.dart';
 import 'package:eros_app/features/profile/presentation/providers/qa_edit_provider.dart';
 import 'package:eros_app/features/profile/presentation/providers/user_profile_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -147,6 +148,20 @@ void main() {
       expect(state().canSave, isFalse);
       await expectLater(notifier().save(), throwsA(isA<StateError>()));
       expect(repository.submissions, isEmpty, reason: 'the stored answers must not be replaced');
+    });
+
+    test('an unexpected error stops the spinner too, with a general message', () async {
+      final reported = <FlutterErrorDetails>[];
+      final previous = FlutterError.onError;
+      FlutterError.onError = reported.add;
+      addTearDown(() => FlutterError.onError = previous);
+      repository.loadError = TypeError();
+      await loaded();
+
+      expect(state().isLoading, isFalse);
+      expect(state().error, 'We couldn\'t load your answers. Please try again.');
+      expect(state().canSave, isFalse);
+      expect(reported.single.exception, isA<TypeError>());
     });
 
     test('a retry that succeeds loads the answers and allows editing again', () async {
