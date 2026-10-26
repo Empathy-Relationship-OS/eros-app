@@ -243,17 +243,17 @@ class PhotoEditNotifier extends StateNotifier<PhotoEditState> {
     }
   }
 
-  // Edits are ignored while a save runs: its result replaces the whole list, so an edit made
-  // meanwhile would be lost without a word. A pick that finishes during a save, or after the
+  // Edits are ignored while a save or a (re)load runs: either result replaces the whole list,
+  // so an edit made meanwhile would be lost without a word. A pick that finishes during a save, or after the
   // list was replaced from the server, is dropped too: image_picker resizes the photo after it
   // is chosen, and Save can be tapped meanwhile.
 
   /// Picks a photo and adds it at the end, uploading it in the background.
   Future<void> add() async {
-    if (state.isSaving || state.photos.length >= MediaConstants.maxPhotos) return;
+    if (_busy || state.photos.length >= MediaConstants.maxPhotos) return;
     final generation = _generation;
     final picked = await _pick();
-    if (picked == null || !mounted || state.isSaving || generation != _generation) return;
+    if (picked == null || !mounted || _busy || generation != _generation) return;
     final staged = _stage(picked);
     state = state.copyWith(photos: [...state.photos, staged], clearError: true);
     _upload(staged);
@@ -261,10 +261,10 @@ class PhotoEditNotifier extends StateNotifier<PhotoEditState> {
 
   /// Picks a photo and puts it in place of the one at [index], uploading it in the background.
   Future<void> replace(int index) async {
-    if (state.isSaving || index < 0 || index >= state.photos.length) return;
+    if (_busy || index < 0 || index >= state.photos.length) return;
     final generation = _generation;
     final picked = await _pick();
-    if (picked == null || !mounted || state.isSaving || generation != _generation || index >= state.photos.length) {
+    if (picked == null || !mounted || _busy || generation != _generation || index >= state.photos.length) {
       return;
     }
     final staged = _stage(picked);
@@ -273,14 +273,14 @@ class PhotoEditNotifier extends StateNotifier<PhotoEditState> {
   }
 
   void remove(int index) {
-    if (state.isSaving || index < 0 || index >= state.photos.length) return;
+    if (_busy || index < 0 || index >= state.photos.length) return;
     state = state.copyWith(photos: [...state.photos]..removeAt(index), clearError: true);
   }
 
   /// Moves the photo at [from] to [to]; position 1 is the main photo.
   void reorder(int from, int to) {
     final count = state.photos.length;
-    if (state.isSaving || from < 0 || from >= count || to < 0 || to >= count || from == to) return;
+    if (_busy || from < 0 || from >= count || to < 0 || to >= count || from == to) return;
     final photos = [...state.photos];
     photos.insert(to, photos.removeAt(from));
     state = state.copyWith(photos: photos);
@@ -331,6 +331,10 @@ class PhotoEditNotifier extends StateNotifier<PhotoEditState> {
   void clearError() => state = state.copyWith(clearError: true);
 
   // -------------------------------------------------------------------------
+
+  /// A save or a (re)load is running; edits wait. A failed load clears `isLoading`, so this
+  /// never sticks.
+  bool get _busy => state.isSaving || state.isLoading;
 
   void _apply(MyPhotoCollection collection) {
     if (!mounted) return;

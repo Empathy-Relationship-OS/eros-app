@@ -46,9 +46,13 @@ class FakePhotoRepository implements PhotoRepository {
   /// When set, every load after the first throws it.
   Object? loadError;
 
+  /// When set, every load after the first waits for it.
+  Completer<void>? heldReload;
+
   @override
   Future<MyPhotoCollection> getMyPhotos() async {
     loads++;
+    if (heldReload != null && loads > 1) await heldReload!.future;
     if (loadError != null && loads > 1) throw loadError!;
     return stored;
   }
@@ -284,6 +288,30 @@ void main() {
       await replacing;
 
       expect(state().photos.map((p) => (p as SavedPhoto).id), [21, 22, 23], reason: 'photo 23 is untouched');
+    });
+
+    test('edits are ignored during the reload after a conflict, which then shows the server\'s set', () async {
+      await loaded();
+      notifier().reorder(0, 1);
+      repository.stored = collection([21, 22, 23], revision: 'rev-other');
+      repository.commitError = PhotoSetConflictException();
+      repository.heldReload = Completer<void>();
+      final saving = notifier().save();
+      await pumpEventQueue();
+      expect(state().isLoading, isTrue);
+
+      notifier().remove(0);
+      notifier().reorder(0, 2);
+      picker.queue.add(picked('during-reload'));
+      await notifier().add();
+
+      repository.heldReload!.complete();
+      await expectLater(saving, throwsA(isA<PhotoSetConflictException>()));
+      expect(state().photos.map((p) => (p as SavedPhoto).id), [21, 22, 23]);
+      expect(repository.uploads, isEmpty);
+      expect(state().isLoading, isFalse);
+      notifier().remove(2);
+      expect(state().photos.length, 2, reason: 'edits work again once the reload is done');
     });
 
     test('a pick that finishes after Save started is dropped', () async {
