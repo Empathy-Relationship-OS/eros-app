@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/core/network/api_client.dart';
+import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -10,6 +11,9 @@ import 'package:flutter_test/flutter_test.dart';
 class _RecordingAdapter implements HttpClientAdapter {
   RequestOptions? lastRequest;
   List<int> sentBytes = [];
+
+  /// What to answer instead of an empty 200.
+  ({int status, String body, String contentType})? respondWith;
 
   @override
   Future<ResponseBody> fetch(
@@ -23,6 +27,12 @@ class _RecordingAdapter implements HttpClientAdapter {
       await for (final chunk in requestStream) {
         sentBytes.addAll(chunk);
       }
+    }
+    final reply = respondWith;
+    if (reply != null) {
+      return ResponseBody.fromString(reply.body, reply.status, headers: {
+        Headers.contentTypeHeader: [reply.contentType],
+      });
     }
     return ResponseBody.fromString('', 200);
   }
@@ -85,6 +95,32 @@ void main() {
     expect(adapter.sentBytes, bytes);
     final headers = adapter.lastRequest!.headers;
     expect(headers['content-length'] ?? headers['Content-Length'], '${bytes.length}');
+  });
+
+  group('a refused upload', () {
+    const accessDenied = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<Error><Code>AccessDenied</Code><Message>Access Denied</Message><RequestId>X</RequestId></Error>';
+
+    test('names S3\'s error code and message', () async {
+      adapter.respondWith = (status: 403, body: accessDenied, contentType: 'application/xml');
+
+      await expectLater(
+        client.uploadToS3(
+          presignedUrl: 'https://bucket.s3.amazonaws.com/photos/u/1.jpg?X-Amz-Signature=abc',
+          fileBytes: List.filled(10, 1),
+          contentType: 'image/jpeg',
+        ),
+        throwsA(isA<NetworkException>()
+            .having((e) => e.message, 'message', 'S3 refused the upload: 403 AccessDenied: Access Denied')),
+      );
+    });
+
+    test('s3ErrorSummary reads the code and message, and ignores other bodies', () {
+      expect(ApiClient.s3ErrorSummary(accessDenied), 'AccessDenied: Access Denied');
+      expect(ApiClient.s3ErrorSummary('<Error><Code>SignatureDoesNotMatch</Code></Error>'), 'SignatureDoesNotMatch');
+      expect(ApiClient.s3ErrorSummary('not xml'), isNull);
+      expect(ApiClient.s3ErrorSummary(null), isNull);
+    });
   });
 
   test('reports upload progress up to 1', () async {

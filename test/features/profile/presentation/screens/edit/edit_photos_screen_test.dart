@@ -154,6 +154,44 @@ void main() {
     expect(_saveButton(tester).onPressed, isNotNull);
   });
 
+  group('a failed upload', () {
+    Future<FakePhotoRepository> withFailedUpload(WidgetTester tester) async {
+      final picker = FakePhotoPicker()..queue.add(picked('new'));
+      final repository = await _pump(tester, picker: picker);
+      await tester.tap(find.text('Add\nPhoto').first);
+      await tester.pump();
+      repository.uploads.single.completeError(PhotoRepositoryException('Upload failed. Tap to try again.'));
+      await tester.pump();
+      return repository;
+    }
+
+    testWidgets('says why Save is off', (tester) async {
+      await withFailedUpload(tester);
+
+      expect(find.text('Upload failed'), findsOneWidget);
+      expect(find.byKey(const Key('upload-failed-hint')), findsOneWidget);
+      expect(_saveButton(tester).onPressed, isNull);
+    });
+
+    testWidgets('can be dragged by a long press on its retry button', (tester) async {
+      await withFailedUpload(tester);
+      final from = tester.getCenter(find.byKey(const Key('upload-retry')));
+      final to = tester.getCenter(_slot(11));
+
+      final gesture = await tester.startGesture(from);
+      await tester.pump(const Duration(milliseconds: 800));
+      for (var i = 0; i < 20; i++) {
+        await gesture.moveBy((to - from) / 20);
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      final state = ProviderScope.containerOf(tester.element(find.byType(EditPhotosScreen))).read(photoEditProvider);
+      expect(state.photos.first, isA<StagedPhoto>(), reason: 'the failed photo moved to position 1');
+    });
+  });
+
   group('saving', () {
     testWidgets('a save that reset verification closes the editor and says so', (tester) async {
       final repository = await _pump(tester, stored: _verified);

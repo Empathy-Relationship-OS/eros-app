@@ -178,13 +178,28 @@ class ApiClient {
 
       _logger.d('✅ S3 upload successful');
     } on DioException catch (e, stackTrace) {
-      _logger.e('❌ S3 upload failed', error: e, stackTrace: stackTrace);
+      // S3 explains a refusal in an XML body (<Code>AccessDenied</Code>,
+      // <Code>SignatureDoesNotMatch</Code>…). Without it a 403 can't be told apart.
+      final status = e.response?.statusCode;
+      final s3Error = s3ErrorSummary(e.response?.data);
+      final reason = [if (status != null) '$status', ?s3Error].join(' ');
+      _logger.e('❌ S3 upload failed${reason.isEmpty ? '' : ': $reason'}', error: e, stackTrace: stackTrace);
       throw NetworkException(
-        'Failed to upload to S3: ${e.message}',
+        reason.isEmpty ? 'Failed to upload to S3: ${e.message}' : 'S3 refused the upload: $reason',
         originalError: e,
         stackTrace: stackTrace,
       );
     }
+  }
+
+  /// `Code: Message` from an S3 XML error body, or null if [body] isn't one.
+  static String? s3ErrorSummary(Object? body) {
+    if (body is! String) return null;
+    String? tag(String name) => RegExp('<$name>(.*?)</$name>', dotAll: true).firstMatch(body)?.group(1)?.trim();
+    final code = tag('Code');
+    if (code == null) return null;
+    final message = tag('Message');
+    return message == null ? code : '$code: $message';
   }
 
   // ====================

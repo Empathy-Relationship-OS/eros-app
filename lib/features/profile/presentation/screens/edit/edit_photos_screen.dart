@@ -98,7 +98,12 @@ class EditPhotosScreen extends ConsumerWidget {
                         notifier.reorder(from, to);
                       }
                     },
-                    dragWidgetBuilder: (index, child) => Opacity(opacity: 0.8, child: child),
+                    // The dragged copy is drawn in an overlay with no Material above it; without one
+                    // its text gets Flutter's yellow "missing Material" underline.
+                    dragWidgetBuilder: (index, child) => Material(
+                      type: MaterialType.transparency,
+                      child: Opacity(opacity: 0.8, child: child),
+                    ),
                     itemBuilder: (context, index) {
                       final photo = index < state.photos.length ? state.photos[index] : null;
                       return _EditPhotoSlot(
@@ -118,6 +123,25 @@ class EditPhotosScreen extends ConsumerWidget {
                       child: Text(
                         'Add at least ${MediaConstants.minPhotos} photos to save.',
                         style: const TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ),
+                  // Save waits for every new photo, so say why it is off rather than leave a
+                  // reorder looking as if it did nothing.
+                  if (state.photos.any((p) => p is StagedPhoto && p.status is StageFailed))
+                    const Padding(
+                      key: Key('upload-failed-hint'),
+                      padding: EdgeInsets.only(top: 16),
+                      child: Text(
+                        'A photo didn\'t upload, so you can\'t save yet. Tap retry on it, or tap the photo to remove it.',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    )
+                  else if (state.photos.any((p) => p is StagedPhoto && p.status is StageUploading))
+                    const Padding(
+                      padding: EdgeInsets.only(top: 16),
+                      child: Text(
+                        'You can save once your new photos have uploaded.',
+                        style: TextStyle(color: AppColors.textSecondary),
                       ),
                     ),
                 ],
@@ -265,20 +289,28 @@ class _EditPhotoSlot extends StatelessWidget {
               ),
             ),
           ],
-        StageFailed(:final message) => [
+        // No tooltip on the retry button: a tooltip claims the long press, so the tile could not
+        // be dragged. The label says what happened instead.
+        StageFailed() => [
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Center(
-                  child: IconButton(
-                    key: const Key('upload-retry'),
-                    icon: const Icon(Icons.refresh, color: Colors.white, size: 36),
-                    tooltip: message,
-                    onPressed: onRetry,
-                  ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      key: const Key('upload-retry'),
+                      icon: const Icon(Icons.refresh, color: Colors.white, size: 36, semanticLabel: 'Retry upload'),
+                      onPressed: onRetry,
+                    ),
+                    const Text(
+                      'Upload failed',
+                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ],
                 ),
               ),
             ),
