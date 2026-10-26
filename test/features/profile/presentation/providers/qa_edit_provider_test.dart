@@ -39,9 +39,14 @@ class FakeQARepository implements QARepository {
   /// When set, the submit waits for this.
   Completer<void>? heldSubmit;
 
+  /// When set, loading throws it (the first load only when [failFirstLoadOnly]).
+  Object? loadError;
+  bool failFirstLoadOnly = false;
+
   @override
   Future<UserQACollectionDTO> getMyQAs() async {
     loads++;
+    if (loadError != null && (!failFirstLoadOnly || loads == 1)) throw loadError!;
     return stored;
   }
 
@@ -128,6 +133,35 @@ void main() {
     expect(state().answers.map((a) => a.question), [q1, q2]);
     expect(state().isDirty, isFalse);
     expect(state().canSave, isFalse);
+  });
+
+  group('a failed load', () {
+    test('stops the spinner, says why, and never allows Save, even after adding an answer', () async {
+      repository.loadError = QARepositoryException('Unable to connect to the server.');
+      await loaded();
+
+      expect(state().isLoading, isFalse);
+      expect(state().error, 'Unable to connect to the server.');
+      notifier().add(q3);
+      notifier().setAnswer(0, 'Lisbon');
+      expect(state().canSave, isFalse);
+      await expectLater(notifier().save(), throwsA(isA<StateError>()));
+      expect(repository.submissions, isEmpty, reason: 'the stored answers must not be replaced');
+    });
+
+    test('a retry that succeeds loads the answers and allows editing again', () async {
+      repository
+        ..loadError = QARepositoryException('Unable to connect to the server.')
+        ..failFirstLoadOnly = true;
+      await loaded();
+
+      await notifier().load();
+      notifier().setAnswer(0, 'Puns, mostly');
+
+      expect(state().error, isNull);
+      expect(state().answers.map((a) => a.question), [q1, q2]);
+      expect(state().canSave, isTrue);
+    });
   });
 
   group('Save is enabled', () {

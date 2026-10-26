@@ -157,6 +157,21 @@ void main() {
     expect(find.text('3/3 answers (at least 1)'), findsOneWidget);
   });
 
+  testWidgets('a failed load shows why with a retry, and no editable list', (tester) async {
+    final repository = FakeQARepository()
+      ..loadError = QARepositoryException('Unable to connect to the server.')
+      ..failFirstLoadOnly = true;
+    await _pump(tester, repository: repository);
+
+    expect(find.text('Unable to connect to the server.'), findsOneWidget);
+    expect(find.text('Add an answer'), findsNothing);
+    expect(find.byType(TextFormField), findsNothing);
+
+    await tester.tap(find.text('Try again'));
+    await tester.pumpAndSettle();
+    expect(find.text('Puns'), findsOneWidget);
+  });
+
   testWidgets('back with changes asks before discarding them', (tester) async {
     await _pump(tester);
     await tester.enterText(_field(0), 'Puns, mostly');

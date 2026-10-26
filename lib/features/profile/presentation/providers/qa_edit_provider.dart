@@ -37,7 +37,8 @@ class QAEditState {
   final bool isLoading;
   final bool isSaving;
 
-  /// A load problem to show. Save problems are thrown to the screen's banner.
+  /// A load problem to show. Save problems are thrown to the screen's banner, so this being set
+  /// means the answers were never loaded.
   final String? error;
 
   const QAEditState({
@@ -79,9 +80,13 @@ class QAEditState {
 
   bool get canAddMore => answers.length < maxQAAnswers;
 
-  /// 1–3 answers, all valid, something changed, and no save running.
+  /// The saved answers were read. Until then the list is not the user's real set, and saving it
+  /// would replace their answers on the server.
+  bool get isLoaded => !isLoading && error == null;
+
+  /// Loaded, 1–3 answers, all valid, something changed, and no save running.
   bool get canSave =>
-      !isLoading &&
+      isLoaded &&
       !isSaving &&
       answers.length >= minQAAnswers &&
       answers.length <= maxQAAnswers &&

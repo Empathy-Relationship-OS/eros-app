@@ -51,6 +51,9 @@ class _EditQAScreenState extends ConsumerState<EditQAScreen> {
       onSave: notifier.save,
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator())
+          // Never show an editable list that isn't the user's real set (see _LoadError).
+          : state.error != null
+          ? _LoadError(message: state.error!, onRetry: notifier.load)
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Form(
@@ -75,11 +78,6 @@ class _EditQAScreenState extends ConsumerState<EditQAScreen> {
                             fontStyle: FontStyle.italic,
                           ),
                         ),
-                      ),
-                    if (state.error != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Text(state.error!, style: TextStyle(color: Colors.red[700])),
                       ),
                     const SizedBox(height: 16),
                     ReorderableListView(
@@ -168,6 +166,32 @@ class _EditQAScreenState extends ConsumerState<EditQAScreen> {
       ),
     );
     if (question != null) ref.read(qaEditProvider.notifier).add(question);
+  }
+}
+
+/// Shown instead of the list when the saved answers couldn't be read. Editing an empty list and
+/// saving it would replace the user's answers, so nothing is editable until a retry succeeds.
+class _LoadError extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _LoadError({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(message, textAlign: TextAlign.center, style: TextStyle(color: Colors.red[700])),
+            const SizedBox(height: 16),
+            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+          ],
+        ),
+      ),
+    );
   }
 }
 
