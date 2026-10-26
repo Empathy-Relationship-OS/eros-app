@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:eros_app/core/constants/user_text_limits.dart';
+import 'package:eros_app/core/utils/user_text.dart';
 import 'package:eros_app/core/network/api_client.dart';
 import 'package:eros_app/core/network/api_client_provider.dart';
 import 'package:eros_app/core/network/api_endpoints.dart';
@@ -89,7 +91,7 @@ class QARepository {
       if (qa.answer.trim().isEmpty) {
         throw QARepositoryException('All answers must be filled in');
       }
-      if (qa.answer.length > 200) {
+      if (UserText.length(qa.answer) > UserTextLimits.qaAnswer) {
         throw QARepositoryException(
           'Answers must not exceed 200 characters',
         );

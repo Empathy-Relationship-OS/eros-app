@@ -10,20 +10,19 @@ import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/domain/models/my_profile.dart';
 import 'package:eros_app/features/profile/domain/models/update_user_request.dart';
+import 'package:eros_app/features/profile/domain/models/user_qa_collection_dto.dart';
 import 'package:eros_app/features/profile/presentation/providers/my_profile_provider.dart';
+import 'package:eros_app/features/profile/presentation/providers/qa_edit_provider.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_attributes_screen.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_basics_screens.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_choice_screens.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_multi_choice_screen.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_photos_screen.dart';
+import 'package:eros_app/features/profile/presentation/screens/edit/edit_qa_screen.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_text_screen.dart';
 import 'package:eros_app/features/profile/presentation/widgets/editors/interest_groups.dart';
 import 'package:eros_app/features/profile/presentation/widgets/editors/languages_editor.dart';
 
-/// The Q&A screens under `screens/qa/` are onboarding-only today: they start from an empty
-/// draft rather than the user's answers, and finishing clears the onboarding draft and opens the
-/// onboarding photo screen. The row stays hidden until they can edit existing answers.
-const bool qaEditorEnabled = false;
 
 /// Edit profile (RFC-004 §6.2): the whole profile in sections, from `GET /users/me`
 /// ([myProfileProvider]). Tapping a row opens that field's editor; each save is a small PATCH
@@ -426,10 +425,14 @@ class _Hub extends ConsumerWidget {
             onTap: () => _openBody(context),
           ),
         ]),
-        if (qaEditorEnabled)
-          _Section(title: 'Q&A', rows: [
-            _EditRow(label: 'Your answers', value: 'Edit your Q&A', onTap: () {}),
-          ]),
+        _Section(title: 'Q&A', rows: [
+          _EditRow(
+            label: 'Your answers',
+            value: _qaSummary(ref.watch(myQAsProvider)),
+            maxLines: 3,
+            onTap: () => _open(context, const EditQAScreen()),
+          ),
+        ]),
         _Section(title: 'Account', rows: [
           _EditRow(label: 'Name', value: '${p.firstName} ${p.lastName}', locked: true),
           _EditRow(label: 'Date of birth', value: _formatDate(p.dateOfBirth), locked: true),
@@ -465,6 +468,17 @@ class _Hub extends ConsumerWidget {
           buildRequest: (attributes, description) =>
               UpdateUserRequest(bodyAttributes: attributes, bodyDescription: description),
         ),
+      );
+
+  /// The Q&A row's value: the answered questions, or what's happening while they load.
+  static String _qaSummary(AsyncValue<UserQACollectionDTO> qas) => qas.when(
+        data: (c) => c.qas.isEmpty
+            ? 'Add an answer'
+            : ([...c.qas]..sort((a, b) => a.displayOrder.compareTo(b.displayOrder)))
+                .map((qa) => qa.question.question)
+                .join('\n'),
+        loading: () => 'Loading…',
+        error: (_, _) => 'Edit your answers',
       );
 
   static const _months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

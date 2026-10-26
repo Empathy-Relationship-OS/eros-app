@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/presentation/providers/qa_provider.dart';
 import 'package:eros_app/features/profile/domain/models/question_dto.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/question_picker_list.dart';
 
 /// Question selector screen with category tabs
 /// Matches screenshot: @screenshots/users/create-profile/2773081D-DBB1-4E02-85A9-F9C8DAA60F46.png
@@ -153,13 +154,9 @@ class _QuestionSelectorScreenState
               // In production, filter by category from backend
               final categoryQuestions = availableQuestions;
 
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: categoryQuestions.length,
-                itemBuilder: (context, index) {
-                  final question = categoryQuestions[index];
-                  return _buildQuestionItem(context, question);
-                },
+              return QuestionPickerList(
+                questions: categoryQuestions,
+                onSelected: (question) => _selectQuestion(context, question),
               );
             }).toList(),
           );
@@ -198,42 +195,6 @@ class _QuestionSelectorScreenState
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuestionItem(BuildContext context, QuestionDTO question) {
-    return InkWell(
-      onTap: () => _selectQuestion(context, question),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                question.question,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: Colors.black,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Colors.grey,
-            ),
-          ],
         ),
       ),
     );

@@ -17,6 +17,9 @@ class TextFieldEditor extends StatelessWidget {
   final FormFieldValidator<String>? validator;
   final ValueChanged<String>? onChanged;
 
+  /// False while the text can't change, for example during a save.
+  final bool enabled;
+
   const TextFieldEditor({
     super.key,
     required this.controller,
@@ -26,6 +29,7 @@ class TextFieldEditor extends StatelessWidget {
     this.maxLines = 1,
     this.validator,
     this.onChanged,
+    this.enabled = true,
   });
 
   @override
@@ -52,6 +56,7 @@ class TextFieldEditor extends StatelessWidget {
       textInputAction: TextInputAction.done,
       onChanged: onChanged,
       validator: validator,
+      enabled: enabled,
     );
   }
 }
