@@ -49,8 +49,11 @@ class _PhotosEndpoints {
   /// DELETE /users/me/photos/{photoId} - Delete photo
   String delete(String photoId) => '/users/me/photos/$photoId';
 
-  /// PATCH /users/me/photos/reorder - Reorder photos
-  String reorder() => '/users/me/photos/reorder';
+  /// GET /users/me/photos - The user's photos, with the set's `revision` (RFC-004 PE-B4)
+  String list() => '/users/me/photos';
+
+  /// PUT /users/me/photos - Commit the whole ordered photo set (RFC-004 PE-B6)
+  String commit() => '/users/me/photos';
 }
 
 // ====================

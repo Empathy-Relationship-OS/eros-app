@@ -99,6 +99,22 @@ class ApiClient {
     );
   }
 
+  /// PUT request
+  Future<T> put<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    return _request<T>(
+      path: path,
+      method: 'PUT',
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+    );
+  }
+
   /// DELETE request
   Future<T> delete<T>(
     String path, {
@@ -119,12 +135,14 @@ class ApiClient {
   ///
   /// [extraHeaders] are the presign response's `requiredHeaders`. They are signed into
   /// [presignedUrl], so they are sent exactly as given (they win over the defaults on a
-  /// clash), and nothing extra is added when there are none.
+  /// clash), and nothing extra is added when there are none. [onProgress] gets the fraction
+  /// sent, from 0 to 1.
   Future<void> uploadToS3({
     required String presignedUrl,
     required List<int> fileBytes,
     required String contentType,
     Map<String, String> extraHeaders = const {},
+    void Function(double progress)? onProgress,
   }) async {
     try {
       _logger.d('📤 Uploading to S3: ${fileBytes.length} bytes');
@@ -146,6 +164,9 @@ class ApiClient {
           },
           validateStatus: (status) => status != null && status < 300,
         ),
+        onSendProgress: onProgress == null
+            ? null
+            : (sent, total) => onProgress(total > 0 ? sent / total : 0),
       );
 
       if (response.statusCode != 200 && response.statusCode != 204) {
