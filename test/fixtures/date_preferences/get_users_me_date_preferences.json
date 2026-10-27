@@ -1,0 +1,18 @@
+{
+  "isSet": true,
+  "updatedAt": "2026-10-27T18:04:11Z",
+  "where": {
+    "cities": [
+      { "cityId": 1, "cityName": "London",
+        "start": { "latitude": 51.462, "longitude": -0.138, "district": { "districtId": 14, "name": "Clapham" } } }
+    ],
+    "maxTravelMeters": 8047
+  },
+  "activities": [
+    { "activityId": 3, "level": "LOVE" },
+    { "activityId": 1, "level": "NO" }
+  ],
+  "food":   { "cuisinesLoved": ["THAI", "ITALIAN"], "cuisinesExcluded": ["BRITISH"], "dietaryNeeds": ["VEGETARIAN"] },
+  "drinks": { "drinkStyles": ["WINE_BAR"], "wantsAlcoholFree": false },
+  "venue":  { "priceRanges": ["MID_RANGE", "PREMIUM"], "atmosphere": "QUIET", "setting": "EITHER", "needsStepFree": false }
+}

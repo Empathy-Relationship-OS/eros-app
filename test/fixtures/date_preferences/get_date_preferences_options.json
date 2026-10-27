@@ -1,0 +1,16 @@
+{
+  "activities": [
+    { "activityId": 3, "name": "Dinner", "category": "FOOD", "status": "ACTIVE",
+      "tokenCost": 1.00, "durationMinutes": 120, "description": "…", "iconUrl": "…" }
+  ],
+  "cuisines":       [ { "value": "THAI", "displayName": "Thai" } ],
+  "dietaryOptions": [ { "value": "HALAL", "displayName": "Halal" } ],
+  "drinkStyles":    [ { "value": "WINE_BAR", "displayName": "Wine bar" } ],
+  "priceRanges":    [ { "value": "MID_RANGE", "symbol": "££", "displayName": "Mid-range" } ],
+  "atmospheres":    [ { "value": "QUIET", "displayName": "Quiet and relaxed" } ],
+  "settings":       [ { "value": "EITHER", "displayName": "Either" } ],
+  "city":           { "cityId": 1, "distanceUnit": "MI", "currency": "GBP",
+                      "centre": { "latitude": 51.5074, "longitude": -0.1278 } },
+  "travelStops":    [ { "label": "1 mile", "meters": 1609 }, { "label": "5 miles", "meters": 8047 } ],
+  "limits":         { "maxCuisinesLoved": 5, "maxCuisinesExcluded": 5 }
+}
