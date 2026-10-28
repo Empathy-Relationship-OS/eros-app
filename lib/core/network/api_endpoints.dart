@@ -14,6 +14,7 @@ class ApiEndpoints {
   static final dates = _DatesEndpoints();
   static final marketing = _MarketingEndpoints();
   static final wallet = _WalletEndpoints();
+  static final datePreferences = _DatePreferencesEndpoints();
 }
 
 // ====================
@@ -190,4 +191,28 @@ class _WalletEndpoints {
 
   /// POST /wallet/refund - Request refund
   String refund() => '/wallet/refund';
+}
+
+// ====================
+// DATE PREFERENCES ENDPOINTS (RFC-005 §5)
+// ====================
+class _DatePreferencesEndpoints {
+  /// GET /users/me/date-preferences - The user's date preferences, or the defaults
+  String getCurrentUser() => '/users/me/date-preferences';
+
+  /// PATCH /users/me/date-preferences - Replace one or more sections
+  String updateCurrentUser() => '/users/me/date-preferences';
+
+  /// GET /date-preferences/options?cityId={cityId} - Every option list the screens render
+  ///
+  /// Without [cityId], the server uses the user's first dating city.
+  String options({int? cityId}) {
+    if (cityId != null) {
+      return '/date-preferences/options?cityId=${Uri.encodeQueryComponent(cityId.toString())}';
+    }
+    return '/date-preferences/options';
+  }
+
+  /// GET /city/{cityId}/districts - A city's districts, sorted by name
+  String districts(int cityId) => '/city/$cityId/districts';
 }
