@@ -37,6 +37,7 @@ abstract final class _Copy {
   static String editHint(String section) => 'Edit $section';
 
   static const cityCentre = 'City centre';
+  static const yourStartingPoint = 'Your starting point';
   static String near(String district) => 'near $district';
   static const anywhere = 'Anywhere';
   static String upTo(String distance) => 'up to $distance';
@@ -217,10 +218,12 @@ List<Widget> _whereLines(WherePreferences where, DatePreferenceOptions options) 
   ];
 }
 
+/// "City centre" only when no pin is set; a pin in a city without districts has no name.
 String _startLabel(StartPoint? start) {
-  final district = start?.district;
+  if (start == null) return _Copy.cityCentre;
+  final district = start.district;
   if (district != null) return _Copy.near(district.name);
-  return _Copy.cityCentre;
+  return _Copy.yourStartingPoint;
 }
 
 /// "up to 5 miles", in the city's unit, or "Anywhere". Uses the matching travel stop's label

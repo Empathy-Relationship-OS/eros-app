@@ -195,6 +195,16 @@ void main() {
       expect(find.text('Up to 5 miles'), findsOneWidget);
     });
 
+    testWidgets('calls a pin with no district "Your starting point"', (tester) async {
+      final preferences = _preferences();
+      final city = ((preferences['where'] as Map<String, dynamic>)['cities'] as List<dynamic>)
+          .single as Map<String, dynamic>;
+      (city['start'] as Map<String, dynamic>)['district'] = null;
+      await _pump(tester, _api(preferences: preferences));
+
+      expect(find.text('London · Your starting point · up to 5 miles'), findsOneWidget);
+    });
+
     testWidgets('shows price bands with a gap separately', (tester) async {
       final preferences = _preferences();
       (preferences['venue'] as Map<String, dynamic>)
