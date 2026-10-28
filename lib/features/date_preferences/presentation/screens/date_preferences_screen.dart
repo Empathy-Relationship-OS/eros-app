@@ -22,10 +22,55 @@ const bool drinksEditorEnabled = false;
 /// "The venue" editor arrives with DP-F6. Until then its row opens a placeholder.
 const bool venueEditorEnabled = false;
 
+/// Every string this screen shows that isn't from the options.
+abstract final class _Copy {
+  static const title = 'Date preferences';
+  static const intro = 'These shape the places we suggest. You and your date still rank them. '
+      'Only you can see this page.';
+  static const notSetBanner = 'Tell us what you like and we\'ll pick better places';
+
+  static const where = 'Where';
+  static const dateTypes = 'Date types';
+  static const dinner = 'Dinner';
+  static const drinks = 'Drinks';
+  static const venue = 'The venue';
+  static String editHint(String section) => 'Edit $section';
+
+  static const cityCentre = 'City centre';
+  static String near(String district) => 'near $district';
+  static const anywhere = 'Anywhere';
+  static String upTo(String distance) => 'up to $distance';
+  static String miles(String miles) => miles == '1' ? '1 mile' : '$miles miles';
+  static String km(String km) => '$km km';
+
+  static String level(PreferenceLevel level) => switch (level) {
+        PreferenceLevel.love => 'Love it',
+        PreferenceLevel.ok => 'Happy to',
+        PreferenceLevel.no => 'Not for me',
+      };
+
+  static String loves(String cuisines) => 'Loves $cuisines';
+  static String wontEat(String cuisines) => 'won\'t eat $cuisines';
+  static const anyCuisine = 'Any cuisine';
+
+  static const anyBar = 'Any kind of bar';
+  static const alcoholFree = 'Good alcohol-free options';
+
+  static String atmosphere(String value) => 'Atmosphere: $value';
+  static String setting(String value) => 'Setting: $value';
+  static String stepFree({required bool needed}) =>
+      'Step-free access: ${needed ? 'needed' : 'not needed'}';
+
+  static const loadError = 'We couldn\'t load your date preferences. Please try again.';
+  static const retry = 'Try again';
+  static const back = 'Back';
+  static const placeholder = 'You\'ll be able to change this soon.';
+}
+
 /// Date preferences (RFC-005 §6.2): every section in plain words, from
 /// `GET /users/me/date-preferences` ([datePreferencesProvider]) and the option lists for the
 /// user's first dating city ([datePreferenceOptionsProvider]). Tapping a section opens its
-/// editor. Every label, unit and currency symbol comes from the options (D-8, D-15).
+/// editor. Every option label, unit and currency symbol comes from the options (D-8, D-15).
 class DatePreferencesScreen extends ConsumerWidget {
   const DatePreferencesScreen({super.key});
 
@@ -68,10 +113,10 @@ class DatePreferencesScreen extends ConsumerWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          tooltip: 'Back',
+          tooltip: _Copy.back,
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Date preferences', style: TextStyle(color: Colors.black)),
+        title: const Text(_Copy.title, style: TextStyle(color: Colors.black)),
       ),
       body: body,
     );
@@ -115,47 +160,43 @@ class _Hub extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       children: [
-        Text(
-          'These shape the places we suggest. You and your date still rank them. Only you can '
-          'see this page.',
-          style: TextStyle(fontSize: 15, color: Colors.grey[700]),
-        ),
+        Text(_Copy.intro, style: TextStyle(fontSize: 15, color: Colors.grey[700])),
         if (!preferences.isSet) ...[
           const SizedBox(height: 16),
           const _NotSetBanner(),
         ],
         _Section(
-          title: 'Where',
+          title: _Copy.where,
           lines: _whereLines(preferences.where, options),
-          onTap: () => _open(context, title: 'Where', enabled: whereEditorEnabled),
+          onTap: () => _open(context, title: _Copy.where, enabled: whereEditorEnabled),
         ),
         _Section(
-          title: 'Date types',
+          title: _Copy.dateTypes,
           lines: [
             for (final activity in options.activities)
               _LevelLine(
                 name: activity.name,
-                level: _levelLabel(preferences.levelFor(activity.activityId)),
+                level: _Copy.level(preferences.levelFor(activity.activityId)),
               ),
           ],
-          onTap: () => _open(context, title: 'Date types', enabled: dateTypesEditorEnabled),
+          onTap: () => _open(context, title: _Copy.dateTypes, enabled: dateTypesEditorEnabled),
         ),
         if (_offers('FOOD'))
           _Section(
-            title: 'Dinner',
+            title: _Copy.dinner,
             lines: _foodLines(preferences.food, options),
-            onTap: () => _open(context, title: 'Dinner', enabled: foodEditorEnabled),
+            onTap: () => _open(context, title: _Copy.dinner, enabled: foodEditorEnabled),
           ),
         if (_offers('DRINKS'))
           _Section(
-            title: 'Drinks',
+            title: _Copy.drinks,
             lines: _drinksLines(preferences.drinks, options),
-            onTap: () => _open(context, title: 'Drinks', enabled: drinksEditorEnabled),
+            onTap: () => _open(context, title: _Copy.drinks, enabled: drinksEditorEnabled),
           ),
         _Section(
-          title: 'The venue',
+          title: _Copy.venue,
           lines: _venueLines(preferences.venue, options),
-          onTap: () => _open(context, title: 'The venue', enabled: venueEditorEnabled),
+          onTap: () => _open(context, title: _Copy.venue, enabled: venueEditorEnabled),
         ),
       ],
     );
@@ -180,22 +221,21 @@ List<Widget> _whereLines(WherePreferences where, DatePreferenceOptions options) 
 
 String _startLabel(StartPoint? start) {
   final district = start?.district;
-  if (district != null) return 'near ${district.name}';
-  return 'City centre';
+  if (district != null) return _Copy.near(district.name);
+  return _Copy.cityCentre;
 }
 
 /// "up to 5 miles", in the city's unit, or "Anywhere". Uses the matching travel stop's label
 /// when there is one; otherwise (a stop from another of the user's cities) converts the metres.
 String _distance(int? meters, DatePreferenceOptions options) {
-  if (meters == null) return 'Anywhere';
+  if (meters == null) return _Copy.anywhere;
   for (final stop in options.travelStops) {
-    if (stop.meters == meters) return 'up to ${stop.label}';
+    if (stop.meters == meters) return _Copy.upTo(stop.label);
   }
   if (options.city?.distanceUnit == 'MI') {
-    final miles = _oneDecimal(meters / 1609.344);
-    return 'up to $miles ${miles == '1' ? 'mile' : 'miles'}';
+    return _Copy.upTo(_Copy.miles(_oneDecimal(meters / 1609.344)));
   }
-  return 'up to ${_oneDecimal(meters / 1000)} km';
+  return _Copy.upTo(_Copy.km(_oneDecimal(meters / 1000)));
 }
 
 String _oneDecimal(double value) {
@@ -208,11 +248,11 @@ List<Widget> _foodLines(FoodPreferences food, DatePreferenceOptions options) {
   final excluded = _names(food.cuisinesExcluded, options.cuisines);
   final dietary = _names(food.dietaryNeeds, options.dietaryOptions);
   final cuisines = [
-    if (loved.isNotEmpty) 'Loves ${loved.join(', ')}',
-    if (excluded.isNotEmpty) 'won\'t eat ${excluded.join(', ')}',
+    if (loved.isNotEmpty) _Copy.loves(loved.join(', ')),
+    if (excluded.isNotEmpty) _Copy.wontEat(excluded.join(', ')),
   ];
   return [
-    Text(cuisines.isEmpty ? 'Any cuisine' : _capitalise(cuisines.join(' · '))),
+    Text(cuisines.isEmpty ? _Copy.anyCuisine : _capitalise(cuisines.join(' · '))),
     if (dietary.isNotEmpty) Text(dietary.join(', ')),
   ];
 }
@@ -220,20 +260,22 @@ List<Widget> _foodLines(FoodPreferences food, DatePreferenceOptions options) {
 List<Widget> _drinksLines(DrinksPreferences drinks, DatePreferenceOptions options) {
   final styles = _names(drinks.drinkStyles, options.drinkStyles);
   return [
-    Text(styles.isEmpty ? 'Any kind of bar' : styles.join(', ')),
-    if (drinks.wantsAlcoholFree) const Text('Good alcohol-free options'),
+    Text(styles.isEmpty ? _Copy.anyBar : styles.join(', ')),
+    if (drinks.wantsAlcoholFree) const Text(_Copy.alcoholFree),
   ];
 }
 
 List<Widget> _venueLines(VenuePreferences venue, DatePreferenceOptions options) {
+  final atmosphere = _name(venue.atmosphere, options.atmospheres);
+  final setting = _name(venue.setting, options.settings);
   final parts = [
     ?_priceRange(venue.priceRanges, options.priceRanges),
-    ?_name(venue.atmosphere, options.atmospheres),
-    ?_name(venue.setting, options.settings),
+    if (atmosphere != null) _Copy.atmosphere(atmosphere),
+    if (setting != null) _Copy.setting(setting),
   ];
   return [
-    Text(_capitalise(parts.map(_lowerFirst).join(' · '))),
-    Text('Step-free access: ${venue.needsStepFree ? 'needed' : 'not needed'}'),
+    Text(parts.join(' · ')),
+    Text(_Copy.stepFree(needed: venue.needsStepFree)),
   ];
 }
 
@@ -263,17 +305,8 @@ String? _name(String value, List<OptionValue> options) {
   return null;
 }
 
-String _levelLabel(PreferenceLevel level) => switch (level) {
-      PreferenceLevel.love => 'Love it',
-      PreferenceLevel.ok => 'Happy to',
-      PreferenceLevel.no => 'Not for me',
-    };
-
 String _capitalise(String text) =>
     text.isEmpty ? text : '${text[0].toUpperCase()}${text.substring(1)}';
-
-String _lowerFirst(String text) =>
-    text.isEmpty ? text : '${text[0].toLowerCase()}${text.substring(1)}';
 
 class _NotSetBanner extends StatelessWidget {
   const _NotSetBanner();
@@ -292,7 +325,7 @@ class _NotSetBanner extends StatelessWidget {
           SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Tell us what you like and we\'ll pick better places',
+              _Copy.notSetBanner,
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ),
@@ -331,7 +364,7 @@ class _Section extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: Semantics(
               button: true,
-              hint: 'Edit $title',
+              hint: _Copy.editHint(title),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
@@ -391,7 +424,7 @@ class _LoadError extends StatelessWidget {
   Widget build(BuildContext context) {
     final message = error is DatePreferencesRepositoryException
         ? (error as DatePreferencesRepositoryException).message
-        : 'We couldn\'t load your date preferences. Please try again.';
+        : _Copy.loadError;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -400,7 +433,7 @@ class _LoadError extends StatelessWidget {
           children: [
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 16),
-            ElevatedButton(onPressed: onRetry, child: const Text('Try again')),
+            ElevatedButton(onPressed: onRetry, child: const Text(_Copy.retry)),
           ],
         ),
       ),
@@ -423,7 +456,7 @@ class _SectionPlaceholderScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          tooltip: 'Back',
+          tooltip: _Copy.back,
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(title, style: const TextStyle(color: Colors.black)),
@@ -431,7 +464,7 @@ class _SectionPlaceholderScreen extends StatelessWidget {
       body: const Center(
         child: Padding(
           padding: EdgeInsets.all(24),
-          child: Text('You\'ll be able to change this soon.', textAlign: TextAlign.center),
+          child: Text(_Copy.placeholder, textAlign: TextAlign.center),
         ),
       ),
     );

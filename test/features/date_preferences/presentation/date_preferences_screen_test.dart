@@ -91,7 +91,10 @@ void main() {
 
       // The venue
       await tester.scrollUntilVisible(find.text('Step-free access: not needed'), 100);
-      expect(find.text('££–£££ · quiet and relaxed · either'), findsOneWidget);
+      expect(
+        find.text('££–£££ · Atmosphere: Quiet and relaxed · Setting: Either'),
+        findsOneWidget,
+      );
       expect(find.text('Step-free access: not needed'), findsOneWidget);
     });
 
@@ -103,8 +106,11 @@ void main() {
             matching: find.byType(Text),
           );
 
-      expect(tester.widgetList<Text>(levelOf('Coffee')).map((t) => t.data), ['Coffee', 'Not for me']);
-      expect(tester.widgetList<Text>(levelOf('Drinks')).map((t) => t.data), ['Drinks', 'Happy to']);
+      List<String?> texts(String activity) =>
+          tester.widgetList<Text>(levelOf(activity)).map((t) => t.data).toList();
+
+      expect(texts('Coffee'), ['Coffee', 'Not for me']);
+      expect(texts('Drinks'), ['Drinks', 'Happy to']);
     });
 
     testWidgets('shows the defaults and the banner when nothing is set yet', (tester) async {
@@ -116,7 +122,10 @@ void main() {
       expect(find.text('Any cuisine'), findsOneWidget);
       expect(find.text('Any kind of bar'), findsOneWidget);
       await tester.scrollUntilVisible(find.text('Step-free access: not needed'), 100);
-      expect(find.text('£–££££ · no preference · either'), findsOneWidget);
+      expect(
+        find.text('£–££££ · Atmosphere: No preference · Setting: Either'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('hides Dinner when Dinner is "Not for me"', (tester) async {
@@ -163,7 +172,10 @@ void main() {
 
       expect(find.text('London · near Clapham · up to 5 km'), findsOneWidget);
       await tester.scrollUntilVisible(find.text('Step-free access: not needed'), 100);
-      expect(find.text('€€–€€€ · quiet and relaxed · either'), findsOneWidget);
+      expect(
+        find.text('€€–€€€ · Atmosphere: Quiet and relaxed · Setting: Either'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('converts a distance that isn\'t one of the city\'s stops into km', (tester) async {
@@ -191,7 +203,10 @@ void main() {
       await _pump(tester, _api(preferences: preferences));
 
       await tester.scrollUntilVisible(find.text('Step-free access: needed'), 100);
-      expect(find.text('£, £££ · quiet and relaxed · either'), findsOneWidget);
+      expect(
+        find.text('£, £££ · Atmosphere: Quiet and relaxed · Setting: Either'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows an error and loads again on retry', (tester) async {
