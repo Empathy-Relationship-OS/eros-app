@@ -1,0 +1,54 @@
+{
+  "activities": [
+    { "activityId": 3, "name": "Dinner", "category": "FOOD", "status": "ACTIVE",
+      "tokenCost": 1.00, "durationMinutes": 120, "description": null, "iconUrl": null },
+    { "activityId": 2, "name": "Drinks", "category": "DRINKS", "status": "ACTIVE",
+      "tokenCost": 1.00, "durationMinutes": 120, "description": null, "iconUrl": null },
+    { "activityId": 1, "name": "Coffee", "category": "COFFEE", "status": "ACTIVE",
+      "tokenCost": 0.50, "durationMinutes": 90, "description": null, "iconUrl": null }
+  ],
+  "cuisines": [
+    { "value": "BRITISH", "displayName": "British" },
+    { "value": "ITALIAN", "displayName": "Italian" },
+    { "value": "JAPANESE", "displayName": "Japanese" },
+    { "value": "THAI", "displayName": "Thai" }
+  ],
+  "dietaryOptions": [
+    { "value": "VEGETARIAN", "displayName": "Vegetarian" },
+    { "value": "VEGAN", "displayName": "Vegan" },
+    { "value": "HALAL", "displayName": "Halal" }
+  ],
+  "drinkStyles": [
+    { "value": "COCKTAIL_BAR", "displayName": "Cocktail bar" },
+    { "value": "WINE_BAR", "displayName": "Wine bar" },
+    { "value": "PUB", "displayName": "Pub" }
+  ],
+  "priceRanges": [
+    { "value": "BUDGET", "symbol": "$", "displayName": "Budget" },
+    { "value": "MID_RANGE", "symbol": "$$", "displayName": "Mid-range" },
+    { "value": "PREMIUM", "symbol": "$$$", "displayName": "Premium" },
+    { "value": "LUXURY", "symbol": "$$$$", "displayName": "Luxury" }
+  ],
+  "atmospheres": [
+    { "value": "QUIET", "displayName": "Quiet and relaxed" },
+    { "value": "LIVELY", "displayName": "Lively" },
+    { "value": "NO_PREFERENCE", "displayName": "No preference" }
+  ],
+  "settings": [
+    { "value": "INDOORS", "displayName": "Indoors" },
+    { "value": "OUTDOORS", "displayName": "Outdoors" },
+    { "value": "EITHER", "displayName": "Either" }
+  ],
+  "city": { "cityId": 2, "distanceUnit": "MI", "currency": "USD",
+            "minDrinkingAge": 21, "reachMeters": 70000,
+            "centre": { "latitude": 29.7604, "longitude": -95.3698 } },
+  "travelStops": [
+    { "label": "2 miles", "meters": 3219 },
+    { "label": "5 miles", "meters": 8047 },
+    { "label": "10 miles", "meters": 16093 },
+    { "label": "15 miles", "meters": 24140 },
+    { "label": "25 miles", "meters": 40234 },
+    { "label": "40 miles", "meters": 64374 }
+  ],
+  "limits": { "maxCuisinesLoved": 5, "maxCuisinesExcluded": 5 }
+}

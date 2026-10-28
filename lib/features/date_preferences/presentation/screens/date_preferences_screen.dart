@@ -6,9 +6,10 @@ import 'package:eros_app/features/date_preferences/domain/models/date_preference
 import 'package:eros_app/features/date_preferences/domain/models/date_preferences.dart';
 import 'package:eros_app/features/date_preferences/presentation/providers/date_preference_options_provider.dart';
 import 'package:eros_app/features/date_preferences/presentation/providers/date_preferences_provider.dart';
+import 'package:eros_app/features/date_preferences/presentation/screens/edit_where_screen.dart';
 
-/// The "Where" editor arrives with DP-F3. Until then its row opens a placeholder.
-const bool whereEditorEnabled = false;
+/// The "Where" editor (DP-F3).
+const bool whereEditorEnabled = true;
 
 /// The "Date types" editor arrives with DP-F5. Until then its row opens a placeholder.
 const bool dateTypesEditorEnabled = false;
@@ -167,7 +168,12 @@ class _Hub extends StatelessWidget {
         _Section(
           title: _Copy.where,
           lines: _whereLines(preferences.where, options),
-          onTap: () => _open(context, title: _Copy.where, enabled: whereEditorEnabled),
+          onTap: () => _open(
+            context,
+            title: _Copy.where,
+            enabled: whereEditorEnabled,
+            editor: (_) => EditWhereScreen(initial: preferences.where),
+          ),
         ),
         _Section(
           title: _Copy.dateTypes,
