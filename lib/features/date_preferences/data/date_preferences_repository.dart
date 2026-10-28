@@ -7,6 +7,7 @@ import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/date_preferences/domain/models/city_district.dart';
 import 'package:eros_app/features/date_preferences/domain/models/date_preference_options.dart';
 import 'package:eros_app/features/date_preferences/domain/models/date_preferences.dart';
+import 'package:eros_app/features/date_preferences/domain/models/dating_city.dart';
 import 'package:eros_app/features/date_preferences/domain/models/section_patch.dart';
 
 /// Repository for date preference API calls (RFC-005 §5).
@@ -123,6 +124,27 @@ class DatePreferencesRepository {
       return districts;
     } on ApiException catch (e) {
       throw _mapError(e, 'We couldn\'t load the areas for this city. Please try again.');
+    }
+  }
+
+  /// Get every city users can date in, for the dating-city picker
+  /// GET /city/all
+  Future<List<DatingCity>> cities() async {
+    try {
+      _logger.i('🏙️  Getting dating cities');
+
+      final response = await _apiClient.get<List<dynamic>>(ApiEndpoints.datePreferences.cities());
+
+      final cities = _parse(
+        () => List<DatingCity>.unmodifiable(
+            response.map((c) => DatingCity.fromJson(c as Map<String, dynamic>))),
+        'cities',
+        'We couldn\'t load the cities. Please try again.',
+      );
+      _logger.i('✅ ${cities.length} cities retrieved');
+      return cities;
+    } on ApiException catch (e) {
+      throw _mapError(e, 'We couldn\'t load the cities. Please try again.');
     }
   }
 

@@ -18,6 +18,19 @@ void main() {
     });
   });
 
+  group('ProfileCreationDraft dating cities', () {
+    test('keeps the chosen city ids, in order, through storage', () {
+      final json = ProfileCreationDraft(datingCityIds: [2, 1]).toJson();
+
+      expect(json['datingCityIds'], [2, 1]);
+      expect(ProfileCreationDraft.fromJson(json).datingCityIds, [2, 1]);
+    });
+
+    test('a draft saved before dating cities were kept has none', () {
+      expect(ProfileCreationDraft.fromJson({}).datingCityIds, isNull);
+    });
+  });
+
   test('Gender.fromBackend stays exact for server values', () {
     expect(() => Gender.fromBackend('Non-binary'), throwsArgumentError);
   });
