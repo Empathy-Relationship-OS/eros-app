@@ -87,6 +87,24 @@ void main() {
       expect(where.cities.single.cityName, 'London');
     });
 
+    test('copies lists, so changing the caller\'s list later changes nothing', () {
+      final preferences = DatePreferences.fromJson(
+          _fixture('get_users_me_date_preferences') as Map<String, dynamic>);
+      final styles = ['PUB'];
+      final activities = [const ActivityPreference(activityId: 2, level: PreferenceLevel.love)];
+
+      final drinks = DrinksPreferences(drinkStyles: styles);
+      final food = preferences.food.copyWith(cuisinesExcluded: styles);
+      final updated = preferences.copyWith(activities: activities);
+      styles.add('WINE_BAR');
+      activities.clear();
+
+      expect(drinks.drinkStyles, ['PUB']);
+      expect(food.cuisinesExcluded, ['PUB']);
+      expect(updated.levelFor(2), PreferenceLevel.love);
+      expect(() => drinks.drinkStyles.add('X'), throwsUnsupportedError);
+    });
+
     test('keeps coordinates and sensitive values out of toString', () {
       final preferences = DatePreferences.fromJson(
           _fixture('get_users_me_date_preferences') as Map<String, dynamic>);

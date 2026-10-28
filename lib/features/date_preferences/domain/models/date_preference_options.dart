@@ -245,18 +245,25 @@ class DatePreferenceOptions {
   final List<TravelStop> travelStops;
   final OptionLimits limits;
 
-  const DatePreferenceOptions({
-    required this.activities,
-    required this.cuisines,
-    required this.dietaryOptions,
-    required this.drinkStyles,
-    required this.priceRanges,
-    required this.atmospheres,
-    required this.settings,
+  DatePreferenceOptions({
+    required List<DateActivityOption> activities,
+    required List<OptionValue> cuisines,
+    required List<OptionValue> dietaryOptions,
+    required List<OptionValue> drinkStyles,
+    required List<PriceRangeOption> priceRanges,
+    required List<OptionValue> atmospheres,
+    required List<OptionValue> settings,
     this.city,
-    required this.travelStops,
+    required List<TravelStop> travelStops,
     required this.limits,
-  });
+  })  : activities = List.unmodifiable(activities),
+        cuisines = List.unmodifiable(cuisines),
+        dietaryOptions = List.unmodifiable(dietaryOptions),
+        drinkStyles = List.unmodifiable(drinkStyles),
+        priceRanges = List.unmodifiable(priceRanges),
+        atmospheres = List.unmodifiable(atmospheres),
+        settings = List.unmodifiable(settings),
+        travelStops = List.unmodifiable(travelStops);
 
   factory DatePreferenceOptions.fromJson(Map<String, dynamic> json) {
     final city = json['city'] as Map<String, dynamic>?;
@@ -344,4 +351,4 @@ class DatePreferenceOptions {
 }
 
 List<T> _list<T>(Object? json, T Function(Map<String, dynamic>) fromJson) =>
-    List.unmodifiable((json as List<dynamic>).map((e) => fromJson(e as Map<String, dynamic>)));
+    (json as List<dynamic>).map((e) => fromJson(e as Map<String, dynamic>)).toList();

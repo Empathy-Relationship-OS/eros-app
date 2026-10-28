@@ -43,7 +43,7 @@ void main() {
       final api = FakeDatePreferencesApi(responses: {
         'PATCH $_preferencesPath': dpFixture('get_users_me_date_preferences'),
       });
-      const patch = DrinksPatch(DrinksPreferences(drinkStyles: ['PUB'], wantsAlcoholFree: true));
+      final patch = DrinksPatch(DrinksPreferences(drinkStyles: ['PUB'], wantsAlcoholFree: true));
 
       final saved = await _repository(api).patch(patch);
 

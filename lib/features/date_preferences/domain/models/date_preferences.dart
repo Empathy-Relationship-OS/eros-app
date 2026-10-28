@@ -190,12 +190,14 @@ class WherePreferences {
   /// Null means "Anywhere". Always metres, whatever unit the user saw.
   final int? maxTravelMeters;
 
-  const WherePreferences({required this.cities, this.maxTravelMeters});
+  WherePreferences({required List<DatingCityPreference> cities, this.maxTravelMeters})
+      : cities = List.unmodifiable(cities);
 
   factory WherePreferences.fromJson(Map<String, dynamic> json) {
     return WherePreferences(
-      cities: List.unmodifiable((json['cities'] as List<dynamic>)
-          .map((c) => DatingCityPreference.fromJson(c as Map<String, dynamic>))),
+      cities: (json['cities'] as List<dynamic>)
+          .map((c) => DatingCityPreference.fromJson(c as Map<String, dynamic>))
+          .toList(),
       maxTravelMeters: json['maxTravelMeters'] as int?,
     );
   }
@@ -265,11 +267,13 @@ class FoodPreferences {
   final List<String> cuisinesExcluded;
   final List<String> dietaryNeeds;
 
-  const FoodPreferences({
-    this.cuisinesLoved = const [],
-    this.cuisinesExcluded = const [],
-    this.dietaryNeeds = const [],
-  });
+  FoodPreferences({
+    List<String> cuisinesLoved = const [],
+    List<String> cuisinesExcluded = const [],
+    List<String> dietaryNeeds = const [],
+  })  : cuisinesLoved = List.unmodifiable(cuisinesLoved),
+        cuisinesExcluded = List.unmodifiable(cuisinesExcluded),
+        dietaryNeeds = List.unmodifiable(dietaryNeeds);
 
   factory FoodPreferences.fromJson(Map<String, dynamic> json) {
     return FoodPreferences(
@@ -322,7 +326,8 @@ class DrinksPreferences {
   final List<String> drinkStyles;
   final bool wantsAlcoholFree;
 
-  const DrinksPreferences({this.drinkStyles = const [], this.wantsAlcoholFree = false});
+  DrinksPreferences({List<String> drinkStyles = const [], this.wantsAlcoholFree = false})
+      : drinkStyles = List.unmodifiable(drinkStyles);
 
   factory DrinksPreferences.fromJson(Map<String, dynamic> json) {
     return DrinksPreferences(
@@ -362,12 +367,12 @@ class VenuePreferences {
   final String setting;
   final bool needsStepFree;
 
-  const VenuePreferences({
-    required this.priceRanges,
+  VenuePreferences({
+    required List<String> priceRanges,
     required this.atmosphere,
     required this.setting,
     required this.needsStepFree,
-  });
+  }) : priceRanges = List.unmodifiable(priceRanges);
 
   factory VenuePreferences.fromJson(Map<String, dynamic> json) {
     return VenuePreferences(
@@ -437,15 +442,15 @@ class DatePreferences {
   final DrinksPreferences drinks;
   final VenuePreferences venue;
 
-  const DatePreferences({
+  DatePreferences({
     required this.isSet,
     this.updatedAt,
     required this.where,
-    required this.activities,
+    required List<ActivityPreference> activities,
     required this.food,
     required this.drinks,
     required this.venue,
-  });
+  }) : activities = List.unmodifiable(activities);
 
   factory DatePreferences.fromJson(Map<String, dynamic> json) {
     final updatedAt = json['updatedAt'] as String?;
@@ -453,8 +458,9 @@ class DatePreferences {
       isSet: json['isSet'] as bool,
       updatedAt: updatedAt == null ? null : DateTime.parse(updatedAt),
       where: WherePreferences.fromJson(json['where'] as Map<String, dynamic>),
-      activities: List.unmodifiable((json['activities'] as List<dynamic>)
-          .map((a) => ActivityPreference.fromJson(a as Map<String, dynamic>))),
+      activities: (json['activities'] as List<dynamic>)
+          .map((a) => ActivityPreference.fromJson(a as Map<String, dynamic>))
+          .toList(),
       food: FoodPreferences.fromJson(json['food'] as Map<String, dynamic>),
       drinks: DrinksPreferences.fromJson(json['drinks'] as Map<String, dynamic>),
       venue: VenuePreferences.fromJson(json['venue'] as Map<String, dynamic>),
@@ -526,5 +532,4 @@ class DatePreferences {
   String toString() => 'DatePreferences(isSet: $isSet, <redacted>)';
 }
 
-List<String> _strings(Object? json) =>
-    List.unmodifiable((json as List<dynamic>).cast<String>());
+List<String> _strings(Object? json) => (json as List<dynamic>).cast<String>();
