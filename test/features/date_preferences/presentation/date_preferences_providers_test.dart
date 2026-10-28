@@ -102,6 +102,39 @@ void main() {
       expect(options.cuisines.single.value, 'THAI');
       expect(api.requests.length, 1);
     });
+
+    test('fetches the first city\'s options again after "Where" is saved, and only then',
+        () async {
+      final api = FakeDatePreferencesApi(responses: {
+        'GET /date-preferences/options': dpFixture('get_date_preferences_options'),
+        'GET /date-preferences/options?cityId=1': dpFixture('get_date_preferences_options'),
+        'GET $_preferencesPath': dpFixture('get_users_me_date_preferences'),
+        'PATCH $_preferencesPath': dpFixture('get_users_me_date_preferences'),
+      });
+      final container = _container(api);
+      final before = await container.read(datePreferencesProvider.future);
+      await container.read(datePreferenceOptionsProvider(null).future);
+      await container.read(datePreferenceOptionsProvider(1).future);
+      final notifier = container.read(datePreferencesProvider.notifier);
+
+      await notifier.saveSection(VenuePatch(before.venue));
+      await container.read(datePreferenceOptionsProvider(null).future);
+      await notifier.saveSection(
+        const WherePatch(cities: [WhereCityPatch(cityId: 1)], maxTravelMeters: null),
+      );
+      await container.read(datePreferenceOptionsProvider(null).future);
+      await container.read(datePreferenceOptionsProvider(1).future);
+
+      final optionReads = api.requests
+          .map((r) => r.path)
+          .where((p) => p.startsWith('/date-preferences/options'))
+          .toList();
+      expect(optionReads, [
+        '/date-preferences/options',
+        '/date-preferences/options?cityId=1',
+        '/date-preferences/options',
+      ]);
+    });
   });
 
   group('cityDistrictsProvider', () {
