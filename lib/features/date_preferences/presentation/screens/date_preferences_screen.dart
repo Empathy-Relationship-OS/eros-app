@@ -6,6 +6,9 @@ import 'package:eros_app/features/date_preferences/domain/models/date_preference
 import 'package:eros_app/features/date_preferences/domain/models/date_preferences.dart';
 import 'package:eros_app/features/date_preferences/presentation/providers/date_preference_options_provider.dart';
 import 'package:eros_app/features/date_preferences/presentation/providers/date_preferences_provider.dart';
+import 'package:eros_app/features/date_preferences/presentation/screens/edit_drinks_screen.dart';
+import 'package:eros_app/features/date_preferences/presentation/screens/edit_food_screen.dart';
+import 'package:eros_app/features/date_preferences/presentation/screens/edit_venue_screen.dart';
 
 /// The "Where" editor arrives with DP-F3. Until then its row opens a placeholder.
 const bool whereEditorEnabled = false;
@@ -14,13 +17,13 @@ const bool whereEditorEnabled = false;
 const bool dateTypesEditorEnabled = false;
 
 /// The "Dinner" editor arrives with DP-F6. Until then its row opens a placeholder.
-const bool foodEditorEnabled = false;
+const bool foodEditorEnabled = true;
 
 /// The "Drinks" editor arrives with DP-F6. Until then its row opens a placeholder.
-const bool drinksEditorEnabled = false;
+const bool drinksEditorEnabled = true;
 
 /// "The venue" editor arrives with DP-F6. Until then its row opens a placeholder.
-const bool venueEditorEnabled = false;
+const bool venueEditorEnabled = true;
 
 /// Every string this screen shows that isn't from the options.
 abstract final class _Copy {
@@ -183,18 +186,33 @@ class _Hub extends StatelessWidget {
           _Section(
             title: _Copy.dinner,
             lines: _foodLines(preferences.food, options),
-            onTap: () => _open(context, title: _Copy.dinner, enabled: foodEditorEnabled),
+            onTap: () => _open(
+              context,
+              title: _Copy.dinner,
+              enabled: foodEditorEnabled,
+              editor: (_) => EditFoodScreen(preferences: preferences, options: options),
+            ),
           ),
         if (_offers('DRINKS'))
           _Section(
             title: _Copy.drinks,
             lines: _drinksLines(preferences.drinks, options),
-            onTap: () => _open(context, title: _Copy.drinks, enabled: drinksEditorEnabled),
+            onTap: () => _open(
+              context,
+              title: _Copy.drinks,
+              enabled: drinksEditorEnabled,
+              editor: (_) => EditDrinksScreen(preferences: preferences, options: options),
+            ),
           ),
         _Section(
           title: _Copy.venue,
           lines: _venueLines(preferences.venue, options),
-          onTap: () => _open(context, title: _Copy.venue, enabled: venueEditorEnabled),
+          onTap: () => _open(
+            context,
+            title: _Copy.venue,
+            enabled: venueEditorEnabled,
+            editor: (_) => EditVenueScreen(preferences: preferences, options: options),
+          ),
         ),
       ],
     );
