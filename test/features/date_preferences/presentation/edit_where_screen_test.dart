@@ -188,6 +188,32 @@ void main() {
       expect(_saveEnabled(tester), isFalse);
     });
 
+    testWidgets('a pin with no district reads "Your starting point", not "City centre"',
+        (tester) async {
+      const pinNoDistrict = StartPoint(latitude: 29.76, longitude: -95.37);
+      await _pump(
+        tester,
+        _api(),
+        WherePreferences(
+          cities: [
+            _london1.copyWith(start: pinNoDistrict),
+            _houston,
+          ],
+          maxTravelMeters: 8047,
+        ),
+      );
+
+      final pinnedRow = find.byKey(const Key('starting-from-1'));
+      expect(find.descendant(of: pinnedRow, matching: find.text('Your starting point')),
+          findsOneWidget);
+      expect(find.descendant(of: pinnedRow, matching: find.text('City centre')), findsNothing);
+      // No pin at all is still the city centre.
+      expect(
+        find.descendant(of: find.byKey(const Key('starting-from-2')), matching: find.text('City centre')),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('the slider\'s stops and labels come from the London options', (tester) async {
       await _pump(tester, _api(), WherePreferences(cities: [_london1], maxTravelMeters: 8047));
 

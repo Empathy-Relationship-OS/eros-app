@@ -20,6 +20,7 @@ abstract final class _Copy {
   static const citiesHint = 'Choose at least one city';
   static const startingFrom = 'Starting from';
   static const cityCentre = 'City centre';
+  static const yourStartingPoint = 'Your starting point';
   static const distance = 'Travel distance';
   static const optionsError = 'We couldn\'t load the travel distances. Please try again.';
   static const retry = 'Try again';
@@ -160,8 +161,9 @@ class _Heading extends StatelessWidget {
   }
 }
 
-/// A chosen city and where the user starts from in it: the district of their pin, or the city
-/// centre when they haven't placed one.
+/// A chosen city and where the user starts from in it: the district of their pin, "Your starting
+/// point" for a pin with no district (a city without districts), or the city centre when they
+/// haven't placed one.
 class _StartingFromRow extends StatelessWidget {
   final DatingCityPreference city;
 
@@ -172,7 +174,10 @@ class _StartingFromRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final district = city.start?.district;
+    final start = city.start;
+    final startLabel = start == null
+        ? _Copy.cityCentre
+        : start.district?.name ?? _Copy.yourStartingPoint;
     return MergeSemantics(
       child: Material(
         color: AppColors.background,
@@ -196,7 +201,7 @@ class _StartingFromRow extends StatelessWidget {
                     ],
                   ),
                 ),
-                Text(district?.name ?? _Copy.cityCentre),
+                Text(startLabel),
                 if (onTap != null) ...[
                   const SizedBox(width: 8),
                   Icon(Icons.chevron_right, color: Colors.grey[400]),
