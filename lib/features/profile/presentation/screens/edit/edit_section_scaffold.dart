@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/features/date_preferences/data/date_preferences_repository.dart';
 import 'package:eros_app/features/profile/data/repositories/photo_repository.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 import 'package:eros_app/features/profile/data/repositories/qa_repository.dart';
@@ -9,8 +10,8 @@ import 'package:eros_app/features/profile/data/repositories/qa_repository.dart';
 ///
 /// - **Save** is enabled when [canSave] (the value is valid and has changed) and calls
 ///   [onSave]. On success the screen pops. A failure stays on the screen and shows in the banner:
-///   the server's validation message, a repository error (profile or Q&A), or a local
-///   `ArgumentError` from `UpdateUserRequest`. A [PhotoRepositoryException] shows no banner,
+///   the server's validation message, a repository error (profile, Q&A or date preferences), or
+///   a local `ArgumentError` from `UpdateUserRequest`. A [PhotoRepositoryException] shows no banner,
 ///   because the photo editor shows its notifier's error itself. Any other error is reported
 ///   through `FlutterError.reportError` and shown as a generic message, so Save is always usable
 ///   again.
@@ -62,6 +63,10 @@ class _EditSectionScaffoldState extends State<EditSectionScaffold> {
     } on ArgumentError catch (e) {
       _fail(e.message?.toString() ?? 'Please check your changes and try again.');
     } on QARepositoryException catch (e) {
+      _fail(e.message);
+    } on DatePreferencesValidationException catch (e) {
+      _fail(e.message);
+    } on DatePreferencesRepositoryException catch (e) {
       _fail(e.message);
     } on PhotoRepositoryException {
       _fail(null); // the photo editor shows the error from its state
