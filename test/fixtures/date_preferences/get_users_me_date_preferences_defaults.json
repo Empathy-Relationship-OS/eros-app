@@ -1,0 +1,12 @@
+{
+  "isSet": false,
+  "updatedAt": null,
+  "where": {
+    "cities": [ { "cityId": 1, "cityName": "London", "start": null } ],
+    "maxTravelMeters": null
+  },
+  "activities": [],
+  "food":   { "cuisinesLoved": [], "cuisinesExcluded": [], "dietaryNeeds": [] },
+  "drinks": { "drinkStyles": [], "wantsAlcoholFree": false },
+  "venue":  { "priceRanges": ["BUDGET", "MID_RANGE", "PREMIUM", "LUXURY"], "atmosphere": "NO_PREFERENCE", "setting": "EITHER", "needsStepFree": false }
+}
