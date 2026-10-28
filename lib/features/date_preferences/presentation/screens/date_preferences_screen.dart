@@ -354,15 +354,17 @@ class _Section extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
-        Material(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          child: InkWell(
-            onTap: onTap,
+        // Its own node, so the button reads the summary and not the heading above it.
+        Semantics(
+          container: true,
+          button: true,
+          hint: _Copy.editHint(title),
+          child: Material(
+            color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            child: Semantics(
-              button: true,
-              hint: _Copy.editHint(title),
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(12),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(

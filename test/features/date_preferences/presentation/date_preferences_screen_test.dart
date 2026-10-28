@@ -280,7 +280,22 @@ void main() {
     });
 
     testWidgets('each section opens its placeholder', (tester) async {
+      final semantics = tester.ensureSemantics();
       await _pump(tester, _api());
+
+      // The card reads as one button: its summary, then what tapping it does.
+      expect(
+        tester.getSemantics(find.text('London · near Clapham · up to 5 miles')),
+        matchesSemantics(
+          label: 'London · near Clapham · up to 5 miles',
+          hint: 'Edit Where',
+          isButton: true,
+          hasTapAction: true,
+          isFocusable: true,
+          hasFocusAction: true,
+        ),
+      );
+      semantics.dispose();
 
       await tester.tap(find.text('London · near Clapham · up to 5 miles'));
       await tester.pumpAndSettle();
