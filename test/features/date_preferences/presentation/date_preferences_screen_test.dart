@@ -255,6 +255,30 @@ void main() {
       expect(find.text('London · City centre · Anywhere'), findsOneWidget);
     });
 
+    testWidgets('shows the error, not the old summaries, when a refresh fails', (tester) async {
+      final api = _api();
+      await _pump(tester, api);
+
+      api.responses.remove(_optionsPath);
+      await tester.fling(find.byType(ListView), const Offset(0, 400), 1000);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text('London · near Clapham · up to 5 miles'), findsNothing);
+    });
+
+    testWidgets('shows the error when refreshing the preferences fails', (tester) async {
+      final api = _api();
+      await _pump(tester, api);
+
+      api.responses.remove(_preferencesPath);
+      await tester.fling(find.byType(ListView), const Offset(0, 400), 1000);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text('London · near Clapham · up to 5 miles'), findsNothing);
+    });
+
     testWidgets('each section opens its placeholder', (tester) async {
       await _pump(tester, _api());
 

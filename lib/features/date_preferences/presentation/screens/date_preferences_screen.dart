@@ -88,20 +88,18 @@ class DatePreferencesScreen extends ConsumerWidget {
     final preferences = ref.watch(datePreferencesProvider);
     final options = ref.watch(datePreferenceOptionsProvider(null));
 
+    // A failed load or refresh shows the error, even though the providers still hold the old
+    // values, so the hub never shows summaries the server didn't just confirm.
     final Widget body;
-    if (preferences.valueOrNull case final p?) {
-      if (options.valueOrNull case final o?) {
-        body = RefreshIndicator(
-          onRefresh: () => _refresh(ref),
-          child: _Hub(preferences: p, options: o),
-        );
-      } else if (options.hasError && !options.isLoading) {
-        body = _LoadError(error: options.error!, onRetry: () => _refresh(ref));
-      } else {
-        body = const Center(child: CircularProgressIndicator());
-      }
-    } else if (preferences.hasError && !preferences.isLoading) {
+    if (preferences.hasError && !preferences.isLoading) {
       body = _LoadError(error: preferences.error!, onRetry: () => _refresh(ref));
+    } else if (options.hasError && !options.isLoading) {
+      body = _LoadError(error: options.error!, onRetry: () => _refresh(ref));
+    } else if ((preferences.valueOrNull, options.valueOrNull) case (final p?, final o?)) {
+      body = RefreshIndicator(
+        onRefresh: () => _refresh(ref),
+        child: _Hub(preferences: p, options: o),
+      );
     } else {
       body = const Center(child: CircularProgressIndicator());
     }
