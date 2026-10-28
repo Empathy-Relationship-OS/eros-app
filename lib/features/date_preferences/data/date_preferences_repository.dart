@@ -73,6 +73,7 @@ class DatePreferencesRepository {
         () => DatePreferences.fromJson(response),
         'date preferences',
         'Your changes were saved, but we couldn\'t show them. Please reload your date preferences.',
+        saved: true,
       );
     } on ApiException catch (e) {
       throw _mapError(e, 'We couldn\'t save your date preferences. Please try again.');
@@ -156,13 +157,16 @@ class DatePreferencesRepository {
 
   /// Runs [parse]. A body the app can't read (a missing field, a level it doesn't know) throws a
   /// TypeError, ArgumentError or FormatException, which becomes a
-  /// [DatePreferencesRepositoryException] with [message]. The body itself is never logged.
-  T _parse<T>(T Function() parse, String what, String message) {
+  /// [DatePreferencesRepositoryException] with [message], or a [DatePreferencesSavedException]
+  /// when [saved]. The body itself is never logged.
+  T _parse<T>(T Function() parse, String what, String message, {bool saved = false}) {
     try {
       return parse();
     } catch (e, st) {
       _logger.e('🧩 Could not parse the $what response (${e.runtimeType})', stackTrace: st);
-      throw DatePreferencesRepositoryException(message);
+      throw saved
+          ? DatePreferencesSavedException(message)
+          : DatePreferencesRepositoryException(message);
     }
   }
 }
@@ -181,6 +185,14 @@ class DatePreferencesRepositoryException implements Exception {
 
   @override
   String toString() => 'DatePreferencesRepositoryException: $message';
+}
+
+/// The server saved the change, but its response couldn't be read.
+class DatePreferencesSavedException extends DatePreferencesRepositoryException {
+  DatePreferencesSavedException(super.message);
+
+  @override
+  String toString() => 'DatePreferencesSavedException: $message';
 }
 
 /// The server rejected a save (400). [message] is the server's, and says what was wrong.

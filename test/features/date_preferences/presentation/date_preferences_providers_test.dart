@@ -135,6 +135,29 @@ void main() {
         '/date-preferences/options',
       ]);
     });
+    test('fetches first-city options again when "Where" saved with an unreadable response',
+        () async {
+      final api = FakeDatePreferencesApi(responses: {
+        'GET /date-preferences/options': dpFixture('get_date_preferences_options'),
+        'GET $_preferencesPath': dpFixture('get_users_me_date_preferences'),
+        'PATCH $_preferencesPath': <String, dynamic>{'isSet': true},
+      });
+      final container = _container(api);
+      await container.read(datePreferencesProvider.future);
+      await container.read(datePreferenceOptionsProvider(null).future);
+
+      await expectLater(
+        container.read(datePreferencesProvider.notifier).saveSection(
+              const WherePatch(cities: [WhereCityPatch(cityId: 1)], maxTravelMeters: null),
+            ),
+        throwsA(isA<DatePreferencesSavedException>()),
+      );
+      await container.read(datePreferenceOptionsProvider(null).future);
+
+      final optionReads =
+          api.requests.where((r) => r.path.startsWith('/date-preferences/options')).length;
+      expect(optionReads, 2);
+    });
   });
 
   group('cityDistrictsProvider', () {

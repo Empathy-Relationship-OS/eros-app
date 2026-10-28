@@ -85,7 +85,7 @@ void main() {
 
       await expectLater(
         _repository(api).patch(const ActivitiesPatch([])),
-        throwsA(isA<DatePreferencesRepositoryException>()
+        throwsA(isA<DatePreferencesSavedException>()
             .having((e) => e.message, 'message', contains('Your changes were saved'))),
       );
     });

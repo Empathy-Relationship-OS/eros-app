@@ -27,14 +27,24 @@ class DatePreferencesNotifier extends AsyncNotifier<DatePreferences> {
   /// the section screen to show.
   ///
   /// Saving "Where" can change the first dating city, so the options for "my first city" are
-  /// fetched again on next read.
+  /// fetched again on next read. That also happens when the server saved but its response
+  /// couldn't be read ([DatePreferencesSavedException], still rethrown).
   Future<DatePreferences> saveSection(SectionPatch patch) async {
-    final saved = await ref.read(datePreferencesRepositoryProvider).patch(patch);
-    state = AsyncData(saved);
+    try {
+      final saved = await ref.read(datePreferencesRepositoryProvider).patch(patch);
+      state = AsyncData(saved);
+      _afterSave(patch);
+      return saved;
+    } on DatePreferencesSavedException {
+      _afterSave(patch);
+      rethrow;
+    }
+  }
+
+  void _afterSave(SectionPatch patch) {
     if (patch is WherePatch) {
       ref.invalidate(datePreferenceOptionsProvider(null));
     }
-    return saved;
   }
 }
 
