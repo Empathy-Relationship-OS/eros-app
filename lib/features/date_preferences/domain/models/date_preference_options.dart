@@ -123,7 +123,7 @@ class DateActivityOption {
       activityId, name, category, status, tokenCost, durationMinutes, description, iconUrl);
 }
 
-/// The city the options are for: its distance unit, currency and centre.
+/// The city the options are for: its distance unit, currency, centre and reach.
 @immutable
 class OptionsCity {
   final int cityId;
@@ -137,11 +137,16 @@ class OptionsCity {
   /// Where the map opens when the user hasn't placed a pin.
   final GeoPoint centre;
 
+  /// How far from [centre] a starting pin can be (RFC-005 D-26): 40 km for London, about 70 km
+  /// for Houston. Further out is outside the city.
+  final int reachMeters;
+
   const OptionsCity({
     required this.cityId,
     required this.distanceUnit,
     required this.currency,
     required this.centre,
+    required this.reachMeters,
   });
 
   factory OptionsCity.fromJson(Map<String, dynamic> json) {
@@ -150,6 +155,7 @@ class OptionsCity {
       distanceUnit: json['distanceUnit'] as String,
       currency: json['currency'] as String,
       centre: GeoPoint.fromJson(json['centre'] as Map<String, dynamic>),
+      reachMeters: json['reachMeters'] as int,
     );
   }
 
@@ -158,6 +164,7 @@ class OptionsCity {
         'distanceUnit': distanceUnit,
         'currency': currency,
         'centre': centre.toJson(),
+        'reachMeters': reachMeters,
       };
 
   @override
@@ -166,10 +173,11 @@ class OptionsCity {
       other.cityId == cityId &&
       other.distanceUnit == distanceUnit &&
       other.currency == currency &&
-      other.centre == centre;
+      other.centre == centre &&
+      other.reachMeters == reachMeters;
 
   @override
-  int get hashCode => Object.hash(cityId, distanceUnit, currency, centre);
+  int get hashCode => Object.hash(cityId, distanceUnit, currency, centre, reachMeters);
 }
 
 /// One stop on the travel distance slider, labelled in the city's unit.
