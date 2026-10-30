@@ -14,10 +14,18 @@ class DatePreferencesNotifier extends AsyncNotifier<DatePreferences> {
     return ref.watch(datePreferencesRepositoryProvider).get();
   }
 
+  /// Bumped by every [load] and [saveSection], so only the latest result lands in [state].
+  int _generation = 0;
+
   /// Reloads from the server, keeping the previous value while loading.
+  ///
+  /// A load that finishes after a newer load or a save is ignored, so a late failure can't replace
+  /// a later success.
   Future<void> load() async {
+    final generation = ++_generation;
     state = const AsyncLoading<DatePreferences>().copyWithPrevious(state);
-    state = await AsyncValue.guard(() => ref.read(datePreferencesRepositoryProvider).get());
+    final result = await AsyncValue.guard(() => ref.read(datePreferencesRepositoryProvider).get());
+    if (generation == _generation) state = result;
   }
 
   /// Saves one section.
@@ -32,6 +40,7 @@ class DatePreferencesNotifier extends AsyncNotifier<DatePreferences> {
   Future<DatePreferences> saveSection(SectionPatch patch) async {
     try {
       final saved = await ref.read(datePreferencesRepositoryProvider).patch(patch);
+      _generation++;
       state = AsyncData(saved);
       _afterSave(patch);
       return saved;
