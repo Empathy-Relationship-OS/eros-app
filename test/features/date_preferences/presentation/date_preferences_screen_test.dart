@@ -293,11 +293,11 @@ void main() {
       final semantics = tester.ensureSemantics();
       await _pump(tester, _api());
 
-      // The card reads as one button: its summary, then what tapping it does.
+      // The card reads as one button: its title and summary, then what tapping it does.
       expect(
         tester.getSemantics(find.text('London · near Clapham · up to 5 miles')),
         matchesSemantics(
-          label: 'London · near Clapham · up to 5 miles',
+          label: 'Where\nLondon · near Clapham · up to 5 miles',
           hint: 'Edit Where',
           isButton: true,
           hasTapAction: true,

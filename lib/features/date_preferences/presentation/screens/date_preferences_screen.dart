@@ -350,17 +350,21 @@ class _Section extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        // The button below reads the title, so screen readers don't hear it twice.
+        ExcludeSemantics(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
           ),
         ),
-        // Its own node, so the button reads the summary and not the heading above it.
+        // One button node reading the title, then the summary, so it is named with hints off.
         Semantics(
           container: true,
           button: true,
+          label: title,
           hint: _Copy.editHint(title),
           child: Material(
             color: Colors.white,
