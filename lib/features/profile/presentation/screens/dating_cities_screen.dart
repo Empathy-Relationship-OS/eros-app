@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/constants/profile_creation.dart';
+import 'package:eros_app/features/date_preferences/domain/models/dating_city.dart';
+import 'package:eros_app/features/date_preferences/presentation/providers/date_preference_options_provider.dart';
+import 'package:eros_app/features/date_preferences/presentation/widgets/dating_city_picker.dart';
+import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 
-/// Dating cities selector - choose cities where user wants to date
+/// Dating cities selector - choose cities where user wants to date, from the cities we operate
+/// in ([DatingCityPicker], `GET /city/all`). The choice is kept in the draft as city ids.
 /// Matches screenshot: @screenshots/login/create-user/EABDAE3A-4630-44B2-85B2-E97A280C19E2.png
 class DatingCitiesScreen extends ConsumerStatefulWidget {
   const DatingCitiesScreen({super.key});
@@ -14,20 +19,8 @@ class DatingCitiesScreen extends ConsumerStatefulWidget {
 }
 
 class _DatingCitiesScreenState extends ConsumerState<DatingCitiesScreen> {
-  final Set<String> _selectedCities = {};
-
-  // TODO: In production, fetch from backend API based on user's lat/lon
-  // Call: GET /cities?lat={lat}&lon={lon}&radius={radius}
-  final List<String> _availableCities = [
-    'London',
-    'Manchester',
-    'Birmingham',
-    'Liverpool',
-    'Leeds',
-    'Bristol',
-    'Edinburgh',
-    'Glasgow',
-  ];
+  /// In the order chosen, so the first stays the user's first dating city.
+  final List<int> _selectedCityIds = [];
 
   @override
   void initState() {
@@ -36,22 +29,29 @@ class _DatingCitiesScreenState extends ConsumerState<DatingCitiesScreen> {
   }
 
   void _loadExistingData() {
-    // TODO: Load selected cities from draft if stored
-    // For now, this field isn't in CreateUserRequest, so it might be stored separately
+    final draft = ref.read(profileCreationProvider);
+    if (draft.datingCityIds != null) {
+      _selectedCityIds.addAll(draft.datingCityIds!);
+    }
   }
 
-  void _toggleCity(String city) {
+  void _toggleCity(DatingCity city) {
     setState(() {
-      if (_selectedCities.contains(city)) {
-        _selectedCities.remove(city);
-      } else {
-        _selectedCities.add(city);
+      if (!_selectedCityIds.remove(city.cityId)) {
+        _selectedCityIds.add(city.cityId);
       }
     });
   }
 
-  Future<void> _continue() async {
-    if (_selectedCities.isEmpty) {
+  /// The selected ids the server still lists, so a city it has dropped since the draft was saved
+  /// is never sent.
+  List<int> _listedSelection(List<DatingCity> cities) => [
+        for (final id in _selectedCityIds)
+          if (cities.any((c) => c.cityId == id)) id,
+      ];
+
+  Future<void> _continue(List<int> cityIds) async {
+    if (cityIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select at least one city'),
@@ -61,8 +61,10 @@ class _DatingCitiesScreenState extends ConsumerState<DatingCitiesScreen> {
       return;
     }
 
-    // TODO: Store selected cities (might need to add to ProfileCreationDraft)
-    // For now, we'll just proceed
+    final currentDraft = ref.read(profileCreationProvider);
+    await ref
+        .read(profileCreationProvider.notifier)
+        .updateDraft(currentDraft.copyWith(datingCityIds: cityIds));
 
     // Navigate to next screen
     if (mounted) {
@@ -72,6 +74,8 @@ class _DatingCitiesScreenState extends ConsumerState<DatingCitiesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final selected = _listedSelection(ref.watch(datingCitiesProvider).valueOrNull ?? const []);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -112,58 +116,22 @@ class _DatingCitiesScreenState extends ConsumerState<DatingCitiesScreen> {
               ),
               const SizedBox(height: 32),
 
-              // City grid
+              // City chips
               Expanded(
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 2.5,
+                child: SingleChildScrollView(
+                  child: DatingCityPicker(
+                    selectedCityIds: _selectedCityIds,
+                    onToggle: _toggleCity,
                   ),
-                  itemCount: _availableCities.length,
-                  itemBuilder: (context, index) {
-                    final city = _availableCities[index];
-                    final isSelected = _selectedCities.contains(city);
-
-                    return InkWell(
-                      onTap: () => _toggleCity(city),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primary
-                              : Colors.grey[100],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.primary
-                                : Colors.grey[300]!,
-                            width: 2,
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            city,
-                            style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.black,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
                 ),
               ),
 
               const SizedBox(height: 16),
 
               // Selection count
-              if (_selectedCities.isNotEmpty) ...[
+              if (selected.isNotEmpty) ...[
                 Text(
-                  '${_selectedCities.length} ${_selectedCities.length == 1 ? 'city' : 'cities'} selected',
+                  '${selected.length} ${selected.length == 1 ? 'city' : 'cities'} selected',
                   style: TextStyle(
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,
@@ -177,7 +145,7 @@ class _DatingCitiesScreenState extends ConsumerState<DatingCitiesScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _selectedCities.isNotEmpty ? _continue : null,
+                  onPressed: selected.isNotEmpty ? () => _continue(selected) : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     disabledBackgroundColor: Colors.grey[300],

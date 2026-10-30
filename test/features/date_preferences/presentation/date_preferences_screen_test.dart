@@ -1,6 +1,7 @@
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/date_preferences/data/date_preferences_repository.dart';
 import 'package:eros_app/features/date_preferences/presentation/screens/date_preferences_screen.dart';
+import 'package:eros_app/features/date_preferences/presentation/screens/edit_where_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,6 +43,7 @@ FakeDatePreferencesApi _api({Map<String, dynamic>? preferences, Map<String, dyna
   return FakeDatePreferencesApi(responses: {
     _preferencesPath: preferences ?? _preferences(),
     _optionsPath: options ?? _londonOptions(),
+    'GET /city/all': dpFixture('get_city_all') as Object,
   });
 }
 
@@ -289,7 +291,7 @@ void main() {
       expect(find.text('London · near Clapham · up to 5 miles'), findsNothing);
     });
 
-    testWidgets('each section opens its placeholder', (tester) async {
+    testWidgets('the Where row opens the Where editor', (tester) async {
       final semantics = tester.ensureSemantics();
       await _pump(tester, _api());
 
@@ -310,8 +312,9 @@ void main() {
       await tester.tap(find.text('London · near Clapham · up to 5 miles'));
       await tester.pumpAndSettle();
 
-      expect(find.text('You\'ll be able to change this soon.'), findsOneWidget);
+      expect(find.byType(EditWhereScreen), findsOneWidget);
       expect(find.widgetWithText(AppBar, 'Where'), findsOneWidget);
+      expect(find.text('Clapham'), findsOneWidget);
     });
   });
 }

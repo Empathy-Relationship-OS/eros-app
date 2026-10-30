@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/features/date_preferences/data/date_preferences_repository.dart';
 import 'package:eros_app/features/date_preferences/domain/models/city_district.dart';
 import 'package:eros_app/features/date_preferences/domain/models/date_preference_options.dart';
+import 'package:eros_app/features/date_preferences/domain/models/dating_city.dart';
 
 /// Every option list the date preference screens render, by city (RFC-005 §5).
 ///
@@ -15,4 +16,9 @@ final datePreferenceOptionsProvider =
 /// A city's districts, sorted by name, for "Jump to" and the live "Near ..." label.
 final cityDistrictsProvider = FutureProvider.family<List<CityDistrict>, int>((ref, cityId) {
   return ref.watch(datePreferencesRepositoryProvider).districts(cityId);
+});
+
+/// Every city users can date in, for the dating-city picker in onboarding and "Where".
+final datingCitiesProvider = FutureProvider<List<DatingCity>>((ref) {
+  return ref.watch(datePreferencesRepositoryProvider).cities();
 });

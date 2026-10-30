@@ -215,4 +215,7 @@ class _DatePreferencesEndpoints {
 
   /// GET /city/{cityId}/districts - A city's districts, sorted by name
   String districts(int cityId) => '/city/$cityId/districts';
+
+  /// GET /city/all - Every city users can date in (RFC-004 D-14)
+  String cities() => '/city/all';
 }

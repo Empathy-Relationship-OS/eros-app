@@ -10,12 +10,11 @@ import 'package:eros_app/features/profile/data/repositories/qa_repository.dart';
 ///
 /// - **Save** is enabled when [canSave] (the value is valid and has changed) and calls
 ///   [onSave]. On success the screen pops. A failure stays on the screen and shows in the banner:
-///   the server's validation message, a repository error (profile, Q&A or date preferences),
-///   or a local `ArgumentError` from `UpdateUserRequest`. A [PhotoRepositoryException] shows no
-///   banner,
-///   because the photo editor shows its notifier's error itself. Any other error is reported
-///   through `FlutterError.reportError` and shown as a generic message, so Save is always usable
-///   again.
+///   the server's validation message, a repository error (profile, Q&A or date preferences), or
+///   a local `ArgumentError` from `UpdateUserRequest`. A [PhotoRepositoryException] shows no
+///   banner, because the photo editor shows its notifier's error itself. Any other error is
+///   reported through `FlutterError.reportError` and shown as a generic message, so Save is
+///   always usable again.
 /// - **Back** with [isDirty] asks before throwing the change away.
 ///
 /// [body] fills the space under the banner. Editors that return an `Expanded` (the choice and
