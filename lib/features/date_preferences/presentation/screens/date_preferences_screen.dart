@@ -6,6 +6,7 @@ import 'package:eros_app/features/date_preferences/domain/models/date_preference
 import 'package:eros_app/features/date_preferences/domain/models/date_preferences.dart';
 import 'package:eros_app/features/date_preferences/presentation/providers/date_preference_options_provider.dart';
 import 'package:eros_app/features/date_preferences/presentation/providers/date_preferences_provider.dart';
+import 'package:eros_app/features/date_preferences/presentation/screens/edit_date_types_screen.dart';
 import 'package:eros_app/features/date_preferences/presentation/screens/edit_drinks_screen.dart';
 import 'package:eros_app/features/date_preferences/presentation/screens/edit_food_screen.dart';
 import 'package:eros_app/features/date_preferences/presentation/screens/edit_venue_screen.dart';
@@ -14,8 +15,8 @@ import 'package:eros_app/features/date_preferences/presentation/screens/edit_whe
 /// The "Where" editor (DP-F3).
 const bool whereEditorEnabled = true;
 
-/// The "Date types" editor arrives with DP-F5. Until then its row opens a placeholder.
-const bool dateTypesEditorEnabled = false;
+/// The "Date types" editor (DP-F5).
+const bool dateTypesEditorEnabled = true;
 
 /// The "Dinner" editor arrives with DP-F6. Until then its row opens a placeholder.
 const bool foodEditorEnabled = true;
@@ -187,7 +188,13 @@ class _Hub extends StatelessWidget {
                 level: _Copy.level(preferences.levelFor(activity.activityId)),
               ),
           ],
-          onTap: () => _open(context, title: _Copy.dateTypes, enabled: dateTypesEditorEnabled),
+          onTap: () => _open(
+            context,
+            title: _Copy.dateTypes,
+            enabled: dateTypesEditorEnabled,
+            editor: (_) =>
+                EditDateTypesScreen(activities: options.activities, preferences: preferences),
+          ),
         ),
         if (_offers('FOOD'))
           _Section(

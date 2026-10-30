@@ -71,6 +71,10 @@ class DateActivityOption {
   final String? description;
   final String? iconUrl;
 
+  /// Set by the server when the user is under the city's drinking age, such as "Drinks dates are
+  /// 21+ in Houston" (RFC-005 D-25). The app shows it as given and never works out ages itself.
+  final String? ageNote;
+
   const DateActivityOption({
     required this.activityId,
     required this.name,
@@ -80,6 +84,7 @@ class DateActivityOption {
     required this.durationMinutes,
     this.description,
     this.iconUrl,
+    this.ageNote,
   });
 
   factory DateActivityOption.fromJson(Map<String, dynamic> json) {
@@ -92,6 +97,7 @@ class DateActivityOption {
       durationMinutes: json['durationMinutes'] as int,
       description: json['description'] as String?,
       iconUrl: json['iconUrl'] as String?,
+      ageNote: json['ageNote'] as String?,
     );
   }
 
@@ -104,6 +110,7 @@ class DateActivityOption {
         'durationMinutes': durationMinutes,
         'description': description,
         'iconUrl': iconUrl,
+        'ageNote': ageNote,
       };
 
   @override
@@ -116,11 +123,12 @@ class DateActivityOption {
       other.tokenCost == tokenCost &&
       other.durationMinutes == durationMinutes &&
       other.description == description &&
-      other.iconUrl == iconUrl;
+      other.iconUrl == iconUrl &&
+      other.ageNote == ageNote;
 
   @override
-  int get hashCode => Object.hash(
-      activityId, name, category, status, tokenCost, durationMinutes, description, iconUrl);
+  int get hashCode => Object.hash(activityId, name, category, status, tokenCost, durationMinutes,
+      description, iconUrl, ageNote);
 }
 
 /// The city the options are for: its distance unit, currency, centre and reach.
