@@ -297,6 +297,8 @@ class DateDetail {
   final int? venueId;
   final String? venueName;
   final String? venueAddress;
+  final PriceRange? venuePriceRange; // Null until a venue is assigned
+  final String? venueMenuUrl; // Server resolves menu link, else website, else null
   final DateTime? venueBookedAt;
   final String? bookingReference;
   final DepositStatus depositStatus;
@@ -326,6 +328,8 @@ class DateDetail {
     this.venueId,
     this.venueName,
     this.venueAddress,
+    this.venuePriceRange,
+    this.venueMenuUrl,
     this.venueBookedAt,
     this.bookingReference,
     required this.depositStatus,
@@ -356,6 +360,10 @@ class DateDetail {
         venueId: json['venueId'] as int?,
         venueName: json['venueName'] as String?,
         venueAddress: json['venueAddress'] as String?,
+        venuePriceRange: json['venuePriceRange'] == null
+            ? null
+            : PriceRange.fromJson(json['venuePriceRange'] as Map<String, dynamic>),
+        venueMenuUrl: json['venueMenuUrl'] as String?,
         venueBookedAt: _instant(json['venueBookedAt']),
         bookingReference: json['bookingReference'] as String?,
         depositStatus:
@@ -478,6 +486,19 @@ class DepositPaymentResponse {
       );
 }
 
+/// A venue's price band (RFC-005 §4.7, D-28). There is no money amount: users pay their own bill.
+class PriceRange {
+  final String value; // BUDGET, MID_RANGE, PREMIUM or LUXURY
+  final String symbol; // The city's currency symbol repeated, e.g. "$$". Show as sent.
+
+  const PriceRange({required this.value, required this.symbol});
+
+  factory PriceRange.fromJson(Map<String, dynamic> json) => PriceRange(
+        value: json['value'] as String,
+        symbol: json['symbol'] as String,
+      );
+}
+
 /// Venue option
 class VenueOption {
   final int venueId;
@@ -485,6 +506,8 @@ class VenueOption {
   final String name;
   final String address;
   final String? thumbnailUrl; // Always null today
+  final PriceRange priceRange;
+  final String? menuUrl; // Server resolves menu link, else website, else null
 
   const VenueOption({
     required this.venueId,
@@ -492,6 +515,8 @@ class VenueOption {
     required this.address,
     this.thumbnailUrl,
     required this.optionOrder,
+    required this.priceRange,
+    this.menuUrl,
   });
 
   factory VenueOption.fromJson(Map<String, dynamic> json) => VenueOption(
@@ -500,6 +525,8 @@ class VenueOption {
         address: json['address'] as String,
         thumbnailUrl: json['thumbnailUrl'] as String?,
         optionOrder: json['optionOrder'] as int,
+        priceRange: PriceRange.fromJson(json['priceRange'] as Map<String, dynamic>),
+        menuUrl: json['menuUrl'] as String?,
       );
 }
 
@@ -700,6 +727,8 @@ class VenuePublicInfo {
   final String? imageUrl;
   final DressCode dressCode;
   final String? websiteUrl;
+  final PriceRange priceRange;
+  final String? menuUrl; // Server resolves menu link, else website, else null
 
   const VenuePublicInfo({
     required this.venueId,
@@ -709,6 +738,8 @@ class VenuePublicInfo {
     this.imageUrl,
     required this.dressCode,
     this.websiteUrl,
+    required this.priceRange,
+    this.menuUrl,
   });
 
   factory VenuePublicInfo.fromJson(Map<String, dynamic> json) =>
@@ -720,6 +751,8 @@ class VenuePublicInfo {
         imageUrl: json['imageUrl'] as String?,
         dressCode: enumFromWire(DressCode.values, json['dressCode'] as String),
         websiteUrl: json['websiteUrl'] as String?,
+        priceRange: PriceRange.fromJson(json['priceRange'] as Map<String, dynamic>),
+        menuUrl: json['menuUrl'] as String?,
       );
 }
 

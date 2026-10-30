@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
+import 'package:eros_app/features/dates/presentation/widgets/venue_price_and_menu.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 
@@ -13,6 +14,7 @@ import 'package:eros_app/core/network/exceptions/api_exception.dart';
 /// Shows:
 /// - Venue image
 /// - Name
+/// - Price band and menu link
 /// - Address (tappable - opens maps)
 /// - Description
 /// - Dress code
@@ -196,6 +198,12 @@ class _VenueDetailSheetState extends ConsumerState<VenueDetailSheet> {
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
+              ),
+
+              // Price band and menu link
+              VenuePriceAndMenu(
+                priceRange: venue.priceRange,
+                menuUrl: venue.menuUrl,
               ),
 
               const SizedBox(height: 16),

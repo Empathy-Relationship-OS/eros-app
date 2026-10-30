@@ -4,6 +4,7 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_formats.dart';
+import 'package:eros_app/features/dates/presentation/widgets/venue_price_and_menu.dart';
 import 'package:eros_app/features/dates/presentation/providers/presence_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -91,6 +92,12 @@ class _BookingCardState extends ConsumerState<BookingCard> {
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
+          ),
+
+          // Price band and menu link
+          VenuePriceAndMenu(
+            priceRange: widget.dateDetail.venuePriceRange,
+            menuUrl: widget.dateDetail.venueMenuUrl,
           ),
           const SizedBox(height: 4),
 

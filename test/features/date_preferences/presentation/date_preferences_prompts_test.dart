@@ -214,8 +214,20 @@ void main() {
           venueOptionsProvider('7').overrideWith((ref) async => const VenueOptions(
                 dateId: 7,
                 options: [
-                  VenueOption(venueId: 1, name: 'The Ivy', address: '1 West St', optionOrder: 1),
-                  VenueOption(venueId: 2, name: 'Bao', address: '2 Lexington St', optionOrder: 2),
+                  VenueOption(
+                    venueId: 1,
+                    name: 'The Ivy',
+                    address: '1 West St',
+                    optionOrder: 1,
+                    priceRange: PriceRange(value: 'PREMIUM', symbol: '£££'),
+                  ),
+                  VenueOption(
+                    venueId: 2,
+                    name: 'Bao',
+                    address: '2 Lexington St',
+                    optionOrder: 2,
+                    priceRange: PriceRange(value: 'MID_RANGE', symbol: '££'),
+                  ),
                 ],
                 myRankings: [],
               )),
