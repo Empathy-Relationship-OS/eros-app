@@ -1,6 +1,7 @@
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/date_preferences/data/date_preferences_repository.dart';
 import 'package:eros_app/features/date_preferences/presentation/screens/date_preferences_screen.dart';
+import 'package:eros_app/features/date_preferences/presentation/screens/edit_date_types_screen.dart';
 import 'package:eros_app/features/date_preferences/presentation/screens/edit_where_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -315,6 +316,17 @@ void main() {
       expect(find.byType(EditWhereScreen), findsOneWidget);
       expect(find.widgetWithText(AppBar, 'Where'), findsOneWidget);
       expect(find.text('Clapham'), findsOneWidget);
+    });
+
+    testWidgets('Date types opens its editor', (tester) async {
+      await _pump(tester, _api());
+
+      await tester.tap(find.text('Love it')); // the Dinner line, in the Date types card
+      await tester.pumpAndSettle();
+
+      expect(find.byType(EditDateTypesScreen), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'Date types'), findsOneWidget);
+      expect(find.text('You\'ll be able to change this soon.'), findsNothing);
     });
   });
 }
