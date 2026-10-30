@@ -15,6 +15,7 @@ import 'package:eros_app/features/dates/presentation/widgets/token_amount.dart';
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
 import 'package:eros_app/features/dates/presentation/widgets/terminal_panel.dart';
 import 'package:eros_app/features/dates/presentation/widgets/error_state_widget.dart';
+import 'package:eros_app/features/dates/presentation/widgets/venue_price_and_menu.dart';
 import 'package:eros_app/features/dates/presentation/screens/availability_picker_screen.dart';
 import 'package:eros_app/features/dates/presentation/screens/deposit_sheet.dart';
 import 'package:eros_app/features/dates/presentation/screens/venue_ranking_screen.dart';
@@ -258,6 +259,14 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
                       _buildInlineFact(
                         Icons.location_on,
                         dateDetail.venueName!,
+                      ),
+                      // Lines up with the venue name, past the fact's icon
+                      Padding(
+                        padding: const EdgeInsets.only(left: 22),
+                        child: VenuePriceAndMenu(
+                          priceRange: dateDetail.venuePriceRange,
+                          menuUrl: dateDetail.venueMenuUrl,
+                        ),
                       ),
                       const SizedBox(height: 8),
                     ],

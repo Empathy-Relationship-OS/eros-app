@@ -275,6 +275,14 @@ class DatesCopy {
       'We\'re still sorting venues for this date. Try again shortly.';
 
   // ====================
+  // VENUE PRICE AND MENU (DP-F8)
+  // ====================
+
+  static const String venueSeeMenu = 'See menu';
+
+  static const String venueMenuOpenFailed = 'Could not open link';
+
+  // ====================
   // BOOKING CARD (UI-8)
   // ====================
 

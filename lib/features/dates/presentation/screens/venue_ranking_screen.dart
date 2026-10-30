@@ -10,6 +10,7 @@ import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/deadline_countdown.dart';
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
 import 'package:eros_app/features/dates/presentation/widgets/error_state_widget.dart';
+import 'package:eros_app/features/dates/presentation/widgets/venue_price_and_menu.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -20,6 +21,7 @@ import 'package:url_launcher/url_launcher.dart';
 /// - Drag to reorder venues
 /// - Single venue edge case: show confirm button
 /// - Read-only mode when myRankings.isNotEmpty
+/// - Price band and menu link under each venue's name (RFC-005 §6.4)
 /// - Submit and handle venue assignment response
 /// - Under the options, a link to Date preferences (RFC-005 §6.3)
 class VenueRankingScreen extends ConsumerStatefulWidget {
@@ -384,6 +386,10 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
+                  ),
+                  VenuePriceAndMenu(
+                    priceRange: venue.priceRange,
+                    menuUrl: venue.menuUrl,
                   ),
                   const SizedBox(height: 4),
                   Text(
