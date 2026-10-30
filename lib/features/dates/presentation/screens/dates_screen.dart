@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
+import 'package:eros_app/features/date_preferences/presentation/widgets/date_preferences_prompts.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_list_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
@@ -18,6 +19,7 @@ import 'package:eros_app/features/dates/presentation/screens/date_history_screen
 /// - Active dates: List of date cards
 /// - History icon in app bar (clock arrow) pushes to history screen
 /// - "How Muse works" link below cards
+/// - "Tell us what dates you like" card on top while date preferences aren't set (RFC-005 §6.3)
 class DatesScreen extends ConsumerWidget {
   const DatesScreen({super.key});
 
@@ -49,11 +51,18 @@ class DatesScreen extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            await ref.read(activeDatesProvider.notifier).refresh();
-          },
-          child: _buildBody(context, activeDatesState, authService, ref),
+        child: Column(
+          children: [
+            const DatePreferencesPromptCard(),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  await ref.read(activeDatesProvider.notifier).refresh();
+                },
+                child: _buildBody(context, activeDatesState, authService, ref),
+              ),
+            ),
+          ],
         ),
       ),
     );

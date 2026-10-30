@@ -1,0 +1,11 @@
+[
+  { "cityId": 1, "cityName": "London", "longitude": -0.1278, "latitude": 51.5074,
+    "distanceUnit": "MI", "currency": "GBP", "minDrinkingAge": 18, "reachMeters": 40000,
+    "travelStopMeters": [1609, 3219, 4828, 8047, 16093, 24140] },
+  { "cityId": 2, "cityName": "Houston", "longitude": -95.3698, "latitude": 29.7604,
+    "distanceUnit": "MI", "currency": "USD", "minDrinkingAge": 21, "reachMeters": 70000,
+    "travelStopMeters": [3219, 8047, 16093, 24140, 40234, 64374] },
+  { "cityId": 3, "cityName": "Dallas", "longitude": -96.797, "latitude": 32.7767,
+    "distanceUnit": "MI", "currency": "USD", "minDrinkingAge": 21, "reachMeters": 70000,
+    "travelStopMeters": [3219, 8047, 16093, 24140, 40234, 64374] }
+]

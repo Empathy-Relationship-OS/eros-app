@@ -23,6 +23,10 @@ class ProfileCreationDraft {
   Gender? gender;
   Language? preferredLanguage;
 
+  /// The cities chosen on the dating-cities screen, as backend city ids, in the order chosen.
+  /// Not part of [CreateUserRequest]: saving them is eros-app #16's remaining work.
+  List<int>? datingCityIds;
+
   // Optional profile fields
   String? occupation;
   String? bio;
@@ -66,6 +70,7 @@ class ProfileCreationDraft {
     this.educationLevel,
     this.gender,
     this.preferredLanguage,
+    this.datingCityIds,
     this.occupation,
     this.bio,
     this.interests,
@@ -191,6 +196,7 @@ class ProfileCreationDraft {
       if (gender != null) 'gender': gender!.toBackend(),
       if (preferredLanguage != null)
         'preferredLanguage': preferredLanguage!.code,
+      if (datingCityIds != null) 'datingCityIds': datingCityIds,
       if (occupation != null) 'occupation': occupation,
       if (bio != null) 'bio': bio,
       if (interests != null) 'interests': interests,
@@ -264,6 +270,9 @@ class ProfileCreationDraft {
           : null,
       preferredLanguage: json['preferredLanguage'] != null
           ? Language.fromCode(json['preferredLanguage'] as String)
+          : null,
+      datingCityIds: json['datingCityIds'] != null
+          ? List<int>.from(json['datingCityIds'] as List)
           : null,
       occupation: json['occupation'] as String?,
       bio: json['bio'] as String?,
@@ -421,6 +430,7 @@ class ProfileCreationDraft {
     EducationLevel? educationLevel,
     Gender? gender,
     Language? preferredLanguage,
+    List<int>? datingCityIds,
     String? occupation,
     String? bio,
     List<String>? interests,
@@ -457,6 +467,7 @@ class ProfileCreationDraft {
       educationLevel: educationLevel ?? this.educationLevel,
       gender: gender ?? this.gender,
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
+      datingCityIds: datingCityIds ?? this.datingCityIds,
       occupation: occupation ?? this.occupation,
       bio: bio ?? this.bio,
       interests: interests ?? this.interests,

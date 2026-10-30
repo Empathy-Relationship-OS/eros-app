@@ -39,6 +39,9 @@ class SignOutService {
 
   /// List of SharedPreferences keys that should NOT be cleared on sign-out
   /// These are app-level settings that should persist across accounts
+  ///
+  /// Every other key is per-user and cleared, including the date preference
+  /// prompts' per-uid "shown" and "dismissed" keys (DatePreferencesPromptStore).
   static const List<String> _preservedKeys = [
     'app_settings', // App settings (notifications, language preferences)
     // Dev tooling: recent personas, kept across persona switches
