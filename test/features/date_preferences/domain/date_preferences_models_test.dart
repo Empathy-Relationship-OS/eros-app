@@ -137,6 +137,7 @@ void main() {
       expect(options.activities.single.tokenCost, 1.0);
       expect(options.city!.distanceUnit, 'MI');
       expect(options.city!.centre, const GeoPoint(latitude: 51.5074, longitude: -0.1278));
+      expect(options.city!.reachMeters, 40000);
       expect(options.travelStops.map((s) => s.meters), [1609, 8047]);
       expect(options.limits.maxCuisinesExcluded, 5);
     });

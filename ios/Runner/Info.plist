@@ -68,5 +68,7 @@
 	</array>
 	<key>NSUserNotificationUsageDescription</key>
 	<string>We need your permission to send you notifications about new matches, date reminders, and important updates.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Used to place your starting point on the map. We don't track your location.</string>
 </dict>
 </plist>

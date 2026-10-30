@@ -40,3 +40,30 @@ Devtools are gated by the compile-time constant `DevtoolsConfig.enabled`
 `ENV` is `local` or `develop`. In every other build (including `ENV=beta` or
 `ENV=production` with `DEVTOOLS=true`) the constant is false, so the guarded code is removed
 by the compiler: there is no DEV button, no `/dev` route and no dev HTTP client in the binary.
+
+## Map tiles
+
+The starting-point map (date preferences, RFC-005 §6.5) uses `flutter_map` with a hosted tile
+provider such as MapTiler, Stadia or Mapbox. The provider is build configuration, read by
+`MapConfig` (`lib/core/config/map_config.dart`):
+
+| Define | What it is |
+|---|---|
+| `MAP_TILE_URL` | Tile URL template with `{z}`, `{x}`, `{y}` and `{key}`, e.g. `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key={key}` |
+| `MAP_TILE_KEY` | The provider's API key, filled into `{key}` |
+| `MAP_TILE_ATTRIBUTION` | The credit the map always shows, e.g. `© MapTiler © OpenStreetMap contributors` |
+
+```bash
+flutter run --dart-define=ENV=develop \
+  --dart-define=MAP_TILE_URL='https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key={key}' \
+  --dart-define=MAP_TILE_KEY=<your key> \
+  --dart-define=MAP_TILE_ATTRIBUTION='© MapTiler © OpenStreetMap contributors'
+```
+
+- A local build (`ENV=local`) without `MAP_TILE_URL` shows a plain grey map, so development
+  works without a key.
+- Any other build without all three values throws when the map opens, with the command to run.
+- Never use OpenStreetMap's own tile servers (`tile.openstreetmap.org`): their usage policy
+  doesn't allow app traffic, and `MapConfig` rejects them.
+- Don't commit a key. A tile key ships inside the app, so restrict it in the provider's console
+  to the app's bundle id (`com.eros.eros_app`) and set a usage cap.

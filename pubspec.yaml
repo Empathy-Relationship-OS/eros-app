@@ -80,6 +80,11 @@ dependencies:
   # Calendar
   add_2_calendar: ^3.0.1
 
+  # Maps and location (RFC-005 §6.5): tiles come from MapConfig, never OpenStreetMap's servers
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
+  geolocator: ^14.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
