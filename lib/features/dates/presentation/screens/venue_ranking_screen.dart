@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
+import 'package:eros_app/features/date_preferences/presentation/widgets/date_preferences_prompts.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/venue_ranking_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
@@ -20,6 +21,7 @@ import 'package:url_launcher/url_launcher.dart';
 /// - Single venue edge case: show confirm button
 /// - Read-only mode when myRankings.isNotEmpty
 /// - Submit and handle venue assignment response
+/// - Under the options, a link to Date preferences (RFC-005 §6.3)
 class VenueRankingScreen extends ConsumerStatefulWidget {
   final String dateId;
   final DateTime? rankingDeadline;
@@ -172,6 +174,8 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
                     ? _buildSingleVenueCard(_orderedVenues.first)
                     : _buildReorderableList(isReadOnly),
               ),
+
+              const DatePreferencesUpdateLink(),
 
               // Footer button
               if (!isReadOnly)

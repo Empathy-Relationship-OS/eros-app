@@ -64,12 +64,12 @@ class _EditSectionScaffoldState extends State<EditSectionScaffold> {
       _fail(e.message?.toString() ?? 'Please check your changes and try again.');
     } on QARepositoryException catch (e) {
       _fail(e.message);
+    } on PhotoRepositoryException {
+      _fail(null); // the photo editor shows the error from its state
     } on DatePreferencesValidationException catch (e) {
       _fail(e.message);
     } on DatePreferencesRepositoryException catch (e) {
       _fail(e.message);
-    } on PhotoRepositoryException {
-      _fail(null); // the photo editor shows the error from its state
     } catch (e, stack) {
       // Anything else is a bug. Report it, and never leave Save disabled and back blocked.
       FlutterError.reportError(FlutterErrorDetails(

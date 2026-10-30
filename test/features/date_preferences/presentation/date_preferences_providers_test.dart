@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/date_preferences/data/date_preferences_repository.dart';
 import 'package:eros_app/features/date_preferences/domain/models/date_preferences.dart';
@@ -20,6 +23,22 @@ ProviderContainer _container(FakeDatePreferencesApi api) {
   ]);
   addTearDown(container.dispose);
   return container;
+}
+
+/// Holds each GET until the test answers it, so responses can land out of order.
+class _HeldApi extends FakeDatePreferencesApi {
+  _HeldApi()
+      : super(responses: {'GET $_preferencesPath': dpFixture('get_users_me_date_preferences')});
+
+  final held = <Completer<void>>[];
+
+  @override
+  Future<T> get<T>(String path, {Map<String, dynamic>? queryParameters, Options? options}) async {
+    final answer = Completer<void>();
+    held.add(answer);
+    await answer.future;
+    return super.get<T>(path, queryParameters: queryParameters, options: options);
+  }
 }
 
 void main() {
@@ -86,6 +105,44 @@ void main() {
 
       expect(api.requests.length, 2);
       expect(container.read(datePreferencesProvider).hasValue, isTrue);
+    });
+
+    test('a load that finishes after a newer one is ignored', () async {
+      final api = _HeldApi();
+      final container = _container(api);
+      final initial = container.read(datePreferencesProvider.future);
+      api.held.single.complete();
+      await initial;
+      final notifier = container.read(datePreferencesProvider.notifier);
+
+      final first = notifier.load();
+      final retry = notifier.load();
+      api.held[2].complete();
+      await retry;
+      api.held[1].completeError(const ServerException('Server error'));
+      await first;
+
+      final state = container.read(datePreferencesProvider);
+      expect(state.hasError, isFalse);
+      expect(state.isLoading, isFalse);
+      expect(state.hasValue, isTrue);
+    });
+
+    test('a load that finishes after a save is ignored', () async {
+      final api = _HeldApi()
+        ..responses['PATCH $_preferencesPath'] = dpFixture('get_users_me_date_preferences');
+      final container = _container(api);
+      final initial = container.read(datePreferencesProvider.future);
+      api.held.single.complete();
+      final before = await initial;
+      final notifier = container.read(datePreferencesProvider.notifier);
+
+      final reload = notifier.load();
+      final saved = await notifier.saveSection(VenuePatch(before.venue));
+      api.held[1].completeError(const ServerException('Server error'));
+      await reload;
+
+      expect(container.read(datePreferencesProvider), AsyncData(saved));
     });
   });
 
