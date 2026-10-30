@@ -40,6 +40,7 @@ abstract final class _Copy {
   static String editHint(String section) => 'Edit $section';
 
   static const cityCentre = 'City centre';
+  static const yourStartingPoint = 'Your starting point';
   static String near(String district) => 'near $district';
   static const anywhere = 'Anywhere';
   static String upTo(String distance) => 'up to $distance';
@@ -235,10 +236,12 @@ List<Widget> _whereLines(WherePreferences where, DatePreferenceOptions options) 
   ];
 }
 
+/// "City centre" only when no pin is set; a pin in a city without districts has no name.
 String _startLabel(StartPoint? start) {
-  final district = start?.district;
+  if (start == null) return _Copy.cityCentre;
+  final district = start.district;
   if (district != null) return _Copy.near(district.name);
-  return _Copy.cityCentre;
+  return _Copy.yourStartingPoint;
 }
 
 /// "up to 5 miles", in the city's unit, or "Anywhere". Uses the matching travel stop's label
@@ -365,17 +368,21 @@ class _Section extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        // The button below reads the title, so screen readers don't hear it twice.
+        ExcludeSemantics(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
           ),
         ),
-        // Its own node, so the button reads the summary and not the heading above it.
+        // One button node reading the title, then the summary, so it is named with hints off.
         Semantics(
           container: true,
           button: true,
+          label: title,
           hint: _Copy.editHint(title),
           child: Material(
             color: Colors.white,
