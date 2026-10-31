@@ -165,6 +165,7 @@ final _date = DateDetail(
   partnerName: 'Sam',
   activityId: 1,
   activityName: 'Coffee',
+  durationMinutes: 90,
   tokenCost: '5.00',
   cityId: 1,
   cityName: 'London',

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/time/server_clock.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/availability_provider.dart';
+import 'package:eros_app/features/dates/presentation/providers/dates_list_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
@@ -20,6 +22,8 @@ import 'package:intl/intl.dart';
 /// - Tap cycle: unmarked → Available → Busy → unmarked
 /// - Partner availability shown side-by-side with colored indicators
 /// - Requires 3+ Available slots to submit
+/// - Blocked slots can't be marked; tapping one shows the server's reason
+/// - A day where every slot is ACTIVITY_CLOSED collapses to one line
 class AvailabilityPickerScreen extends ConsumerStatefulWidget {
   final String dateId;
   final int round;
@@ -102,21 +106,32 @@ class _AvailabilityPickerScreenState
         data: (availability) {
           // Load mySlots into _marks on first build (excluding blocked slots)
           if (_marks.isEmpty && availability.mySlots.isNotEmpty) {
-            // Create a set of blocked slot times for fast lookup
-            final blockedTimes = availability.blockedSlots
-                .map((s) => s.slotStart)
-                .toSet();
-
             for (final slot in availability.mySlots) {
-              // Only load non-blocked slots
-              if (!blockedTimes.contains(slot.slotStart)) {
-                _marks[slot.slotStart] = slot.availability;
-              }
+              _marks[slot.slotStart] = slot.availability;
             }
           }
+          // Also covers a refresh: a mark on a newly blocked slot must not be counted or sent
+          _marks.removeWhere((slot, _) => availability.blockedByStart.containsKey(slot));
 
           return Column(
             children: [
+              // The kind of date and its length
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                child: Text(
+                  DatesCopy.availabilityDateSummary(
+                    availability.activityName,
+                    availability.durationMinutes,
+                  ),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+
               // Partner legend
               if (availability.partnerSlots.isNotEmpty)
                 Container(
@@ -296,6 +311,23 @@ class _AvailabilityPickerScreenState
   }
 
   Widget _buildSlotList(AvailabilityView availability) {
+    if (_isDayClosed(availability)) {
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: Text(
+            DatesCopy.availabilityDayClosed(availability.activityName),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 15,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      );
+    }
+
     final slots = _generateSlots();
 
     return ListView.builder(
@@ -366,27 +398,32 @@ class _AvailabilityPickerScreenState
         .firstOrNull
         ?.availability;
 
-    // Check if this slot is blocked
-    final blockedSlot = availability.blockedSlots
-        .where((s) => s.slotStart.isAtSameMomentAs(slotStart))
-        .firstOrNull;
+    // Check if this slot is blocked. ACTIVITY_CLOSED is lighter than other blocks: it's just
+    // outside the venues' hours, while an unknown code is treated like ANOTHER_DATE.
+    final blockedSlot = availability.blockedByStart[slotStart];
     final isBlocked = blockedSlot != null;
+    final isClosed = blockedSlot?.code == BlockedSlotCode.activityClosed;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
-      child: Tooltip(
-        message: isBlocked ? blockedSlot.reason : '',
-        preferBelow: false,
+      child: Semantics(
+        hint: blockedSlot?.reason,
         child: InkWell(
-          onTap: isBlocked ? null : () => _cycleSlot(slotStart),
-          onLongPress: isBlocked ? null : () => _fillRestOfDay(slotStart, myMark),
+          onTap: isBlocked
+              ? () => _showBlockedReason(blockedSlot)
+              : () => _cycleSlot(slotStart),
+          onLongPress: isBlocked
+              ? () => _showBlockedReason(blockedSlot)
+              : () => _fillRestOfDay(slotStart, myMark, availability),
           borderRadius: BorderRadius.circular(8),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
             decoration: BoxDecoration(
-              color: _getSlotBackgroundColor(myMark, isBlocked: isBlocked),
+              color: isClosed
+                  ? Colors.transparent
+                  : _getSlotBackgroundColor(myMark, isBlocked: isBlocked),
               borderRadius: BorderRadius.circular(8),
-              border: isBlocked ? Border.all(
+              border: isBlocked && !isClosed ? Border.all(
                 color: AppColors.textTertiary.withValues(alpha: 0.3),
                 width: 1,
               ) : null,
@@ -398,7 +435,7 @@ class _AvailabilityPickerScreenState
                   timeLabel,
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: isClosed ? FontWeight.w400 : FontWeight.w500,
                     color: _getSlotTextColor(myMark, isBlocked: isBlocked),
                   ),
                 ),
@@ -406,7 +443,10 @@ class _AvailabilityPickerScreenState
                 const Spacer(),
 
                 // My availability indicator
-                _buildAvailabilityIndicator(myMark, isPartner: false, isBlocked: isBlocked),
+                if (isClosed)
+                  const SizedBox(width: 32, height: 32)
+                else
+                  _buildAvailabilityIndicator(myMark, isPartner: false, isBlocked: isBlocked),
 
                 const SizedBox(width: 16),
 
@@ -663,7 +703,7 @@ class _AvailabilityPickerScreenState
     return days;
   }
 
-  List<DateTime> _generateSlots() {
+  List<DateTime> _generateSlots({bool includeEarlier = false}) {
     final slots = <DateTime>[];
     final dayStart = DateTime(
       _selectedDay.year,
@@ -674,7 +714,7 @@ class _AvailabilityPickerScreenState
     // Default: 15:00 (3pm) to 22:00 (10pm)
     // Earlier: 09:00 (9am) to 14:30
     // Absolute limits: 09:00 to 22:00 (9am to 10pm, last slot at 22:00)
-    final int startHour = _showEarlierSlots ? 9 : 15;
+    final int startHour = includeEarlier || _showEarlierSlots ? 9 : 15;
     final int endHour = 22; // Always ends at 22:00 (10pm)
 
     for (int hour = startHour; hour <= endHour; hour++) {
@@ -694,6 +734,21 @@ class _AvailabilityPickerScreenState
     }
 
     return slots;
+  }
+
+  /// Whether every slot of the selected day is ACTIVITY_CLOSED. Earlier slots count even when
+  /// hidden, or a morning coffee would disappear behind the collapsed line.
+  bool _isDayClosed(AvailabilityView availability) {
+    final slots = _generateSlots(includeEarlier: true);
+    return slots.isNotEmpty &&
+        slots.every((slot) =>
+            availability.blockedByStart[slot]?.code == BlockedSlotCode.activityClosed);
+  }
+
+  void _showBlockedReason(BlockedSlotDto blockedSlot) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(blockedSlot.reason)));
   }
 
   bool _isSameDay(DateTime a, DateTime b) {
@@ -720,7 +775,11 @@ class _AvailabilityPickerScreenState
     });
   }
 
-  void _fillRestOfDay(DateTime slotStart, SlotAvailability? currentMark) {
+  void _fillRestOfDay(
+    DateTime slotStart,
+    SlotAvailability? currentMark,
+    AvailabilityView availability,
+  ) {
     // Determine target mark: if currently unmarked, fill with Free; else toggle
     final targetMark = currentMark == null
         ? SlotAvailability.available
@@ -730,6 +789,7 @@ class _AvailabilityPickerScreenState
 
     final daySlots = _generateSlots()
         .where((s) => !s.isBefore(slotStart))
+        .where((s) => !availability.blockedByStart.containsKey(s))
         .toList();
 
     setState(() {
@@ -851,6 +911,22 @@ class _AvailabilityPickerScreenState
         // Still AWAITING_AVAILABILITY - waiting on partner
         Navigator.of(context).pop();
       }
+    } on ValidationException catch (e) {
+      if (!mounted) return;
+      // Usually a slot blocked since this grid loaded (a race): refresh, and the build drops it
+      ref.invalidate(availabilityProvider(widget.dateId));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } on ConflictException {
+      if (!mounted) return;
+      // The date moved on while the picker was open, usually because it expired (RFC-005 D-30).
+      // The detail screen refetches when the picker closes, but the dates list doesn't.
+      ref.read(activeDatesProvider.notifier).refresh();
+      Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -870,7 +946,7 @@ class _AvailabilityPickerScreenState
     if (dateDetail.scheduledStart != null) {
       final formatter = DateFormat('EEE d MMM, HH:mm');
       final start = formatter.format(dateDetail.scheduledStart!.toLocal());
-      final end = DateFormat('HH:mm').format(dateDetail.scheduledStart!.add(const Duration(hours: 2)).toLocal());
+      final end = DateFormat('HH:mm').format(dateDetail.endTime!.toLocal());
       agreedTimeRange = '$start - $end';
     }
 

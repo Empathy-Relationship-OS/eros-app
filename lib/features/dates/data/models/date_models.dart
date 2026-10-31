@@ -38,6 +38,13 @@ enum SlotAvailability {
   noPreference; // Request-only, never returned by backend
 }
 
+/// Why a slot is blocked. [unknown] covers any code this build doesn't know.
+enum BlockedSlotCode {
+  anotherDate,
+  activityClosed,
+  unknown,
+}
+
 enum ParticipantDepositStatus {
   paid,
   pending,
@@ -285,6 +292,7 @@ class DateDetail {
   final String? partnerThumbnailUrl;
   final int activityId;
   final String activityName;
+  final int durationMinutes; // Fixed at creation (RFC-005 D-21)
   final String tokenCost; // Decimal string, e.g. "5.00"
   final int cityId;
   final String cityName;
@@ -316,6 +324,7 @@ class DateDetail {
     this.partnerThumbnailUrl,
     required this.activityId,
     required this.activityName,
+    required this.durationMinutes,
     required this.tokenCost,
     required this.cityId,
     required this.cityName,
@@ -348,6 +357,7 @@ class DateDetail {
         partnerThumbnailUrl: json['partnerThumbnailUrl'] as String?,
         activityId: json['activityId'] as int,
         activityName: json['activityName'] as String,
+        durationMinutes: json['durationMinutes'] as int,
         tokenCost: json['tokenCost'] as String,
         cityId: json['cityId'] as int,
         cityName: json['cityName'] as String,
@@ -378,6 +388,10 @@ class DateDetail {
 
   // Helpers every screen needs
   String partnerId(String myUid) => user1Id == myUid ? user2Id : user1Id;
+
+  /// When the agreed time ends. Non-null whenever [scheduledStart] is set.
+  DateTime? get endTime =>
+      scheduledEnd ?? scheduledStart?.add(Duration(minutes: durationMinutes));
 
   ParticipantDepositStatus myDeposit(String myUid) =>
       user1Id == myUid ? depositStatus.user1 : depositStatus.user2;
@@ -424,12 +438,22 @@ class SlotDto {
 /// Blocked slot DTO - slots that cannot be selected
 class BlockedSlotDto {
   final DateTime slotStart;
-  final String reason; // Human-readable message explaining why it's blocked
+  final BlockedSlotCode code;
+  final String reason; // Human-readable message explaining why it's blocked. Show as sent.
 
-  const BlockedSlotDto({required this.slotStart, required this.reason});
+  const BlockedSlotDto({
+    required this.slotStart,
+    required this.code,
+    required this.reason,
+  });
 
   factory BlockedSlotDto.fromJson(Map<String, dynamic> json) => BlockedSlotDto(
         slotStart: _instant(json['slotStart'])!,
+        // Not enumFromWire: an unknown code still blocks the slot, it must not fail the parse
+        code: BlockedSlotCode.values.firstWhere(
+          (c) => enumToWire(c) == json['code'],
+          orElse: () => BlockedSlotCode.unknown,
+        ),
         reason: json['reason'] as String,
       );
 }
@@ -437,13 +461,22 @@ class BlockedSlotDto {
 /// Availability view response
 class AvailabilityView {
   final int dateId;
+  final String activityName;
+  final int durationMinutes; // Fixed at creation (RFC-005 D-21)
   final int currentRound;
   final List<SlotDto> mySlots;
   final List<SlotDto> partnerSlots;
   final List<BlockedSlotDto> blockedSlots;
 
-  const AvailabilityView({
+  /// [blockedSlots] by UTC start. The list can hold hundreds of entries, so look slots up here.
+  late final Map<DateTime, BlockedSlotDto> blockedByStart = {
+    for (final slot in blockedSlots) slot.slotStart.toUtc(): slot,
+  };
+
+  AvailabilityView({
     required this.dateId,
+    required this.activityName,
+    required this.durationMinutes,
     required this.currentRound,
     required this.mySlots,
     required this.partnerSlots,
@@ -453,6 +486,8 @@ class AvailabilityView {
   factory AvailabilityView.fromJson(Map<String, dynamic> json) =>
       AvailabilityView(
         dateId: json['dateId'] as int,
+        activityName: json['activityName'] as String,
+        durationMinutes: json['durationMinutes'] as int,
         currentRound: json['currentRound'] as int,
         mySlots: (json['mySlots'] as List)
             .map((e) => SlotDto.fromJson(e as Map<String, dynamic>))
@@ -765,7 +800,6 @@ class DatesConstants {
   DatesConstants._();
 
   static const int slotGridMinutes = 30;
-  static const int dateDurationMinutes = 120;
   static const int minLeadHours = 48;
   static const int horizonDays = 21;
   static const int minAvailableSlots = 3;

@@ -123,7 +123,10 @@ class _BookingCardState extends ConsumerState<BookingCard> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  DateFormats.formatRange(widget.dateDetail.scheduledStart!),
+                  DateFormats.formatDateTimeRange(
+                    widget.dateDetail.scheduledStart!,
+                    widget.dateDetail.endTime!,
+                  ),
                   style: const TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -257,8 +260,10 @@ class _BookingCardState extends ConsumerState<BookingCard> {
                           Text(
                             DatesCopy.bookingConfirmedCaption(
                               widget.dateDetail.venueName!,
-                              DateFormats.formatRange(
-                                  widget.dateDetail.scheduledStart!),
+                              DateFormats.formatDateTimeRange(
+                                widget.dateDetail.scheduledStart!,
+                                widget.dateDetail.endTime!,
+                              ),
                             ),
                             style: const TextStyle(
                               fontSize: 12,
@@ -459,8 +464,6 @@ class _BookingCardState extends ConsumerState<BookingCard> {
     final scheduledStart = widget.dateDetail.scheduledStart;
     if (scheduledStart == null) return;
 
-    final scheduledEnd = scheduledStart.add(const Duration(hours: 2));
-
     final event = calendar.Event(
       title: DatesCopy.bookingCalendarTitle(
         widget.dateDetail.partnerName,
@@ -469,7 +472,7 @@ class _BookingCardState extends ConsumerState<BookingCard> {
       description: 'Date with ${widget.dateDetail.partnerName}',
       location: widget.dateDetail.venueAddress,
       startDate: scheduledStart,
-      endDate: scheduledEnd,
+      endDate: widget.dateDetail.endTime!,
     );
 
     await calendar.Add2Calendar.addEvent2Cal(event);
