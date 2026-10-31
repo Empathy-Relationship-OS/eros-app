@@ -34,6 +34,7 @@ Map<String, dynamic> _dateDetail({Map<String, dynamic>? priceRange, String? menu
       'partnerThumbnailUrl': null,
       'activityId': 1,
       'activityName': 'Dinner',
+      'durationMinutes': 120,
       'tokenCost': '1.00',
       'cityId': 1,
       'cityName': 'London',

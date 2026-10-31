@@ -770,7 +770,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
     if (dateDetail.scheduledStart != null) {
       final formatter = DateFormat('EEE d MMM, HH:mm');
       final start = formatter.format(dateDetail.scheduledStart!.toLocal());
-      final end = DateFormat('HH:mm').format(dateDetail.scheduledStart!.add(const Duration(hours: 2)).toLocal());
+      final end = DateFormat('HH:mm').format(dateDetail.endTime!.toLocal());
       agreedTimeRange = '$start - $end';
     }
 

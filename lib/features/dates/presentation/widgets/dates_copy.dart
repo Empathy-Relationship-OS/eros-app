@@ -197,6 +197,17 @@ class DatesCopy {
   static String availabilitySubtitle(int round) =>
       'Round $round of 2. Pick at least 3 times.';
 
+  /// "Dinner, about 2 hours". A length that isn't whole hours stays in minutes:
+  /// "Coffee, about 90 minutes".
+  static String availabilityDateSummary(String activityName, int durationMinutes) {
+    if (durationMinutes % 60 != 0) return '$activityName, about $durationMinutes minutes';
+    final hours = durationMinutes ~/ 60;
+    return '$activityName, about $hours ${hours == 1 ? 'hour' : 'hours'}';
+  }
+
+  static String availabilityDayClosed(String activityName) =>
+      'No $activityName places open this day';
+
   static const String availabilityDiscardConfirm = 'Discard changes?';
 
   static String availabilityCounter(int count, int required) =>

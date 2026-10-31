@@ -88,6 +88,7 @@ DateDetail _date({
     partnerName: 'Sam',
     activityId: 1,
     activityName: 'Dinner',
+    durationMinutes: 120,
     tokenCost: '1.00',
     cityId: 1,
     cityName: 'London',
