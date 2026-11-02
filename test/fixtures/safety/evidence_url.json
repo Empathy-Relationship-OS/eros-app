@@ -1,0 +1,6 @@
+{
+  "evidenceId": "0f8fad5b-d9cb-469f-a165-70867728950e",
+  "uploadUrl": "https://evidence.example/upload",
+  "headers": { "Content-Type": "image/png" },
+  "expiresAt": "2026-11-07T19:15:00Z"
+}

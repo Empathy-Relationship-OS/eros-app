@@ -3,8 +3,18 @@ import 'package:logger/logger.dart';
 import '../api_config.dart';
 
 /// Logs HTTP requests and responses (only in non-production environments)
+///
+/// Chat messages and report descriptions are never printed (RFC-006 primer rule 20): for a
+/// path containing `/chat` or `/report`, only the method, path and status are logged.
 class LoggingInterceptor extends Interceptor {
-  final Logger _logger = Logger();
+  final Logger _logger;
+
+  LoggingInterceptor({Logger? logger}) : _logger = logger ?? Logger();
+
+  static const String _bodyNotLogged = '[not logged]';
+
+  /// Paths whose bodies may hold private text.
+  static bool _isPrivate(Uri uri) => uri.path.contains('/chat') || uri.path.contains('/report');
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -13,7 +23,7 @@ class LoggingInterceptor extends Interceptor {
 📤 REQUEST
 ${options.method} ${options.uri}
 Headers: ${_sanitizeHeaders(options.headers)}
-Body: ${_sanitizeBody(options.data)}
+Body: ${_isPrivate(options.uri) ? _bodyNotLogged : _sanitizeBody(options.data)}
 ''');
     }
     handler.next(options);
@@ -25,7 +35,7 @@ Body: ${_sanitizeBody(options.data)}
       _logger.d('''
 📥 RESPONSE
 ${response.statusCode} ${response.requestOptions.uri}
-Body: ${_truncateData(response.data)}
+Body: ${_isPrivate(response.requestOptions.uri) ? _bodyNotLogged : _truncateData(response.data)}
 ''');
     }
     handler.next(response);
@@ -39,7 +49,7 @@ Body: ${_truncateData(response.data)}
 ${err.requestOptions.method} ${err.requestOptions.uri}
 Status: ${err.response?.statusCode}
 Error: ${err.message}
-Response: ${err.response?.data}
+Response: ${_isPrivate(err.requestOptions.uri) ? _bodyNotLogged : err.response?.data}
 ''');
     }
     handler.next(err);

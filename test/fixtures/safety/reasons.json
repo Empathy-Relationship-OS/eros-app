@@ -1,0 +1,8 @@
+[
+  { "code": "FEELS_UNSAFE", "label": "I feel unsafe" },
+  { "code": "THREATENING", "label": "They threatened me" },
+  { "code": "HARASSMENT", "label": "Harassment" },
+  { "code": "SEXUAL_CONTENT", "label": "Unwanted sexual content" },
+  { "code": "FAKE_PROFILE", "label": "Fake profile" },
+  { "code": "OTHER", "label": "Something else" }
+]

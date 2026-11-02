@@ -6,12 +6,14 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 DATES_DIR="$PROJECT_ROOT/lib/features/dates"
+# Safety copy (CH-F5) follows the same rule
+SAFETY_DIR="$PROJECT_ROOT/lib/features/safety"
 
-echo "🔍 Checking for em-dashes in dates feature..."
+echo "🔍 Checking for em-dashes in dates and safety features..."
 
 # Run grep and capture exit code
 set +e
-grep -r "—" "$DATES_DIR/" 2>&1
+grep -r "—" "$DATES_DIR/" "$SAFETY_DIR/" 2>&1
 GREP_EXIT=$?
 set -e
 
@@ -20,7 +22,7 @@ set -e
 # 1 = no matches (success)
 # 2+ = error (fail)
 if [ $GREP_EXIT -eq 0 ]; then
-    echo "❌ FAIL: Em-dashes found in dates feature code"
+    echo "❌ FAIL: Em-dashes found in dates or safety feature code"
     echo "Please replace em-dashes with commas, periods, or hyphens with spaces"
     exit 1
 elif [ $GREP_EXIT -eq 1 ]; then
