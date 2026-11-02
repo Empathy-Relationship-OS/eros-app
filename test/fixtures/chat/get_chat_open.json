@@ -1,0 +1,13 @@
+{
+  "dateId": 42,
+  "status": "OPEN",
+  "closesAt": "2026-11-07T21:00:00Z",
+  "readableUntil": "2026-12-07T21:00:00Z",
+  "lastSeq": 18,
+  "unreadCount": 2,
+  "yourLastReadSeq": 16,
+  "partnerLastReadSeq": 18,
+  "partnerName": "Alex",
+  "partnerThumbnailUrl": "https://example.com/alex.jpg",
+  "quickReplies": [{ "key": "ON_MY_WAY", "text": "On my way" }]
+}

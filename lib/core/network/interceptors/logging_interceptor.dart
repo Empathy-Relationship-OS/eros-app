@@ -3,12 +3,23 @@ import 'package:logger/logger.dart';
 import '../api_config.dart';
 
 /// Logs HTTP requests and responses (only in non-production environments)
+///
+/// Chat and report calls carry message text and report descriptions, which must never be
+/// printed (RFC-006 §4.11). For those paths it logs the method, path and status only, with
+/// no query, headers or bodies.
 class LoggingInterceptor extends Interceptor {
-  final Logger _logger = Logger();
+  final Logger _logger;
+
+  LoggingInterceptor({Logger? logger}) : _logger = logger ?? Logger();
+
+  /// True for paths whose bodies are private: anything containing `/chat` or `/report`.
+  static bool isPrivatePath(String path) => path.contains('/chat') || path.contains('/report');
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    if (ApiConfig.enableDetailedLogging) {
+    if (ApiConfig.enableDetailedLogging && isPrivatePath(options.uri.path)) {
+      _logger.d('📤 REQUEST ${options.method} ${options.uri.path}');
+    } else if (ApiConfig.enableDetailedLogging) {
       _logger.d('''
 📤 REQUEST
 ${options.method} ${options.uri}
@@ -21,7 +32,10 @@ Body: ${_sanitizeBody(options.data)}
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    if (ApiConfig.enableDetailedLogging) {
+    final uri = response.requestOptions.uri;
+    if (ApiConfig.enableDetailedLogging && isPrivatePath(uri.path)) {
+      _logger.d('📥 RESPONSE ${response.statusCode} ${response.requestOptions.method} ${uri.path}');
+    } else if (ApiConfig.enableDetailedLogging) {
       _logger.d('''
 📥 RESPONSE
 ${response.statusCode} ${response.requestOptions.uri}
@@ -33,7 +47,10 @@ Body: ${_truncateData(response.data)}
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    if (ApiConfig.enableDetailedLogging) {
+    final uri = err.requestOptions.uri;
+    if (ApiConfig.enableDetailedLogging && isPrivatePath(uri.path)) {
+      _logger.e('❌ ERROR ${err.response?.statusCode} ${err.requestOptions.method} ${uri.path}');
+    } else if (ApiConfig.enableDetailedLogging) {
       _logger.e('''
 ❌ ERROR
 ${err.requestOptions.method} ${err.requestOptions.uri}

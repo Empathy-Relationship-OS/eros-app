@@ -1,0 +1,23 @@
+{
+  "messages": [
+    {
+      "seq": 17,
+      "fromMe": false,
+      "kind": "TEXT",
+      "quickReplyKey": null,
+      "text": "Just parking, 5 minutes",
+      "contactDetected": false,
+      "createdAt": "2026-11-07T18:58:03Z"
+    },
+    {
+      "seq": 18,
+      "fromMe": true,
+      "kind": "QUICK_REPLY",
+      "quickReplyKey": "ON_MY_WAY",
+      "text": "On my way",
+      "contactDetected": false,
+      "createdAt": "2026-11-07T18:59:10Z"
+    }
+  ],
+  "hasMore": true
+}

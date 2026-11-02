@@ -19,4 +19,7 @@ class UserTextLimits {
 
   static const int qaAnswer = 200;
   static const int cancellationReason = 150;
+
+  /// One date chat message (RFC-006 D-20).
+  static const int chatMessage = 1000;
 }

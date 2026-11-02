@@ -48,6 +48,7 @@ import 'features/profile/domain/models/question_dto.dart';
 import 'features/home/presentation/screens/home_screen.dart';
 import 'features/dates/presentation/screens/date_detail_screen.dart';
 import 'features/dates/presentation/screens/availability_picker_screen.dart';
+import 'features/chat/presentation/screens/chat_screen.dart';
 import 'features/devtools/devtools_config.dart';
 import 'features/devtools/presentation/dev_menu_navigation.dart';
 import 'features/devtools/presentation/dev_menu_screen.dart';
@@ -174,6 +175,15 @@ class ErosApp extends StatelessWidget {
           final dateId = settings.arguments as String;
           return MaterialPageRoute(
             builder: (context) => DateDetailScreen(dateId: dateId),
+          );
+        }
+
+        // Date chat route (RFC-006 §6.2). Push notifications open it with the date id.
+        if (settings.name == ChatScreen.routeName) {
+          final dateId = settings.arguments as String;
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (context) => ChatScreen(dateId: dateId),
           );
         }
 

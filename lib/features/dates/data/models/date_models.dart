@@ -9,6 +9,8 @@
 /// - Nullable fields: present as null, never omitted
 library;
 
+import 'package:eros_app/features/chat/data/models/chat_models.dart';
+
 // ====================
 // ENUMS
 // ====================
@@ -312,6 +314,7 @@ class DateDetail {
   final DepositStatus depositStatus;
   final bool cancellable;
   final List<TimelineStepDto> timeline; // Always 6, fixed order
+  final ChatSummary chat; // Drives the chat entry, never DateState (RFC-006 §6.1)
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -344,6 +347,7 @@ class DateDetail {
     required this.depositStatus,
     required this.cancellable,
     required this.timeline,
+    this.chat = ChatSummary.notOpen,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -382,6 +386,9 @@ class DateDetail {
         timeline: (json['timeline'] as List)
             .map((e) => TimelineStepDto.fromJson(e as Map<String, dynamic>))
             .toList(),
+        chat: json['chat'] == null
+            ? ChatSummary.notOpen
+            : ChatSummary.fromJson(json['chat'] as Map<String, dynamic>),
         createdAt: _instant(json['createdAt'])!,
         updatedAt: _instant(json['updatedAt'])!,
       );
