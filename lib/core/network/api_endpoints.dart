@@ -8,6 +8,7 @@ class ApiEndpoints {
 
   // Feature-specific endpoint groups
   static final users = _UsersEndpoints();
+  static final devices = _DevicesEndpoints();
   static final photos = _PhotosEndpoints();
   static final qa = _QAEndpoints();
   static final match = _MatchEndpoints();
@@ -35,6 +36,17 @@ class _UsersEndpoints {
 
   /// GET /users/id/{userId}/public - Get public profile by ID
   String getPublicProfile(String userId) => '/users/id/$userId/public';
+}
+
+// ====================
+// DEVICES ENDPOINTS (RFC-006 §5)
+// ====================
+class _DevicesEndpoints {
+  /// POST /users/me/devices - Register this device's push token (upserts by token)
+  String register() => '/users/me/devices';
+
+  /// POST /users/me/devices/remove - Remove this device's push token, if it is the caller's
+  String remove() => '/users/me/devices/remove';
 }
 
 // ====================

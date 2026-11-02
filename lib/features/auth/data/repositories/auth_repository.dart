@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/core/auth/sign_out_service.dart';
+import 'package:eros_app/core/notifications/push_service.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 
 /// Provider for FirebaseAuth instance
@@ -14,6 +15,7 @@ final signOutServiceProvider = Provider<SignOutService>((ref) {
   return SignOutService(
     firebaseAuth: ref.read(firebaseAuthProvider),
     sharedPrefs: ref.read(sharedPreferencesProvider),
+    pushService: ref.read(pushServiceProvider),
   );
 });
 

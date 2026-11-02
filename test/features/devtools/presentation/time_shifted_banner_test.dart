@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:eros_app/core/navigation/app_navigator.dart';
 import 'package:eros_app/core/time/server_clock.dart';
 import 'package:eros_app/features/devtools/data/devtools_api.dart';
 import 'package:eros_app/features/devtools/data/models/devtools_models.dart';
@@ -48,7 +49,7 @@ Widget _app(ServerClock clock, {Widget? home}) {
       ),
     ],
     child: MaterialApp(
-      navigatorKey: devtoolsNavigatorKey,
+      navigatorKey: appNavigatorKey,
       builder: (context, child) => DevOverlay(clock: clock, child: child!),
       home: home ?? const Scaffold(body: Text('home')),
       routes: {devMenuRoute: (context) => DevMenuScreen.fromRoute(context)},
@@ -82,7 +83,7 @@ void main() {
       'keeping the current screen', (tester) async {
     await tester.pumpWidget(_app(clock));
     await tester.pumpAndSettle();
-    devtoolsNavigatorKey.currentState!.push(
+    appNavigatorKey.currentState!.push(
       MaterialPageRoute<void>(
         builder: (_) => const Scaffold(body: Text('second screen')),
       ),

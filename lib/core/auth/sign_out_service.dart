@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:eros_app/core/notifications/push_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
 
 /// Comprehensive sign-out service that clears all user-specific data
 ///
 /// This service ensures complete cleanup when a user signs out:
+/// - This device's push token on the account (RFC-006 §6.4)
 /// - Firebase authentication session
 /// - All SharedPreferences data (except app-level settings if needed)
 /// - Cached tokens and user-specific state
@@ -17,14 +19,20 @@ import 'package:logger/logger.dart';
 class SignOutService {
   final FirebaseAuth _firebaseAuth;
   final SharedPreferences _sharedPrefs;
+  final PushService? _pushService;
   final Logger _logger;
+
+  /// How long sign-out waits for the push token to come off the account before going ahead.
+  static const pushRemovalTimeout = Duration(seconds: 5);
 
   SignOutService({
     required FirebaseAuth firebaseAuth,
     required SharedPreferences sharedPrefs,
+    PushService? pushService,
     Logger? logger,
   })  : _firebaseAuth = firebaseAuth,
         _sharedPrefs = sharedPrefs,
+        _pushService = pushService,
         _logger = logger ??
             Logger(
               printer: PrettyPrinter(
@@ -53,16 +61,21 @@ class SignOutService {
   /// Perform complete sign-out and cleanup
   ///
   /// This method:
-  /// 1. Attempts to clear all user-specific SharedPreferences data (best-effort)
-  /// 2. Always signs out from Firebase Authentication
-  /// 3. Logs the cleanup process for debugging
+  /// 1. Takes this device's push token off the account (best-effort). It needs
+  ///    a valid session, so it runs first.
+  /// 2. Attempts to clear all user-specific SharedPreferences data (best-effort)
+  /// 3. Always signs out from Firebase Authentication
+  /// 4. Logs the cleanup process for debugging
   ///
-  /// Local cleanup failures are logged but do not prevent Firebase sign-out.
-  /// Only Firebase sign-out failures will throw exceptions.
+  /// Push and local cleanup failures are logged but do not prevent Firebase
+  /// sign-out. Only Firebase sign-out failures will throw exceptions.
   ///
   /// Note: Riverpod providers will automatically reset when Firebase auth state changes
   Future<void> signOut() async {
     _logger.i('🚪 Starting complete sign-out process...');
+
+    // Step 0: Best-effort push token removal, bounded so a slow network can't hold up sign-out
+    await _removePushToken();
 
     // Step 1: Best-effort clear user-specific SharedPreferences data
     // Failures are logged but don't prevent Firebase sign-out
@@ -88,6 +101,16 @@ class SignOutService {
     } catch (e, stackTrace) {
       _logger.e('❌ Firebase sign-out failed', error: e, stackTrace: stackTrace);
       rethrow;
+    }
+  }
+
+  Future<void> _removePushToken() async {
+    final pushService = _pushService;
+    if (pushService == null) return;
+    try {
+      await pushService.removeToken().timeout(pushRemovalTimeout);
+    } catch (e) {
+      _logger.w('⚠️  Push token removal did not finish, signing out anyway', error: e);
     }
   }
 

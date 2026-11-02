@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:eros_app/core/notifications/push_host.dart';
 import 'package:eros_app/features/devtools/devtools_config.dart';
 import 'package:eros_app/features/devtools/presentation/dev_menu_navigation.dart';
 import 'package:eros_app/features/devtools/presentation/widgets/dev_menu_button.dart';
@@ -27,7 +28,11 @@ void main() {
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
 
     expect(app.routes!.containsKey(devMenuRoute), DevtoolsConfig.enabled);
-    expect(app.builder != null, DevtoolsConfig.enabled);
+    // The builder is always set, for PushHost (RFC-006 CH-F1); the dev
+    // overlay inside it follows the flag.
+    expect(app.builder, isNotNull);
+    expect(find.byType(PushHost), findsOneWidget);
+    expect(find.byType(DevOverlay), DevtoolsConfig.enabled ? findsOneWidget : findsNothing);
     expect(find.byType(DevMenuButton),
         DevtoolsConfig.enabled ? findsOneWidget : findsNothing);
     expect(find.text('DEV'),
