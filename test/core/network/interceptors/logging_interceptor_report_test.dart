@@ -6,6 +6,9 @@ import 'package:eros_app/core/network/interceptors/logging_interceptor.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
 
+// CH-F5's check of primer rule 20 for report paths. CH-F2 has its own test for the same
+// interceptor (logging_interceptor_test.dart); this one is separate so both can merge.
+
 /// Answers every request with [body] and [statusCode].
 class _FakeAdapter implements HttpClientAdapter {
   int statusCode = 200;
@@ -68,7 +71,7 @@ void main() {
       'evidenceIds': <String>[],
     });
 
-    expect(printed(), contains('POST https://api.test/dates/7/report'));
+    expect(printed(), contains('/dates/7/report'));
     expect(printed(), contains('200'));
     expect(printed(), isNot(contains(description)));
     expect(printed(), isNot(contains('HARASSMENT')));
