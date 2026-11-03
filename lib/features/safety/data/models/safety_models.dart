@@ -124,4 +124,8 @@ class SafetyLimits {
 
   /// A finished date can be reported for this long after it ended (D-22).
   static const Duration reportWindow = Duration(days: 30);
+
+  /// How long submitting waits for images still uploading. S3 uploads have no timeout of their
+  /// own, and a report matters more than its images, so after this it's sent without them.
+  static const Duration submitUploadWait = Duration(seconds: 20);
 }

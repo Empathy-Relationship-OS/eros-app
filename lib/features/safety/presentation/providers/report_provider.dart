@@ -126,8 +126,14 @@ class ReportNotifier extends StateNotifier<ReportState> {
   final String _dateId;
   final Logger _logger = Logger();
   final Map<String, Future<void>> _uploads = {};
+  final Duration _uploadWait;
 
-  ReportNotifier(this._repository, this._dateId) : super(const ReportState());
+  ReportNotifier(
+    this._repository,
+    this._dateId, {
+    Duration uploadWait = SafetyLimits.submitUploadWait,
+  })  : _uploadWait = uploadWait,
+        super(const ReportState());
 
   void selectReason(String code) {
     state = state.copyWith(reasonCode: code, clearErrorMessage: true);
@@ -240,13 +246,17 @@ class ReportNotifier extends StateNotifier<ReportState> {
     return error == null;
   }
 
-  /// Files the report. Waits for uploads still in flight, then attaches the ones that
-  /// succeeded. Returns true when filed; [ReportState.result] holds the outcome.
+  /// Files the report. Waits up to [SafetyLimits.submitUploadWait] for uploads still in flight,
+  /// then attaches the ones that succeeded; an image still uploading is left out. Returns true
+  /// when filed; [ReportState.result] holds the outcome.
   Future<bool> submit(ReportOrigin origin) async {
     if (state.isSubmitting || !checkReady()) return false;
 
     state = state.copyWith(isSubmitting: true, conflict: false, clearErrorMessage: true);
-    await Future.wait(_uploads.values.toList());
+    await Future.wait(_uploads.values.toList()).timeout(
+      _uploadWait,
+      onTimeout: () => const <void>[],
+    );
     if (!mounted) return false;
 
     final description = UserText.clean(state.description, multiline: true);

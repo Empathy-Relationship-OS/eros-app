@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
@@ -72,6 +73,26 @@ void main() {
     expect(await notifier.submit(ReportOrigin.report), isTrue);
     expect(sentReport()['description'], 'They kept messaging');
     expect(sentReport()['evidenceIds'], isEmpty);
+  });
+
+  test('a stalled upload delays the report only until the wait runs out', () async {
+    final stalled = ReportNotifier(
+      SafetyRepository(api),
+      '7',
+      uploadWait: const Duration(milliseconds: 50),
+    );
+    addTearDown(stalled.dispose);
+    api.uploadGate = Completer<void>();
+    addTearDown(() => api.uploadGate!.complete());
+    stalled.selectReason('HARASSMENT');
+    unawaited(stalled.addImage(bytes: pngBytes, path: 'evidence.png'));
+    await pumpEventQueue();
+    expect(stalled.state.images.single.status, EvidenceUploadStatus.uploading);
+
+    expect(await stalled.submit(ReportOrigin.report), isTrue);
+    expect(sentReport()['evidenceIds'], isEmpty);
+    expect(stalled.state.isSubmitting, isFalse);
+    expect(stalled.state.images.single.status, EvidenceUploadStatus.uploading);
   });
 
   test('a failed evidence-url request is a failed image too', () async {

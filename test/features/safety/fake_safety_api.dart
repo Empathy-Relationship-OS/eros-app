@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -25,6 +26,9 @@ class FakeSafetyApi implements ApiClient {
 
   /// Makes every S3 upload fail.
   bool failUploads = false;
+
+  /// When set, every S3 upload waits for it, so a test can hold an upload in flight.
+  Completer<void>? uploadGate;
 
   static Map<String, Object> defaultResponses() => {
         'GET /safety/reasons': safetyFixture('reasons'),
@@ -66,6 +70,7 @@ class FakeSafetyApi implements ApiClient {
     Map<String, String> extraHeaders = const {},
     void Function(double progress)? onProgress,
   }) async {
+    await uploadGate?.future;
     if (failUploads) throw const NetworkException('S3 refused the upload: 403 AccessDenied');
     uploadedUrls.add(presignedUrl);
   }
