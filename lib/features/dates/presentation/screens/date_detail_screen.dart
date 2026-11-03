@@ -22,6 +22,8 @@ import 'package:eros_app/features/dates/presentation/screens/deposit_sheet.dart'
 import 'package:eros_app/features/dates/presentation/screens/venue_ranking_screen.dart';
 import 'package:eros_app/features/home/presentation/screens/home_screen.dart';
 import 'package:eros_app/features/matching/presentation/screens/public_profile_view_screen.dart';
+import 'package:eros_app/features/safety/presentation/report_flow.dart';
+import 'package:eros_app/features/safety/presentation/widgets/safety_copy.dart';
 
 /// Date detail screen showing full date info, stepper, and CTA panel
 ///
@@ -137,8 +139,8 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           ),
         ),
 
-        // Overflow menu overlay
-        if (_shouldShowOverflowMenu(dateDetail))
+        // Overflow menu overlay: "Report and block" on any non-terminal date (CH-F5)
+        if (!dateDetail.state.isTerminal)
           Positioned(
             top: 16,
             right: 16,
@@ -149,14 +151,20 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
                 onSelected: (value) {
                   if (value == 'cancel') {
                     _showCancelDialog(context, dateDetail, currentUid);
+                  } else if (value == 'report') {
+                    openReportFlow(context, ref, dateDetail: dateDetail);
                   }
                 },
                 itemBuilder: (context) => [
+                  if (_shouldShowOverflowMenu(dateDetail))
+                    const PopupMenuItem(
+                      value: 'cancel',
+                      child: Text('Cancel date'),
+                    ),
                   const PopupMenuItem(
-                    value: 'cancel',
-                    child: Text('Cancel date'),
+                    value: 'report',
+                    child: Text(SafetyCopy.reportAndBlock),
                   ),
-                  // TODO: Add "Report a problem" if support route exists
                 ],
               ),
             ),
@@ -363,6 +371,9 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
       case DateState.expired:
         return TerminalPanel(
           state: dateDetail.state,
+          finishedAt: dateDetail.updatedAt,
+          refundUnderReview: dateDetail.yourRefundUnderReview,
+          onReport: () => openReportFlow(context, ref, dateDetail: dateDetail),
           onBackToDates: () {
             // Pop until we reach HomeScreen and ensure Dates tab is selected
             Navigator.of(context).popUntil((route) => route.isFirst);

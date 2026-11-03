@@ -6,6 +6,7 @@ import 'package:eros_app/features/chat/presentation/providers/chat_screen_provid
 import 'package:eros_app/features/chat/presentation/screens/chat_screen.dart';
 import 'package:eros_app/features/chat/presentation/widgets/chat_copy.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
+import 'package:eros_app/features/safety/presentation/screens/report_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -150,13 +151,15 @@ void main() {
       await _close(tester);
     });
 
-    testWidgets('has a "Report and block" item in the ⋯ menu', (tester) async {
+    testWidgets('"Report and block" in the ⋯ menu opens the report sheet', (tester) async {
       await _pump(tester, FakeChatRepository());
 
       await tester.tap(find.byTooltip(ChatCopy.moreOptions));
       await tester.pumpAndSettle();
+      await tester.tap(find.text(ChatCopy.reportAndBlock));
+      await tester.pumpAndSettle();
 
-      expect(find.text(ChatCopy.reportAndBlock), findsOneWidget);
+      expect(find.byType(ReportSheet), findsOneWidget);
 
       await _close(tester);
     });

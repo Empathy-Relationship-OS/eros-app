@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:eros_app/core/navigation/app_navigator.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/devtools/data/devtools_api.dart';
 import 'package:eros_app/features/devtools/data/devtools_exceptions.dart';
@@ -43,7 +44,7 @@ Widget _app({required List<Override> overrides, Widget home = const DevMenuScree
   return ProviderScope(
     overrides: overrides,
     child: MaterialApp(
-      navigatorKey: devtoolsNavigatorKey,
+      navigatorKey: appNavigatorKey,
       builder: (context, child) => DevOverlay(child: child!),
       home: home,
       routes: {devMenuRoute: (context) => DevMenuScreen.fromRoute(context)},
@@ -145,7 +146,7 @@ void main() {
       expect(find.byType(TimeTab), findsOneWidget);
 
       // One pop closes the menu: there was only one copy.
-      devtoolsNavigatorKey.currentState!.pop();
+      appNavigatorKey.currentState!.pop();
       await tester.pumpAndSettle();
       expect(find.byType(DevMenuScreen), findsNothing);
       expect(find.text('home'), findsOneWidget);

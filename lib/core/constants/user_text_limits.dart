@@ -22,4 +22,7 @@ class UserTextLimits {
 
   /// One date chat message (RFC-006 D-20).
   static const int chatMessage = 1000;
+
+  /// A safety report's optional description (RFC-006 §5 "Safety").
+  static const int reportDescription = 1000;
 }

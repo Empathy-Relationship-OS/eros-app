@@ -128,7 +128,7 @@ class TimeShiftedBanner extends StatelessWidget {
 /// The draggable "DEV" button. Tap to open the dev menu.
 class DevMenuButton extends StatefulWidget {
   /// Opens the dev menu. Defaults to [openDevMenu] through
-  /// [devtoolsNavigatorKey].
+  /// [appNavigatorKey].
   final VoidCallback? onPressed;
 
   const DevMenuButton({super.key, this.onPressed});

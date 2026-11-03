@@ -8,6 +8,7 @@ class ApiEndpoints {
 
   // Feature-specific endpoint groups
   static final users = _UsersEndpoints();
+  static final devices = _DevicesEndpoints();
   static final photos = _PhotosEndpoints();
   static final qa = _QAEndpoints();
   static final match = _MatchEndpoints();
@@ -16,6 +17,7 @@ class ApiEndpoints {
   static final marketing = _MarketingEndpoints();
   static final wallet = _WalletEndpoints();
   static final datePreferences = _DatePreferencesEndpoints();
+  static final safety = _SafetyEndpoints();
 }
 
 // ====================
@@ -36,6 +38,17 @@ class _UsersEndpoints {
 
   /// GET /users/id/{userId}/public - Get public profile by ID
   String getPublicProfile(String userId) => '/users/id/$userId/public';
+}
+
+// ====================
+// DEVICES ENDPOINTS (RFC-006 §5)
+// ====================
+class _DevicesEndpoints {
+  /// POST /users/me/devices - Register this device's push token (upserts by token)
+  String register() => '/users/me/devices';
+
+  /// POST /users/me/devices/remove - Remove this device's push token, if it is the caller's
+  String remove() => '/users/me/devices/remove';
 }
 
 // ====================
@@ -245,4 +258,18 @@ class _DatePreferencesEndpoints {
 
   /// GET /city/all - Every city users can date in (RFC-004 D-14)
   String cities() => '/city/all';
+}
+
+// ====================
+// SAFETY ENDPOINTS (RFC-006 §5 "Safety")
+// ====================
+class _SafetyEndpoints {
+  /// GET /safety/reasons - Report reasons, in display order
+  String reasons() => '/safety/reasons';
+
+  /// POST /dates/{dateId}/report/evidence-url - Presigned upload for one evidence image
+  String evidenceUrl(String dateId) => '/dates/$dateId/report/evidence-url';
+
+  /// POST /dates/{dateId}/report - Report the partner, or cancel on safety grounds
+  String report(String dateId) => '/dates/$dateId/report';
 }

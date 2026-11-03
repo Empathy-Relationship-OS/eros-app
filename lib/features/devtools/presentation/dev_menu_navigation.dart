@@ -1,3 +1,4 @@
+import 'package:eros_app/core/navigation/app_navigator.dart';
 import 'package:flutter/widgets.dart';
 
 /// Tabs of the dev menu, in display order.
@@ -15,19 +16,10 @@ enum DevMenuTab {
 /// `DevtoolsConfig.enabled`.
 const String devMenuRoute = '/dev';
 
-/// Navigator key attached to `MaterialApp.navigatorKey` when devtools are
-/// enabled.
-///
-/// Widgets overlaid through `MaterialApp.builder` (the DEV button, and later
-/// the "time shifted" banner) sit above the app's [Navigator], so they cannot
-/// use `Navigator.of(context)`. They open the dev menu through this key.
-final GlobalKey<NavigatorState> devtoolsNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'devtoolsNavigator');
-
 /// Opens the dev menu on [tab].
 ///
 /// Pass [context] from any screen inside the app's navigator. Without it,
-/// the dev menu is opened through [devtoolsNavigatorKey], which works from
+/// the dev menu is opened through [appNavigatorKey], which works from
 /// overlays placed by `MaterialApp.builder`.
 ///
 /// If the dev menu is already the top route (for example the "time shifted"
@@ -39,7 +31,7 @@ Future<void> openDevMenu({
 }) async {
   final navigator = context != null
       ? Navigator.of(context)
-      : devtoolsNavigatorKey.currentState;
+      : appNavigatorKey.currentState;
   if (navigator == null) return;
   if (topRouteName(navigator) == devMenuRoute) {
     await navigator.pushReplacementNamed(devMenuRoute, arguments: tab);

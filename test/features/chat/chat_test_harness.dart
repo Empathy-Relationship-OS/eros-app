@@ -8,10 +8,13 @@ import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/data/repositories/dates_repository.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
+import 'package:eros_app/features/safety/data/repositories/safety_repository.dart';
+import 'package:eros_app/features/safety/presentation/providers/report_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../safety/fake_safety_api.dart' as safety;
 import 'fake_chat_repository.dart';
 
 class _FakeUser implements User {
@@ -86,6 +89,7 @@ Future<List<Override>> chatOverrides({
   return [
     authServiceProvider.overrideWithValue(FakeAuthService()),
     chatRepositoryProvider.overrideWithValue(chat),
+    safetyRepositoryProvider.overrideWithValue(SafetyRepository(safety.FakeSafetyApi())),
     datesRepositoryProvider.overrideWithValue(FakeDatesRepository(date)),
     sharedPreferencesProvider.overrideWithValue(sharedPreferences),
     chatNotificationsEnabledProvider.overrideWith((ref) async => notificationsEnabled),

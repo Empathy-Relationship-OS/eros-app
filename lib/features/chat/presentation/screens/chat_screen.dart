@@ -17,6 +17,7 @@ import 'package:eros_app/features/chat/presentation/widgets/chat_bubble.dart';
 import 'package:eros_app/features/chat/presentation/widgets/chat_copy.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/date_detail_provider.dart';
+import 'package:eros_app/features/safety/presentation/report_flow.dart';
 import 'package:eros_app/features/settings/presentation/providers/app_settings_provider.dart';
 
 /// The date chat (RFC-006 §6.2).
@@ -122,14 +123,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
     }
   }
 
-  void _openReportAndBlock() {
-    // TODO(CH-F5): open the report sheet with origin REPORT.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(ChatCopy.reportComingSoon),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  /// Opens CH-F5's report flow (origin `REPORT`) for this date, loading the date first if this
+  /// screen was opened from a push before date detail had fetched it.
+  Future<void> _openReportAndBlock() async {
+    final dates = ref.read(dateDetailProvider(widget.dateId).notifier);
+    var dateDetail = ref.read(dateDetailProvider(widget.dateId)).dateDetail;
+    if (dateDetail == null) {
+      await dates.refresh();
+      dateDetail = ref.read(dateDetailProvider(widget.dateId)).dateDetail;
+    }
+    if (dateDetail == null || !mounted) return;
+    await openReportFlow(context, ref, dateDetail: dateDetail);
   }
 
   @override

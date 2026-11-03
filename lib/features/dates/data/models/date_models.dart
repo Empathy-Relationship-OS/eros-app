@@ -318,6 +318,10 @@ class DateDetail {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// The viewer's own deposit is held or under review after a safety claim (RFC-006 §4.8).
+  /// Never describes the partner.
+  final bool yourRefundUnderReview;
+
   const DateDetail({
     required this.dateId,
     required this.matchId,
@@ -350,6 +354,7 @@ class DateDetail {
     this.chat = ChatSummary.notOpen,
     required this.createdAt,
     required this.updatedAt,
+    this.yourRefundUnderReview = false,
   });
 
   factory DateDetail.fromJson(Map<String, dynamic> json) => DateDetail(
@@ -391,6 +396,8 @@ class DateDetail {
             : ChatSummary.fromJson(json['chat'] as Map<String, dynamic>),
         createdAt: _instant(json['createdAt'])!,
         updatedAt: _instant(json['updatedAt'])!,
+        // Absent until the backend has CH-B7.
+        yourRefundUnderReview: json['yourRefundUnderReview'] as bool? ?? false,
       );
 
   // Helpers every screen needs

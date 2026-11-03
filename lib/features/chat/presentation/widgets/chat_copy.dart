@@ -30,9 +30,6 @@ class ChatCopy {
 
   static const String reportAndBlock = 'Report and block';
 
-  /// Until CH-F5 connects the report sheet.
-  static const String reportComingSoon = 'Reporting is coming soon.';
-
   // ====================
   // CONVERSATION
   // ====================
