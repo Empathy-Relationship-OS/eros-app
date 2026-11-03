@@ -44,6 +44,9 @@ class ChatCopy {
 
   static const String notSent = 'Not sent';
 
+  /// Under my newest message the partner has read.
+  static const String seen = 'Seen';
+
   static const String loadFailed = 'We couldn\'t load your messages.';
 
   static const String tryAgain = 'Try again';
@@ -55,6 +58,8 @@ class ChatCopy {
   static const String inputHint = 'Message';
 
   static const String send = 'Send';
+
+  static const String quickReplies = 'Quick replies';
 
   static const String rejected = 'That message can\'t be sent. Please keep it respectful.';
 
@@ -69,6 +74,15 @@ class ChatCopy {
   static const String closedDateCancelled = 'This chat closed when the date was cancelled.';
 
   static const String archived = 'Messages from this date are no longer available.';
+
+  // ====================
+  // CONTACT TIP (RFC-006 D-6)
+  // ====================
+
+  static const String contactTip =
+      'Sharing contact details? Meet in public first, and keep your plans in the app until you feel sure.';
+
+  static const String contactTipDismiss = 'Got it';
 
   // ====================
   // NOTIFICATIONS BANNER

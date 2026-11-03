@@ -8,15 +8,18 @@ import 'package:eros_app/features/chat/presentation/widgets/chat_copy.dart';
 ///
 /// Under my messages it shows "Sending" while on the way, and "Not sent, tap to retry"
 /// when it failed. [onRetry] is null when the chat can't send any more, and then the
-/// failed line just says "Not sent".
+/// failed line just says "Not sent". [seen] adds "Seen" under the time, on my newest
+/// message the partner has read.
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
   final VoidCallback? onRetry;
+  final bool seen;
 
   const ChatBubble({
     super.key,
     required this.message,
     this.onRetry,
+    this.seen = false,
   });
 
   @override
@@ -65,6 +68,14 @@ class ChatBubble extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           _buildCaption(),
+          if (seen)
+            const Padding(
+              padding: EdgeInsets.only(top: 2),
+              child: Text(
+                ChatCopy.seen,
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ),
         ],
       ),
     );

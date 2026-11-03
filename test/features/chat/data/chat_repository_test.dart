@@ -153,4 +153,22 @@ void main() {
       );
     });
   });
+
+  group('markRead', () {
+    test('posts the seq to /chat/read, and reads a 204', () async {
+      final api = _FakeApi();
+
+      await _repository(api).markRead('42', 18);
+
+      expect(api.requests.single.method, 'POST');
+      expect(api.requests.single.path, '/dates/42/chat/read');
+      expect(api.requests.single.data, {'seq': 18});
+    });
+
+    test('lets a failure through, for the notifier to ignore', () async {
+      final api = _FakeApi(error: const ValidationException('seq above lastSeq'));
+
+      expect(() => _repository(api).markRead('42', 99), throwsA(isA<ValidationException>()));
+    });
+  });
 }

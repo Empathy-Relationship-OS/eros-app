@@ -171,6 +171,9 @@ class _ChatEndpoints {
 
   /// POST /dates/{dateId}/chat/messages - Send a message (idempotent by clientMessageId)
   String sendMessage(String dateId) => '/dates/$dateId/chat/messages';
+
+  /// POST /dates/{dateId}/chat/read - Mark messages up to a seq as read (204)
+  String markRead(String dateId) => '/dates/$dateId/chat/read';
 }
 
 // ====================

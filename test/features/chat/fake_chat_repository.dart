@@ -9,12 +9,31 @@ import 'package:eros_app/features/chat/data/repositories/chat_repository.dart';
 dynamic chatFixture(String name) =>
     jsonDecode(File('test/fixtures/chat/$name.json').readAsStringSync());
 
-ChatState chatState(ChatStatus status, {int unreadCount = 0, DateTime? closesAt}) => ChatState(
+/// The quick replies RFC-006 §4.4 lists. Tests read chips from here, never from app code.
+const rfcQuickReplies = [
+  QuickReply(key: 'ON_MY_WAY', text: 'On my way'),
+  QuickReply(key: 'RUNNING_LATE', text: 'Running 5 minutes late'),
+  QuickReply(key: 'HERE', text: 'I\'m here'),
+  QuickReply(key: 'CANT_FIND', text: 'I can\'t find you, where are you?'),
+];
+
+ChatState chatState(
+  ChatStatus status, {
+  int unreadCount = 0,
+  DateTime? closesAt,
+  int yourLastReadSeq = 0,
+  int partnerLastReadSeq = 0,
+  List<QuickReply> quickReplies = rfcQuickReplies,
+}) =>
+    ChatState(
       dateId: 42,
       status: status,
       closesAt: closesAt ?? DateTime.utc(2026, 11, 7, 21),
       unreadCount: unreadCount,
+      yourLastReadSeq: yourLastReadSeq,
+      partnerLastReadSeq: partnerLastReadSeq,
       partnerName: 'Alex',
+      quickReplies: quickReplies,
     );
 
 /// An in-memory chat server behind the [ChatRepository] interface.
@@ -34,6 +53,12 @@ class FakeChatRepository implements ChatRepository {
   final List<String> calls = [];
   final List<String> sentClientIds = [];
 
+  /// Every `POST .../chat/read`, by seq. Kept out of [calls] so poll tests stay exact.
+  final List<int> readSeqs = [];
+
+  /// When set, `markRead` throws this.
+  ApiException? readError;
+
   /// When set, the next sends answer with this instead of storing anything.
   SendResult? sendResult;
 
@@ -45,13 +70,25 @@ class FakeChatRepository implements ChatRepository {
 
   int _seq = 0;
 
-  ChatMessage addPartnerMessage(String text) => _store(fromMe: false, text: text);
+  ChatMessage addPartnerMessage(String text, {bool contactDetected = false}) =>
+      _store(fromMe: false, text: text, contactDetected: contactDetected);
 
-  ChatMessage _store({required bool fromMe, required String text}) {
+  /// A message I sent earlier, from another device or before this screen opened.
+  ChatMessage addMyMessage(String text) => _store(fromMe: true, text: text);
+
+  ChatMessage _store({
+    required bool fromMe,
+    required String text,
+    String? quickReplyKey,
+    bool contactDetected = false,
+  }) {
     final message = ChatMessage(
       seq: ++_seq,
       fromMe: fromMe,
+      kind: quickReplyKey != null ? ChatMessageKind.quickReply : ChatMessageKind.text,
+      quickReplyKey: quickReplyKey,
       text: text,
+      contactDetected: contactDetected,
       createdAt: DateTime.utc(2026, 11, 7, 19).add(Duration(seconds: _seq)),
     );
     stored.add(message);
@@ -108,12 +145,25 @@ class FakeChatRepository implements ChatRepository {
     final existing = _seqByClientId[clientMessageId];
     final message = existing != null
         ? stored.firstWhere((m) => m.seq == existing)
-        : _store(fromMe: true, text: text!);
+        : _store(
+            fromMe: true,
+            text: text ?? chat.quickReplies.firstWhere((r) => r.key == quickReplyKey).text,
+            quickReplyKey: quickReplyKey,
+            // Stands in for the backend's ContactDetector.
+            contactDetected: text != null && text.contains('@'),
+          );
     _seqByClientId[clientMessageId] = message.seq!;
 
     final gate = sendGate;
     if (gate != null) await gate.future;
     return MessageSent(message);
+  }
+
+  @override
+  Future<void> markRead(String dateId, int seq) async {
+    readSeqs.add(seq);
+    final error = readError;
+    if (error != null) throw error;
   }
 
   @override
