@@ -8,12 +8,20 @@ import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/cancel_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/date_detail_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/token_amount.dart';
+import 'package:eros_app/features/safety/data/models/safety_models.dart';
+import 'package:eros_app/features/safety/presentation/providers/report_provider.dart';
+import 'package:eros_app/features/safety/presentation/report_flow.dart';
+import 'package:eros_app/features/safety/presentation/widgets/report_form.dart';
+import 'package:eros_app/features/safety/presentation/widgets/safety_copy.dart';
 import 'package:eros_app/features/wallet/presentation/providers/wallet_provider.dart';
 
 /// Cancel date confirmation dialog
 ///
 /// Per UI-9: Shows different copy based on cancellation tier
 /// Pre-commitment, post-commitment, or late (within 24h)
+///
+/// Per CH-F5: "Something came up" is the plain cancel above. "I don't feel safe" swaps the
+/// note for the report form and files a safety claim with origin `CANCEL` (RFC-006 §4.7).
 class CancelDateDialog extends ConsumerStatefulWidget {
   final String dateId;
   final DateDetail dateDetail;
@@ -34,6 +42,12 @@ class CancelDateDialog extends ConsumerStatefulWidget {
 
 class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
   final TextEditingController _reasonController = TextEditingController();
+
+  /// "I don't feel safe" is chosen.
+  bool _safety = false;
+
+  /// The reason preselected for a safety cancel, if the API offers it.
+  static const String _feelsUnsafeCode = 'FEELS_UNSAFE';
 
   @override
   void dispose() {
@@ -92,6 +106,32 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
               'You\'ve both committed, so cancelling now means your $tokenCost deposit goes to $partnerName and yours is not refunded.\n\nThis is a late cancellation.',
         );
     }
+  }
+
+  /// Files a safety claim with origin `CANCEL`, then shows the result screen.
+  Future<void> _handleSafetyCancel() async {
+    final dateId = widget.dateId;
+    final filed = await ref.read(reportProvider(dateId).notifier).submit(ReportOrigin.cancel);
+    if (!mounted) return;
+    final report = ref.read(reportProvider(dateId));
+
+    if (filed && report.result != null) {
+      final navigator = Navigator.of(context);
+      navigator.pop();
+      await showReportResult(navigator, ref, dateDetail: widget.dateDetail, result: report.result!);
+    } else if (report.conflict) {
+      // The date has already ended: close, refetch, and say where reporting still works.
+      final messenger = ScaffoldMessenger.of(context);
+      ref.read(dateDetailProvider(dateId).notifier).refresh();
+      Navigator.of(context).pop();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(report.errorMessage ?? SafetyCopy.alreadyEndedOnCancel),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+    // Any other error shows in the dialog, with everything typed kept.
   }
 
   void _handleCancel() async {
@@ -174,9 +214,14 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
   @override
   Widget build(BuildContext context) {
     final cancelState = ref.watch(cancelProvider(widget.dateId));
-    final copy = _getDialogCopy();
+    final report = _safety ? ref.watch(reportProvider(widget.dateId)) : null;
+    final isLoading = cancelState.isLoading || (report?.isSubmitting ?? false);
+    final copy = _safety
+        ? (title: SafetyCopy.cancelSafetyTitle, body: SafetyCopy.cancelSafetyBody)
+        : _getDialogCopy();
 
     return AlertDialog(
+      scrollable: true,
       title: Text(
         copy.title,
         style: const TextStyle(
@@ -198,22 +243,37 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
             ),
           ),
           const SizedBox(height: 16),
-          TextField(
-            controller: _reasonController,
-            decoration: const InputDecoration(
-              hintText: 'Add a note (optional)',
-              border: OutlineInputBorder(),
-            ),
-            maxLines: 2,
-            maxLength: UserTextLimits.cancellationReason,
-            enabled: !cancelState.isLoading,
+          _CancelChoice(
+            safety: _safety,
+            onChanged: isLoading ? null : (safety) => setState(() => _safety = safety),
           ),
+          const SizedBox(height: 8),
+          if (_safety) ...[
+            ReportForm(dateId: widget.dateId, initialReasonCode: _feelsUnsafeCode),
+            if (report?.errorMessage != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                report!.errorMessage!,
+                style: const TextStyle(fontSize: 14, color: AppColors.error),
+              ),
+            ],
+          ] else
+            TextField(
+              controller: _reasonController,
+              decoration: const InputDecoration(
+                hintText: 'Add a note (optional)',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+              maxLength: UserTextLimits.cancellationReason,
+              enabled: !cancelState.isLoading,
+            ),
         ],
       ),
       actions: [
         // Keep the date (primary action)
         TextButton(
-          onPressed: cancelState.isLoading
+          onPressed: isLoading
               ? null
               : () => Navigator.of(context).pop(),
           style: TextButton.styleFrom(
@@ -229,11 +289,11 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
 
         // Cancel date (destructive action)
         TextButton(
-          onPressed: cancelState.isLoading ? null : _handleCancel,
+          onPressed: isLoading ? null : (_safety ? _handleSafetyCancel : _handleCancel),
           style: TextButton.styleFrom(
             foregroundColor: AppColors.error,
           ),
-          child: cancelState.isLoading
+          child: isLoading
               ? const SizedBox(
                   width: 16,
                   height: 16,
@@ -244,6 +304,41 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
               : const Text('Cancel date'),
         ),
       ],
+    );
+  }
+}
+
+/// "Something came up" (a plain cancel) or "I don't feel safe" (a safety claim).
+class _CancelChoice extends StatelessWidget {
+  final bool safety;
+  final ValueChanged<bool>? onChanged;
+
+  const _CancelChoice({required this.safety, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return RadioGroup<bool>(
+      groupValue: safety,
+      onChanged: (value) {
+        if (value != null) onChanged?.call(value);
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final (value, label) in const [
+            (false, SafetyCopy.cancelSomethingCameUp),
+            (true, SafetyCopy.cancelNotSafe),
+          ])
+            RadioListTile<bool>(
+              value: value,
+              enabled: onChanged != null,
+              title: Text(label),
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              activeColor: AppColors.primary,
+            ),
+        ],
+      ),
     );
   }
 }

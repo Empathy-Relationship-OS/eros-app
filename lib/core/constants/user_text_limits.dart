@@ -19,4 +19,7 @@ class UserTextLimits {
 
   static const int qaAnswer = 200;
   static const int cancellationReason = 150;
+
+  /// A safety report's optional description (RFC-006 §5 "Safety").
+  static const int reportDescription = 1000;
 }

@@ -15,6 +15,7 @@ class ApiEndpoints {
   static final marketing = _MarketingEndpoints();
   static final wallet = _WalletEndpoints();
   static final datePreferences = _DatePreferencesEndpoints();
+  static final safety = _SafetyEndpoints();
 }
 
 // ====================
@@ -218,4 +219,18 @@ class _DatePreferencesEndpoints {
 
   /// GET /city/all - Every city users can date in (RFC-004 D-14)
   String cities() => '/city/all';
+}
+
+// ====================
+// SAFETY ENDPOINTS (RFC-006 §5 "Safety")
+// ====================
+class _SafetyEndpoints {
+  /// GET /safety/reasons - Report reasons, in display order
+  String reasons() => '/safety/reasons';
+
+  /// POST /dates/{dateId}/report/evidence-url - Presigned upload for one evidence image
+  String evidenceUrl(String dateId) => '/dates/$dateId/report/evidence-url';
+
+  /// POST /dates/{dateId}/report - Report the partner, or cancel on safety grounds
+  String report(String dateId) => '/dates/$dateId/report';
 }
