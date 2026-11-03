@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:eros_app/core/time/server_clock.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
+import 'package:eros_app/features/chat/presentation/widgets/date_chat_entry.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/date_detail_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_status_pill.dart';
@@ -111,8 +112,8 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
             ),
 
             // Spacer for CTA panel
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 120),
+            SliverToBoxAdapter(
+              child: SizedBox(height: 120 + DateChatEntry.reservedHeight(dateDetail.chat)),
             ),
           ],
         ),
@@ -330,7 +331,15 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           ),
         ],
       ),
-      child: _buildCTAContent(context, dateDetail, currentUid),
+      // The chat entry sits outside the state switch, so it survives a venue change (RFC-006 §6.1)
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DateChatEntry(dateDetail: dateDetail),
+          _buildCTAContent(context, dateDetail, currentUid),
+        ],
+      ),
     );
   }
 

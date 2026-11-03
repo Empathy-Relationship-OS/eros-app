@@ -13,6 +13,7 @@ class ApiEndpoints {
   static final qa = _QAEndpoints();
   static final match = _MatchEndpoints();
   static final dates = _DatesEndpoints();
+  static final chat = _ChatEndpoints();
   static final marketing = _MarketingEndpoints();
   static final wallet = _WalletEndpoints();
   static final datePreferences = _DatePreferencesEndpoints();
@@ -144,6 +145,32 @@ class _DatesEndpoints {
 
   /// GET /dates/{dateId}/venue-details - Get venue public info
   String getVenueDetails(String dateId) => '/dates/$dateId/venue-details';
+}
+
+// ====================
+// CHAT ENDPOINTS (RFC-006 §5 "Chat")
+// ====================
+class _ChatEndpoints {
+  /// GET /dates/{dateId}/chat - Chat status, counts, partner and quick replies
+  String getStatus(String dateId) => '/dates/$dateId/chat';
+
+  /// GET /dates/{dateId}/chat/messages?afterSeq=|beforeSeq=&limit= - A page of messages
+  ///
+  /// [afterSeq] gets newer messages and [beforeSeq] older ones, both ascending. Neither gets
+  /// the latest page. Never pass both.
+  String getMessages(String dateId, {int? afterSeq, int? beforeSeq, int? limit}) {
+    assert(afterSeq == null || beforeSeq == null, 'afterSeq and beforeSeq are exclusive');
+    final queryParts = <String>[
+      if (afterSeq != null) 'afterSeq=${Uri.encodeQueryComponent(afterSeq.toString())}',
+      if (beforeSeq != null) 'beforeSeq=${Uri.encodeQueryComponent(beforeSeq.toString())}',
+      if (limit != null) 'limit=${Uri.encodeQueryComponent(limit.toString())}',
+    ];
+    final base = '/dates/$dateId/chat/messages';
+    return queryParts.isEmpty ? base : '$base?${queryParts.join('&')}';
+  }
+
+  /// POST /dates/{dateId}/chat/messages - Send a message (idempotent by clientMessageId)
+  String sendMessage(String dateId) => '/dates/$dateId/chat/messages';
 }
 
 // ====================

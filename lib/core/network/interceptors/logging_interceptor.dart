@@ -4,26 +4,27 @@ import '../api_config.dart';
 
 /// Logs HTTP requests and responses (only in non-production environments)
 ///
-/// Chat messages and report descriptions are never printed (RFC-006 primer rule 20): for a
-/// path containing `/chat` or `/report`, only the method, path and status are logged.
+/// Chat and report calls carry message text and report descriptions, which must never be
+/// printed (RFC-006 §4.11). For those paths it logs the method, path and status only, with
+/// no query, headers or bodies.
 class LoggingInterceptor extends Interceptor {
   final Logger _logger;
 
   LoggingInterceptor({Logger? logger}) : _logger = logger ?? Logger();
 
-  static const String _bodyNotLogged = '[not logged]';
-
-  /// Paths whose bodies may hold private text.
-  static bool _isPrivate(Uri uri) => uri.path.contains('/chat') || uri.path.contains('/report');
+  /// True for paths whose bodies are private: anything containing `/chat` or `/report`.
+  static bool isPrivatePath(String path) => path.contains('/chat') || path.contains('/report');
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    if (ApiConfig.enableDetailedLogging) {
+    if (ApiConfig.enableDetailedLogging && isPrivatePath(options.uri.path)) {
+      _logger.d('📤 REQUEST ${options.method} ${options.uri.path}');
+    } else if (ApiConfig.enableDetailedLogging) {
       _logger.d('''
 📤 REQUEST
 ${options.method} ${options.uri}
 Headers: ${_sanitizeHeaders(options.headers)}
-Body: ${_isPrivate(options.uri) ? _bodyNotLogged : _sanitizeBody(options.data)}
+Body: ${_sanitizeBody(options.data)}
 ''');
     }
     handler.next(options);
@@ -31,11 +32,14 @@ Body: ${_isPrivate(options.uri) ? _bodyNotLogged : _sanitizeBody(options.data)}
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    if (ApiConfig.enableDetailedLogging) {
+    final uri = response.requestOptions.uri;
+    if (ApiConfig.enableDetailedLogging && isPrivatePath(uri.path)) {
+      _logger.d('📥 RESPONSE ${response.statusCode} ${response.requestOptions.method} ${uri.path}');
+    } else if (ApiConfig.enableDetailedLogging) {
       _logger.d('''
 📥 RESPONSE
 ${response.statusCode} ${response.requestOptions.uri}
-Body: ${_isPrivate(response.requestOptions.uri) ? _bodyNotLogged : _truncateData(response.data)}
+Body: ${_truncateData(response.data)}
 ''');
     }
     handler.next(response);
@@ -43,13 +47,16 @@ Body: ${_isPrivate(response.requestOptions.uri) ? _bodyNotLogged : _truncateData
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    if (ApiConfig.enableDetailedLogging) {
+    final uri = err.requestOptions.uri;
+    if (ApiConfig.enableDetailedLogging && isPrivatePath(uri.path)) {
+      _logger.e('❌ ERROR ${err.response?.statusCode} ${err.requestOptions.method} ${uri.path}');
+    } else if (ApiConfig.enableDetailedLogging) {
       _logger.e('''
 ❌ ERROR
 ${err.requestOptions.method} ${err.requestOptions.uri}
 Status: ${err.response?.statusCode}
 Error: ${err.message}
-Response: ${_isPrivate(err.requestOptions.uri) ? _bodyNotLogged : err.response?.data}
+Response: ${err.response?.data}
 ''');
     }
     handler.next(err);

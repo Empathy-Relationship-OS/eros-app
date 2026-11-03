@@ -4,9 +4,9 @@ import 'package:logger/logger.dart';
 import 'package:eros_app/core/navigation/app_navigator.dart';
 import 'package:eros_app/core/notifications/messaging_client.dart';
 
-/// The chat screen's route (CH-F2). Until CH-F2 lands, chat pushes open date detail instead, where
-/// the chat button will be.
-const bool dateChatRouteEnabled = false;
+/// Whether chat pushes open the chat screen (CH-F2). When false, they open date detail instead,
+/// where the chat button is.
+const bool dateChatRouteEnabled = true;
 
 /// Route name of the chat screen, registered by CH-F2. Takes the date id as a String.
 const String dateChatRoute = '/date-chat';

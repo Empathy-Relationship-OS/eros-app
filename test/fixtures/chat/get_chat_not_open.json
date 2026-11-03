@@ -1,0 +1,13 @@
+{
+  "dateId": 42,
+  "status": "NOT_OPEN",
+  "closesAt": null,
+  "readableUntil": null,
+  "lastSeq": 0,
+  "unreadCount": 0,
+  "yourLastReadSeq": 0,
+  "partnerLastReadSeq": 0,
+  "partnerName": "Alex",
+  "partnerThumbnailUrl": null,
+  "quickReplies": []
+}
