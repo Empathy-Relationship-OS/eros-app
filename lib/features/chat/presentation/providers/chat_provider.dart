@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
+import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/core/constants/user_text_limits.dart';
 import 'package:eros_app/core/time/server_clock.dart';
 import 'package:eros_app/core/time/server_clock_provider.dart';
@@ -123,8 +125,20 @@ class ChatViewState {
 /// Holds one date's chat in memory (RFC-006 §6.3). There is no local message database.
 ///
 /// - [load] fetches the status, then the latest page.
-/// - While the chat is `OPEN`, it polls every [pollInterval]: newer messages by cursor,
-///   then the status. It stops as soon as the status isn't `OPEN`.
+/// - While the chat is `OPEN`, it listens to the live stream (CH-F4). A `messages` signal
+///   fetches newer messages by cursor, one fetch at a time however many arrive, and `read`
+///   updates "Seen". The stream only says something changed: messages always come from the
+///   same fetch as a poll (RFC-006 D-17).
+/// - It also polls while `OPEN`: newer messages by cursor, then the status. Every
+///   [connectedPollInterval] while the stream is connected, and every [pollInterval] while it
+///   isn't, so a broken stream only makes the chat slower. Both stop as soon as the status
+///   isn't `OPEN`.
+/// - When the stream ends or fails it reconnects after [reconnectBackoff], fetching by cursor
+///   first. The backoff resets once a connection has delivered a signal (a heartbeat comes
+///   every 25 seconds), and a clean end of such a connection (the server's 50 minute limit)
+///   reconnects at once. `closed`, a 409 or a 403 stops it until [resume].
+/// - [pause] closes the stream and stops polling while the app is in the background, and
+///   [resume] fetches by cursor, then reconnects.
 /// - [send] shows the message at once and confirms it by `clientMessageId`. [retry] sends
 ///   a failed one again with the same id, so the server can't store it twice.
 /// - Messages merge by `seq` ([ChatMessages]), so overlapping fetches never duplicate one.
@@ -140,11 +154,25 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
   final ServerClock _clock;
   final String Function() _newClientMessageId;
   final Duration pollInterval;
+  final Duration connectedPollInterval;
+  final List<Duration> reconnectBackoff;
   final Duration readDebounce;
   final Logger _logger;
 
-  /// Default poll interval while the chat is open (RFC-006 §6.3).
+  /// Default poll interval while the chat is open and the stream isn't connected (RFC-006 §6.3).
   static const Duration defaultPollInterval = Duration(seconds: 3);
+
+  /// Default poll interval while the stream is connected (RFC-006 §4.5).
+  static const Duration defaultConnectedPollInterval = Duration(seconds: 30);
+
+  /// Waits before each reconnect after a failure, the last repeating (RFC-006 §6.3).
+  static const List<Duration> defaultReconnectBackoff = [
+    Duration(seconds: 1),
+    Duration(seconds: 2),
+    Duration(seconds: 4),
+    Duration(seconds: 8),
+    Duration(seconds: 30),
+  ];
 
   /// Most newer pages fetched in one poll before leaving the rest to the next.
   static const int _maxPagesPerPoll = 5;
@@ -153,7 +181,40 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
   static const Duration defaultReadDebounce = Duration(seconds: 1);
 
   Timer? _pollTimer;
+  Duration? _pollTimerInterval;
   bool _polling = false;
+
+  /// The stream's subscription while it's connecting or connected.
+  StreamSubscription<ChatSignal>? _signals;
+
+  /// Bumped on every connect and close, so callbacks from an old connection do nothing.
+  int _connection = 0;
+
+  /// True once the server has accepted the current connection.
+  bool _streamConnected = false;
+
+  /// True once the current connection has delivered a signal.
+  bool _streamHealthy = false;
+
+  /// Failed connections since the last healthy one: the index into [reconnectBackoff].
+  int _failures = 0;
+
+  Timer? _reconnectTimer;
+
+  /// True while a reconnect fetches by cursor before connecting.
+  bool _reconnecting = false;
+
+  /// Set by `closed`, a 409 or a 403: no reconnects until [resume].
+  bool _streamStopped = false;
+
+  /// True while the app is in the background ([pause]).
+  bool _paused = false;
+
+  /// Highest `lastSeq` a `messages` signal has carried.
+  int _signalledSeq = 0;
+
+  /// True while fetching after a `messages` signal.
+  bool _fetchingSignalled = false;
 
   /// Waits [readDebounce] before posting the read position. Null when nothing is due.
   Timer? _readTimer;
@@ -170,6 +231,8 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
     required ServerClock clock,
     String Function()? newClientMessageId,
     this.pollInterval = defaultPollInterval,
+    this.connectedPollInterval = defaultConnectedPollInterval,
+    this.reconnectBackoff = defaultReconnectBackoff,
     this.readDebounce = defaultReadDebounce,
     Logger? logger,
     bool autoLoad = true,
@@ -183,6 +246,12 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
 
   /// True while the poll timer runs.
   bool get isPolling => _pollTimer != null;
+
+  /// How often it polls right now, or null when it isn't polling.
+  Duration? get activePollInterval => _pollTimer == null ? null : _pollTimerInterval;
+
+  /// True while the live stream is connected.
+  bool get isStreamConnected => _streamConnected;
 
   /// Fetches the status, then the latest page if the chat is readable.
   Future<void> load() async {
@@ -214,7 +283,7 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
       _logger.e('🚨 Failed to load chat $_dateId');
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
-    _syncPolling();
+    _sync();
   }
 
   /// One poll: newer messages, then the status. Skipped while one is already running.
@@ -322,6 +391,24 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
     }
   }
 
+  /// The app went to the background: closes the stream and stops polling.
+  void pause() {
+    if (_paused) return;
+    _paused = true;
+    _sync();
+  }
+
+  /// Back in the foreground: fetches by cursor, then reconnects.
+  Future<void> resume() async {
+    if (!_paused) return;
+    _paused = false;
+    _streamStopped = false;
+    _failures = 0;
+    // The poll's status refresh reconnects, after its fetch.
+    if (state.status == ChatStatus.open) await poll();
+    _sync();
+  }
+
   /// Hides the notice line.
   void clearNotice() {
     if (state.notice != null) state = state.copyWith(clearNotice: true);
@@ -395,7 +482,7 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
       _logger.d('💬 Chat $_dateId is now ${chat.status}');
     }
     state = state.copyWith(chat: chat);
-    _syncPolling();
+    _sync();
   }
 
   /// The seq to post as read, or null when the server already has it.
@@ -445,21 +532,167 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
     _repository.markRead(_dateId, seq).catchError((Object _) {});
   }
 
-  /// Polls while the chat is `OPEN`, and stops otherwise.
-  void _syncPolling() {
+  /// Polls and keeps the stream up while the chat is `OPEN` and the app is in the
+  /// foreground, and stops both otherwise. Polls faster while the stream isn't connected.
+  void _sync() {
     if (!mounted) return;
-    if (state.status == ChatStatus.open) {
-      _pollTimer ??= Timer.periodic(pollInterval, (_) => poll());
-    } else {
+    if (state.status != ChatStatus.open || _paused) {
       _pollTimer?.cancel();
       _pollTimer = null;
+      _closeStream();
+      return;
     }
+
+    final interval = _streamConnected ? connectedPollInterval : pollInterval;
+    if (_pollTimer == null || _pollTimerInterval != interval) {
+      _pollTimer?.cancel();
+      _pollTimerInterval = interval;
+      _pollTimer = Timer.periodic(interval, (_) => poll());
+    }
+
+    if (_signals == null && _reconnectTimer == null && !_reconnecting && !_streamStopped) {
+      _connect();
+    }
+  }
+
+  // ====================
+  // LIVE STREAM (CH-F4)
+  // ====================
+
+  void _connect() {
+    final connection = ++_connection;
+    _streamHealthy = false;
+    _signals = _repository
+        .signals(_dateId, onOpen: () {
+          if (connection == _connection) _onStreamOpen();
+        })
+        .listen(
+          (signal) {
+            if (connection == _connection) _onSignal(signal);
+          },
+          onError: (Object error) {
+            if (connection == _connection) _onStreamEnded(error);
+          },
+          onDone: () {
+            if (connection == _connection) _onStreamEnded(null);
+          },
+          cancelOnError: true,
+        );
+  }
+
+  /// Disconnects, and cancels any reconnect that's waiting.
+  void _closeStream() {
+    _connection++;
+    _signals?.cancel();
+    _signals = null;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _streamConnected = false;
+  }
+
+  void _onStreamOpen() {
+    _logger.d('📡 Chat stream connected for $_dateId');
+    _streamConnected = true;
+    _sync();
+  }
+
+  void _onSignal(ChatSignal signal) {
+    if (!mounted) return;
+    if (!_streamHealthy) {
+      _streamHealthy = true;
+      _failures = 0;
+    }
+    switch (signal) {
+      case MessagesSignal(:final lastSeq):
+        _signalledSeq = max(_signalledSeq, lastSeq);
+        _fetchSignalled();
+      case ReadSignal(:final partnerLastReadSeq):
+        final chat = state.chat;
+        if (chat != null && partnerLastReadSeq > chat.partnerLastReadSeq) {
+          state = state.copyWith(chat: chat.withPartnerLastReadSeq(partnerLastReadSeq));
+        }
+      case ClosedSignal():
+        _logger.d('💬 Chat stream for $_dateId says closed');
+        _stopStream();
+      case HeartbeatSignal():
+        break;
+    }
+  }
+
+  /// Fetches by cursor until it holds the highest seq signalled. Signals that arrive while
+  /// it runs only raise the target, so a burst causes one fetch, or two at most.
+  Future<void> _fetchSignalled() async {
+    if (_fetchingSignalled) return;
+    _fetchingSignalled = true;
+    try {
+      while (mounted && _signalledSeq > (state.highestSeq ?? 0)) {
+        final before = state.highestSeq;
+        await _fetchNewer();
+        // Nothing newer came back: the poll catches up.
+        if (!mounted || state.highestSeq == before) break;
+      }
+    } catch (e) {
+      _logger.w('⚠️  Chat fetch after a signal failed for $_dateId');
+    } finally {
+      _fetchingSignalled = false;
+    }
+  }
+
+  /// Ends the stream for good (until [resume]) and refetches the status, which goes
+  /// read-only when the chat has closed.
+  void _stopStream() {
+    _streamStopped = true;
+    _closeStream();
+    _sync();
+    poll();
+  }
+
+  /// The stream ended cleanly ([error] null) or failed.
+  void _onStreamEnded(Object? error) {
+    final wasHealthy = _streamHealthy;
+    _signals = null;
+    _streamConnected = false;
+    if (!mounted) return;
+
+    switch (error) {
+      case ConflictException():
+        _logger.d('ℹ️  Chat stream for $_dateId refused: not open');
+        _stopStream();
+        return;
+      case ForbiddenException():
+        // Retrying a 403 can't help, and every retry costs a token refresh.
+        _logger.w('⚠️  Chat stream for $_dateId refused: forbidden');
+        _streamStopped = true;
+        _sync();
+        return;
+    }
+
+    // A clean end of a working connection is the server's time limit: no reason to wait.
+    final immediately = error == null && wasHealthy;
+    final delay = immediately ? Duration.zero : reconnectBackoff[min(_failures, reconnectBackoff.length - 1)];
+    if (!immediately) _failures++;
+    _logger.d('📡 Chat stream for $_dateId ended, reconnecting in ${delay.inSeconds}s');
+    _reconnectTimer = Timer(delay, _reconnect);
+    _sync();
+  }
+
+  /// Fetches by cursor first, so nothing sent while disconnected is missed, then connects.
+  Future<void> _reconnect() async {
+    _reconnectTimer = null;
+    _reconnecting = true;
+    try {
+      await poll();
+    } finally {
+      _reconnecting = false;
+    }
+    _sync();
   }
 
   @override
   void dispose() {
     _pollTimer?.cancel();
     _pollTimer = null;
+    _closeStream();
     _flushRead();
     super.dispose();
   }
@@ -469,7 +702,8 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
 // PROVIDERS
 // ====================
 
-/// One date's chat, by date id. Disposed when the chat screen closes, which stops polling.
+/// One date's chat, by date id. Disposed when the chat screen closes, which stops polling
+/// and closes the stream.
 final chatProvider = StateNotifierProvider.autoDispose.family<ChatNotifier, ChatViewState, String>(
   (ref, dateId) => ChatNotifier(
     ref.watch(chatRepositoryProvider),

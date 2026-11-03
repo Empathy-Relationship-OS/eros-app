@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -9,6 +11,7 @@ import 'interceptors/auth_interceptor.dart';
 import 'interceptors/logging_interceptor.dart';
 import 'interceptors/retry_interceptor.dart';
 import 'interceptors/server_time_interceptor.dart';
+import 'sse_parser.dart';
 
 /// Centralized HTTP client for all API requests
 /// Uses Dio with automatic auth injection, retry logic, and error handling
@@ -19,9 +22,12 @@ class ApiClient {
   /// Builds the interceptor-free Dio used for S3 uploads. Tests pass one with a fake adapter.
   final Dio Function()? _s3DioFactory;
 
-  ApiClient(AuthService authService, {Dio Function()? s3DioFactory})
+  /// [httpClientAdapter] replaces the API Dio's network layer. Tests pass a fake one.
+  ApiClient(AuthService authService, {Dio Function()? s3DioFactory, HttpClientAdapter? httpClientAdapter})
       : _dio = Dio(),
         _s3DioFactory = s3DioFactory {
+    if (httpClientAdapter != null) _dio.httpClientAdapter = httpClientAdapter;
+
     // Configure base options
     _dio.options = BaseOptions(
       baseUrl: ApiConfig.baseUrl,
@@ -129,6 +135,96 @@ class ApiClient {
       queryParameters: queryParameters,
       options: options,
     );
+  }
+
+  /// GET a `text/event-stream` at [path], as [SseEvent]s (RFC-006 §6.3).
+  ///
+  /// The request goes through the same interceptors as every call, so the token is added as
+  /// usual. It starts when the stream is listened to, and cancelling the subscription closes
+  /// the connection. [onOpen] runs once the server has answered 2xx, before any event.
+  ///
+  /// There is no receive timeout: the server's heartbeats keep the connection alive. When the
+  /// server ends the stream it closes. A dropped connection is added as a [NetworkException],
+  /// and a non-2xx answer as the matching [ApiException] (a 409 as a [ConflictException]),
+  /// then it closes. A 4xx is an ordinary response here (see `validateStatus`), so
+  /// [RetryInterceptor] never retries one: what to do about a 403 is the caller's choice.
+  Stream<SseEvent> stream(String path, {void Function()? onOpen}) {
+    final cancelToken = CancelToken();
+    var cancelled = false;
+    StreamSubscription<SseEvent>? events;
+    late final StreamController<SseEvent> controller;
+
+    void fail(Object error, StackTrace stackTrace) {
+      if (cancelled || controller.isClosed) return;
+      controller.addError(error, stackTrace);
+      controller.close();
+    }
+
+    Future<void> open() async {
+      try {
+        final response = await _dio.get<ResponseBody>(
+          path,
+          cancelToken: cancelToken,
+          options: Options(
+            responseType: ResponseType.stream,
+            receiveTimeout: Duration.zero,
+            headers: {'Accept': 'text/event-stream'},
+          ),
+        );
+        final body = response.data;
+        if (cancelled) {
+          await body?.stream.listen(null).cancel();
+          return;
+        }
+
+        final status = response.statusCode;
+        if (body == null || status == null || status < 200 || status >= 300) {
+          final error = body == null ? null : await _readErrorBody(body);
+          throw _mapStatusCodeToException(status, error, response);
+        }
+
+        onOpen?.call();
+        events = const SseParser().bind(body.stream).listen(
+              controller.add,
+              onError: (Object e, StackTrace stackTrace) => fail(
+                e is DioException
+                    ? _handleDioException(e, stackTrace)
+                    : NetworkException('Stream connection lost', originalError: e, stackTrace: stackTrace),
+                stackTrace,
+              ),
+              onDone: controller.close,
+              cancelOnError: true,
+            );
+      } on ApiException catch (e, stackTrace) {
+        fail(e, stackTrace);
+      } on DioException catch (e, stackTrace) {
+        if (CancelToken.isCancel(e)) return;
+        fail(_handleDioException(e, stackTrace), stackTrace);
+      } catch (e, stackTrace) {
+        fail(UnknownApiException('Unexpected error: $e', originalError: e, stackTrace: stackTrace), stackTrace);
+      }
+    }
+
+    controller = StreamController<SseEvent>(
+      onListen: open,
+      onCancel: () async {
+        cancelled = true;
+        // Stop listening first: cancelling the token is what closes dio's connection, and it
+        // ends the body with a cancel error that nobody should receive.
+        await events?.cancel();
+        cancelToken.cancel();
+      },
+    );
+    return controller.stream;
+  }
+
+  /// The JSON error body of a streamed non-2xx answer, or null if it isn't JSON.
+  static Future<Object?> _readErrorBody(ResponseBody body) async {
+    try {
+      return jsonDecode(await utf8.decodeStream(body.stream));
+    } catch (_) {
+      return null;
+    }
   }
 
   /// PUT request (for S3 uploads)

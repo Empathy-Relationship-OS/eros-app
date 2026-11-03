@@ -159,6 +159,19 @@ class FakeChatRepository implements ChatRepository {
     return MessageSent(message);
   }
 
+  /// Every stream the notifier has opened, oldest first. Kept out of [calls].
+  final List<FakeChatStream> streams = [];
+
+  /// The newest stream.
+  FakeChatStream get stream => streams.last;
+
+  @override
+  Stream<ChatSignal> signals(String dateId, {void Function()? onOpen}) {
+    final stream = FakeChatStream(onOpen);
+    streams.add(stream);
+    return stream._controller.stream;
+  }
+
   @override
   Future<void> markRead(String dateId, int seq) async {
     readSeqs.add(seq);
@@ -168,4 +181,32 @@ class FakeChatRepository implements ChatRepository {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// One `GET .../chat/stream` connection. It stays connecting until [open], so a notifier
+/// that a test never connects polls exactly as before the stream existed.
+class FakeChatStream {
+  FakeChatStream(this._onOpen) {
+    _controller.onCancel = () => cancelled = true;
+  }
+
+  final void Function()? _onOpen;
+  final StreamController<ChatSignal> _controller = StreamController<ChatSignal>();
+
+  /// True once the notifier has cancelled its subscription.
+  bool cancelled = false;
+
+  /// The server accepted the connection.
+  void open() => _onOpen?.call();
+
+  void send(ChatSignal signal) => _controller.add(signal);
+
+  /// The server ended the stream cleanly.
+  void end() => _controller.close();
+
+  /// The connection failed or was refused with [error].
+  void fail(Object error) {
+    _controller.addError(error);
+    _controller.close();
+  }
 }

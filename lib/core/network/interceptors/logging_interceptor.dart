@@ -6,7 +6,8 @@ import '../api_config.dart';
 ///
 /// Chat and report calls carry message text and report descriptions, which must never be
 /// printed (RFC-006 §4.11). For those paths it logs the method, path and status only, with
-/// no query, headers or bodies.
+/// no query, headers or bodies. A streamed response (`ResponseType.stream`) is never read
+/// here either: its body belongs to whoever listens to it.
 class LoggingInterceptor extends Interceptor {
   final Logger _logger;
 
@@ -15,9 +16,13 @@ class LoggingInterceptor extends Interceptor {
   /// True for paths whose bodies are private: anything containing `/chat` or `/report`.
   static bool isPrivatePath(String path) => path.contains('/chat') || path.contains('/report');
 
+  /// True when only the method, path and status may be logged.
+  static bool _bodyless(RequestOptions options) =>
+      isPrivatePath(options.uri.path) || options.responseType == ResponseType.stream;
+
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    if (ApiConfig.enableDetailedLogging && isPrivatePath(options.uri.path)) {
+    if (ApiConfig.enableDetailedLogging && _bodyless(options)) {
       _logger.d('📤 REQUEST ${options.method} ${options.uri.path}');
     } else if (ApiConfig.enableDetailedLogging) {
       _logger.d('''
@@ -33,7 +38,7 @@ Body: ${_sanitizeBody(options.data)}
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     final uri = response.requestOptions.uri;
-    if (ApiConfig.enableDetailedLogging && isPrivatePath(uri.path)) {
+    if (ApiConfig.enableDetailedLogging && _bodyless(response.requestOptions)) {
       _logger.d('📥 RESPONSE ${response.statusCode} ${response.requestOptions.method} ${uri.path}');
     } else if (ApiConfig.enableDetailedLogging) {
       _logger.d('''
@@ -48,7 +53,7 @@ Body: ${_truncateData(response.data)}
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     final uri = err.requestOptions.uri;
-    if (ApiConfig.enableDetailedLogging && isPrivatePath(uri.path)) {
+    if (ApiConfig.enableDetailedLogging && _bodyless(err.requestOptions)) {
       _logger.e('❌ ERROR ${err.response?.statusCode} ${err.requestOptions.method} ${uri.path}');
     } else if (ApiConfig.enableDetailedLogging) {
       _logger.e('''

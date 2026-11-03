@@ -7,6 +7,8 @@
 /// includes it, so a model printed by accident never leaks a message.
 library;
 
+import 'dart:convert';
+
 // ====================
 // ENUMS
 // ====================
@@ -143,6 +145,79 @@ class ChatState {
             .map((e) => QuickReply.fromJson(e as Map<String, dynamic>))
             .toList(),
       );
+
+  /// This state with the partner's read position from a `read` signal.
+  ChatState withPartnerLastReadSeq(int seq) => ChatState(
+        dateId: dateId,
+        status: status,
+        closesAt: closesAt,
+        readableUntil: readableUntil,
+        lastSeq: lastSeq,
+        unreadCount: unreadCount,
+        yourLastReadSeq: yourLastReadSeq,
+        partnerLastReadSeq: seq,
+        partnerName: partnerName,
+        partnerThumbnailUrl: partnerThumbnailUrl,
+        quickReplies: quickReplies,
+      );
+}
+
+/// One signal on `GET /dates/{dateId}/chat/stream` (RFC-006 §5). Signals carry numbers only:
+/// the messages themselves are always fetched by cursor (D-17).
+sealed class ChatSignal {
+  const ChatSignal();
+
+  /// The signal for an SSE [event] with its [data], or null for an unknown event or data
+  /// that doesn't parse.
+  static ChatSignal? fromSse(String event, String? data) {
+    int? number(String field) {
+      if (data == null) return null;
+      try {
+        final json = jsonDecode(data);
+        return json is Map<String, dynamic> && json[field] is int ? json[field] as int : null;
+      } on FormatException {
+        return null;
+      }
+    }
+
+    switch (event) {
+      case 'messages':
+        final lastSeq = number('lastSeq');
+        return lastSeq == null ? null : MessagesSignal(lastSeq);
+      case 'read':
+        final seq = number('partnerLastReadSeq');
+        return seq == null ? null : ReadSignal(seq);
+      case 'closed':
+        return const ClosedSignal();
+      case 'heartbeat':
+        return const HeartbeatSignal();
+    }
+    return null;
+  }
+}
+
+/// `messages`: the chat's newest message is now [lastSeq]. Sent for your own messages too.
+final class MessagesSignal extends ChatSignal {
+  final int lastSeq;
+
+  const MessagesSignal(this.lastSeq);
+}
+
+/// `read`: the partner has read up to [partnerLastReadSeq].
+final class ReadSignal extends ChatSignal {
+  final int partnerLastReadSeq;
+
+  const ReadSignal(this.partnerLastReadSeq);
+}
+
+/// `closed`: the chat has left `OPEN`. The server ends the stream after it.
+final class ClosedSignal extends ChatSignal {
+  const ClosedSignal();
+}
+
+/// `heartbeat`: sent every 25 seconds to keep the connection alive.
+final class HeartbeatSignal extends ChatSignal {
+  const HeartbeatSignal();
 }
 
 /// One message, from the server or written here and not yet confirmed.

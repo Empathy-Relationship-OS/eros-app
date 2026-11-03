@@ -174,6 +174,9 @@ class _ChatEndpoints {
 
   /// POST /dates/{dateId}/chat/read - Mark messages up to a seq as read (204)
   String markRead(String dateId) => '/dates/$dateId/chat/read';
+
+  /// GET /dates/{dateId}/chat/stream - Live signals as `text/event-stream` (409 unless OPEN)
+  String stream(String dateId) => '/dates/$dateId/chat/stream';
 }
 
 // ====================

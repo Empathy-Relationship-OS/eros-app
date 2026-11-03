@@ -102,6 +102,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _notifier.setForeground(state == AppLifecycleState.resumed);
+    // The live stream closes in the background and catches up on return (RFC-006 §6.3).
+    if (state == AppLifecycleState.paused) _notifier.pause();
+    if (state == AppLifecycleState.resumed) _notifier.resume();
     // They may have turned notifications on in system settings.
     if (state == AppLifecycleState.resumed) ref.invalidate(chatNotificationsEnabledProvider);
   }
