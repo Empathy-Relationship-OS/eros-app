@@ -4,6 +4,7 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_formats.dart';
+import 'package:eros_app/features/dates/presentation/widgets/push_permission_prompt.dart';
 import 'package:eros_app/features/dates/presentation/widgets/venue_price_and_menu.dart';
 import 'package:eros_app/features/dates/presentation/providers/presence_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
@@ -424,6 +425,15 @@ class _BookingCardState extends ConsumerState<BookingCard> {
           backgroundColor: AppColors.success,
         ),
       );
+
+      // Once per user: ask for push now that the reason is clear (RFC-006 §6.4).
+      await maybeShowPushPermissionPrompt(
+        context,
+        ref,
+        uid: widget.currentUid,
+        partnerName: widget.dateDetail.partnerName,
+      );
+      if (!mounted) return;
 
       // If both confirmed, the parent will refetch and show READY state
       if (presenceStatus.me(widget.currentUid).confirmed &&

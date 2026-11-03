@@ -332,6 +332,17 @@ class DatesCopy {
   static const String presenceBothConfirmed = 'You\'re both confirmed';
 
   // ====================
+  // PUSH PERMISSION PROMPT (RFC-006 §6.4)
+  // ====================
+
+  static String pushPromptBody(String partnerName) =>
+      'Turn on notifications so you don\'t miss $partnerName\'s messages.';
+
+  static const String pushPromptTurnOn = 'Turn on notifications';
+
+  static const String pushPromptLater = 'Not now';
+
+  // ====================
   // CANCEL FLOW (UI-9)
   // ====================
 

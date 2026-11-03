@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'core/navigation/app_navigator.dart';
+import 'core/notifications/push_host.dart';
 import 'core/theme/app_theme.dart';
 import 'core/config/stripe_config.dart';
 import 'features/auth/presentation/screens/auth_loading_screen.dart';
@@ -96,13 +98,18 @@ class ErosApp extends StatelessWidget {
       title: 'Muse',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      // Developer tools (RFC-003). DevtoolsConfig.enabled is a compile-time
-      // const, so in beta and production builds these collapse to null / no
-      // entry and the dev menu is tree-shaken out of the binary.
-      navigatorKey: DevtoolsConfig.enabled ? devtoolsNavigatorKey : null,
-      builder: DevtoolsConfig.enabled
-          ? (context, child) => DevOverlay(child: child ?? const SizedBox.shrink())
-          : null,
+      // Always set: notification taps (RFC-006 §6.4) and the dev menu navigate through it.
+      navigatorKey: appNavigatorKey,
+      navigatorObservers: [appRouteObserver],
+      // PushHost syncs the push token and shows the foreground push banner.
+      // Developer tools (RFC-003): DevtoolsConfig.enabled is a compile-time
+      // const, so in beta and production builds the dev overlay and menu are
+      // tree-shaken out of the binary.
+      builder: (context, child) => PushHost(
+        child: DevtoolsConfig.enabled
+            ? DevOverlay(child: child ?? const SizedBox.shrink())
+            : child ?? const SizedBox.shrink(),
+      ),
       home: const AuthLoadingScreen(),
       routes: {
         // Auth routes
