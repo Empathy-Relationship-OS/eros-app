@@ -315,4 +315,236 @@ void main() {
       expect(repo.calls, isEmpty);
     });
   });
+
+  group('quick replies', () {
+    test('sends the key with a new clientMessageId, and shows its text at once', () async {
+      final (:notifier, :repo) = _setUp();
+      await notifier.load();
+      repo.sendGate = Completer<void>();
+      const reply = QuickReply(key: 'RUNNING_LATE', text: 'Running 5 minutes late');
+
+      final outcome = notifier.sendQuickReply(reply);
+
+      final pending = notifier.state.messages.single;
+      expect(pending.clientMessageId, 'cid-1');
+      expect(pending.kind, ChatMessageKind.quickReply);
+      expect(pending.quickReplyKey, 'RUNNING_LATE');
+      expect(pending.text, 'Running 5 minutes late');
+      expect(pending.sendState, ChatSendState.sending);
+
+      repo.sendGate!.complete();
+      expect(await outcome, SendOutcome.sent);
+      expect(repo.stored.single.quickReplyKey, 'RUNNING_LATE');
+
+      repo.sendGate = null;
+      await notifier.sendQuickReply(reply);
+      expect(repo.sentClientIds, ['cid-1', 'cid-2']);
+      expect(_seqs(notifier), [1, 2]);
+    });
+
+    test('a failed quick reply retries with the same clientMessageId and key', () async {
+      final (:notifier, :repo) = _setUp();
+      await notifier.load();
+      repo.sendError = const NetworkException('offline');
+
+      await notifier.sendQuickReply(const QuickReply(key: 'HERE', text: 'I\'m here'));
+      repo.sendError = null;
+      expect(await notifier.retry('cid-1'), SendOutcome.sent);
+
+      expect(repo.sentClientIds, ['cid-1', 'cid-1']);
+      expect(repo.stored.single.quickReplyKey, 'HERE');
+      expect(notifier.state.messages, hasLength(1));
+    });
+
+    test('sends nothing unless OPEN', () async {
+      final (:notifier, :repo) = _setUp(status: ChatStatus.closed);
+      await notifier.load();
+
+      expect(
+        await notifier.sendQuickReply(const QuickReply(key: 'HERE', text: 'I\'m here')),
+        SendOutcome.invalid,
+      );
+      expect(repo.sentClientIds, isEmpty);
+    });
+  });
+
+  group('mark as read', () {
+    const debounce = ChatNotifier.defaultReadDebounce;
+
+    testWidgets('posts the highest seq held a second after it changes', (tester) async {
+      final (:notifier, :repo) = _readSetUp(seed: (repo) {
+        repo.addPartnerMessage('Hi');
+        repo.addPartnerMessage('See you at 7');
+      });
+      await notifier.load();
+
+      await tester.pump(debounce - const Duration(milliseconds: 1));
+      expect(repo.readSeqs, isEmpty);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(repo.readSeqs, [2]);
+
+      // Nothing new, nothing posted.
+      await tester.pump(_pollInterval * 2);
+      expect(repo.readSeqs, [2]);
+
+      repo.addPartnerMessage('Nearly there');
+      await tester.pump(_pollInterval);
+      await tester.pump(debounce);
+      expect(repo.readSeqs, [2, 3]);
+
+      notifier.dispose();
+    });
+
+    testWidgets('rapid updates post at most once a second, and never backwards', (tester) async {
+      final (:notifier, :repo) = _readSetUp(
+        pollInterval: const Duration(milliseconds: 200),
+        seed: (repo) => repo.addPartnerMessage('message 0'),
+      );
+      await notifier.load();
+
+      const step = Duration(milliseconds: 100);
+      final postedAt = <Duration>[];
+      var elapsed = Duration.zero;
+      for (var i = 1; elapsed < const Duration(seconds: 5); i++) {
+        if (i.isEven) repo.addPartnerMessage('message $i');
+        final before = repo.readSeqs.length;
+        await tester.pump(step);
+        elapsed += step;
+        if (repo.readSeqs.length > before) postedAt.add(elapsed);
+      }
+
+      expect(postedAt.length, greaterThanOrEqualTo(3));
+      for (var i = 1; i < postedAt.length; i++) {
+        expect(postedAt[i] - postedAt[i - 1], greaterThanOrEqualTo(debounce));
+      }
+      for (var i = 1; i < repo.readSeqs.length; i++) {
+        expect(repo.readSeqs[i], greaterThan(repo.readSeqs[i - 1]));
+      }
+
+      repo.chat = chatState(ChatStatus.closed);
+      await tester.pump(const Duration(seconds: 2));
+      notifier.dispose();
+    });
+
+    testWidgets('posts nothing the server already holds', (tester) async {
+      final (:notifier, :repo) = _readSetUp(
+        chat: chatState(ChatStatus.open, yourLastReadSeq: 2),
+        seed: (repo) {
+          repo.addPartnerMessage('Hi');
+          repo.addPartnerMessage('See you at 7');
+        },
+      );
+      await notifier.load();
+
+      await tester.pump(debounce * 2);
+      expect(repo.readSeqs, isEmpty);
+
+      repo.addPartnerMessage('Nearly there');
+      await tester.pump(_pollInterval);
+      await tester.pump(debounce);
+      expect(repo.readSeqs, [3]);
+
+      notifier.dispose();
+    });
+
+    testWidgets('a failure is ignored, and the next update catches up', (tester) async {
+      final (:notifier, :repo) = _readSetUp(seed: (repo) => repo.addPartnerMessage('Hi'));
+      repo.readError = const NetworkException('offline');
+      await notifier.load();
+
+      await tester.pump(debounce);
+      expect(repo.readSeqs, [1]);
+      expect(notifier.state.hasError, isFalse);
+
+      repo.readError = null;
+      repo.addPartnerMessage('Hello?');
+      await tester.pump(_pollInterval);
+      await tester.pump(debounce);
+      expect(repo.readSeqs, [1, 2]);
+
+      notifier.dispose();
+    });
+
+    testWidgets('marks a CLOSED chat read too, so the unread dot clears', (tester) async {
+      final (:notifier, :repo) = _readSetUp(
+        chat: chatState(ChatStatus.closed),
+        seed: (repo) => repo.addPartnerMessage('Thanks for tonight'),
+      );
+      await notifier.load();
+
+      await tester.pump(debounce);
+      expect(repo.readSeqs, [1]);
+
+      notifier.dispose();
+    });
+
+    testWidgets('posts nothing while in the background, and catches up on return', (tester) async {
+      final (:notifier, :repo) = _readSetUp(seed: (repo) => repo.addPartnerMessage('Hi'));
+      notifier.setForeground(false);
+      await notifier.load();
+
+      await tester.pump(_pollInterval * 2);
+      expect(repo.readSeqs, isEmpty);
+
+      notifier.setForeground(true);
+      await tester.pump(debounce);
+      expect(repo.readSeqs, [1]);
+
+      notifier.dispose();
+    });
+
+    testWidgets('leaving the screen posts a read still waiting', (tester) async {
+      final (:notifier, :repo) = _readSetUp(seed: (repo) => repo.addPartnerMessage('Hi'));
+      await notifier.load();
+
+      notifier.dispose();
+      await tester.pump();
+
+      expect(repo.readSeqs, [1]);
+    });
+  });
+
+  group('seenSeq', () {
+    test('is my newest message the partner has read', () async {
+      final (:notifier, :repo) = _setUp(seed: (repo) {
+        repo.addMyMessage('On my way'); // 1
+        repo.addPartnerMessage('Great'); // 2
+        repo.addMyMessage('At the door'); // 3
+        repo.addMyMessage('Inside now'); // 4
+      });
+
+      repo.chat = chatState(ChatStatus.open, partnerLastReadSeq: 0);
+      await notifier.load();
+      expect(notifier.state.seenSeq, isNull);
+
+      repo.chat = chatState(ChatStatus.open, partnerLastReadSeq: 2);
+      await notifier.poll();
+      expect(notifier.state.seenSeq, 1);
+
+      repo.chat = chatState(ChatStatus.open, partnerLastReadSeq: 3);
+      await notifier.poll();
+      expect(notifier.state.seenSeq, 3);
+    });
+  });
+}
+
+/// Like [_setUp], for tests that dispose the notifier themselves, so its timers can't
+/// outlive a widget test.
+({ChatNotifier notifier, FakeChatRepository repo}) _readSetUp({
+  ChatState? chat,
+  Duration pollInterval = _pollInterval,
+  void Function(FakeChatRepository repo)? seed,
+}) {
+  final repo = FakeChatRepository();
+  if (chat != null) repo.chat = chat;
+  seed?.call(repo);
+  final notifier = ChatNotifier(
+    repo,
+    '42',
+    clock: ServerClock(deviceNow: () => DateTime.utc(2026, 11, 7, 19)),
+    pollInterval: pollInterval,
+    logger: Logger(level: Level.off),
+    autoLoad: false,
+  );
+  return (notifier: notifier, repo: repo);
 }

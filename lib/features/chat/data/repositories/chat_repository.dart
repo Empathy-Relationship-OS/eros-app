@@ -157,4 +157,22 @@ class ChatRepository {
       rethrow;
     }
   }
+
+  /// `POST /dates/{dateId}/chat/read`: everything up to [seq] has been read (204).
+  ///
+  /// A lower [seq] than the server holds is a no-op there. Allowed while `OPEN` or `CLOSED`.
+  /// Throws [ApiException]s. Callers ignore them, as the next call catches up.
+  Future<void> markRead(String dateId, int seq) async {
+    try {
+      _logger.d('👀 Marking chat $dateId read up to $seq');
+
+      await _apiClient.post<void>(
+        ApiEndpoints.chat.markRead(dateId),
+        data: {'seq': seq},
+      );
+    } on ApiException catch (e) {
+      _logger.w('⚠️  Failed to mark chat $dateId read up to $seq (${e.statusCode})');
+      rethrow;
+    }
+  }
 }

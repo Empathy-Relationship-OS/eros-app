@@ -4,7 +4,9 @@ import 'package:eros_app/features/chat/data/models/chat_models.dart';
 import 'package:eros_app/features/chat/data/repositories/chat_repository.dart';
 import 'package:eros_app/features/chat/presentation/providers/chat_screen_providers.dart';
 import 'package:eros_app/features/chat/presentation/screens/chat_screen.dart';
+import 'package:eros_app/features/chat/presentation/widgets/chat_bubble.dart';
 import 'package:eros_app/features/chat/presentation/widgets/chat_copy.dart';
+import 'package:eros_app/features/chat/presentation/widgets/contact_tip_sheet.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/safety/presentation/screens/report_sheet.dart';
 import 'package:flutter/material.dart';
@@ -248,6 +250,222 @@ void main() {
 
       expect(find.text(ChatCopy.archived), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
+
+      await _close(tester);
+    });
+  });
+
+  group('quick replies (CH-F3)', () {
+    testWidgets('shows the chips the response gives, and none of its own', (tester) async {
+      const fromServer = [
+        QuickReply(key: 'TEST_ONE', text: 'Copy only the server knows'),
+        QuickReply(key: 'TEST_TWO', text: 'Another server reply'),
+      ];
+      final chat = FakeChatRepository()..chat = chatState(ChatStatus.open, quickReplies: fromServer);
+      await _pump(tester, chat);
+
+      expect(find.byType(ActionChip), findsNWidgets(2));
+      expect(find.widgetWithText(ActionChip, 'Copy only the server knows'), findsOneWidget);
+      expect(find.widgetWithText(ActionChip, 'Another server reply'), findsOneWidget);
+      for (final reply in rfcQuickReplies) {
+        expect(find.text(reply.text), findsNothing);
+      }
+
+      await _close(tester);
+    });
+
+    testWidgets('shows no chips when the response has none', (tester) async {
+      final chat = FakeChatRepository()..chat = chatState(ChatStatus.open, quickReplies: const []);
+      await _pump(tester, chat);
+
+      expect(find.byType(ActionChip), findsNothing);
+      expect(find.byType(TextField), findsOneWidget);
+
+      await _close(tester);
+    });
+
+    testWidgets('a tap sends the key straight away and shows its text', (tester) async {
+      final chat = FakeChatRepository();
+      await _pump(tester, chat);
+
+      await tester.tap(find.widgetWithText(ActionChip, 'Running 5 minutes late'));
+      await tester.pump();
+
+      expect(chat.stored.single.quickReplyKey, 'RUNNING_LATE');
+      expect(chat.stored.single.kind, ChatMessageKind.quickReply);
+      expect(find.widgetWithText(ChatBubble, 'Running 5 minutes late'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(ActionChip, 'I\'m here'));
+      await tester.pump();
+      expect(chat.sentClientIds.toSet(), hasLength(2));
+
+      await _close(tester);
+    });
+
+    testWidgets('hide when the chat is CLOSED', (tester) async {
+      await _pump(
+        tester,
+        FakeChatRepository(status: ChatStatus.closed)..addPartnerMessage('Thanks for tonight'),
+        date: chatDate(state: DateState.completed, chat: ChatStatus.closed),
+      );
+
+      expect(find.byType(ActionChip), findsNothing);
+
+      await _close(tester);
+    });
+
+    testWidgets('hide as soon as the chat closes while open', (tester) async {
+      final chat = FakeChatRepository();
+      await _pump(tester, chat);
+      expect(find.byType(ActionChip), findsWidgets);
+
+      chat.chat = chatState(ChatStatus.closed);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump();
+
+      expect(find.byType(ActionChip), findsNothing);
+
+      await _close(tester);
+    });
+  });
+
+  group('"Seen" (CH-F3)', () {
+    Finder seenUnder(String text) => find.descendant(
+          of: find.widgetWithText(ChatBubble, text),
+          matching: find.text(ChatCopy.seen),
+        );
+
+    testWidgets('shows under my newest read message, once, and moves on', (tester) async {
+      final chat = FakeChatRepository()
+        ..addMyMessage('On my way') // 1
+        ..addPartnerMessage('Great') // 2
+        ..addMyMessage('At the door') // 3
+        ..addMyMessage('Inside now'); // 4
+      chat.chat = chatState(ChatStatus.open, partnerLastReadSeq: 1);
+      await _pump(tester, chat);
+
+      expect(find.text(ChatCopy.seen), findsOneWidget);
+      expect(seenUnder('On my way'), findsOneWidget);
+
+      chat.chat = chatState(ChatStatus.open, partnerLastReadSeq: 3);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump();
+
+      expect(find.text(ChatCopy.seen), findsOneWidget);
+      expect(seenUnder('At the door'), findsOneWidget);
+
+      chat.chat = chatState(ChatStatus.open, partnerLastReadSeq: 4);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump();
+
+      expect(find.text(ChatCopy.seen), findsOneWidget);
+      expect(seenUnder('Inside now'), findsOneWidget);
+
+      await _close(tester);
+    });
+
+    testWidgets('isn\'t shown before the partner has read anything of mine', (tester) async {
+      final chat = FakeChatRepository()
+        ..addPartnerMessage('Hi')
+        ..addMyMessage('Hello');
+      chat.chat = chatState(ChatStatus.open, partnerLastReadSeq: 1);
+      await _pump(tester, chat);
+
+      expect(find.text(ChatCopy.seen), findsNothing);
+
+      await _close(tester);
+    });
+  });
+
+  group('mark as read (CH-F3)', () {
+    testWidgets('posts the highest seq after a second on screen', (tester) async {
+      final chat = FakeChatRepository()
+        ..addPartnerMessage('Hi')
+        ..addPartnerMessage('Where are you?');
+      await _pump(tester, chat);
+
+      expect(chat.readSeqs, isEmpty);
+      await tester.pump(const Duration(seconds: 1));
+      expect(chat.readSeqs, [2]);
+
+      await _close(tester);
+    });
+
+    testWidgets('posts nothing while the app is in the background', (tester) async {
+      final chat = FakeChatRepository()..addPartnerMessage('Hi');
+      await _pump(tester, chat);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump(const Duration(seconds: 2));
+      expect(chat.readSeqs, isEmpty);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump(const Duration(seconds: 1));
+      expect(chat.readSeqs, [1]);
+
+      await _close(tester);
+    });
+  });
+
+  group('contact tip (CH-F3)', () {
+    testWidgets('shows once, the first time a flagged message shows', (tester) async {
+      final chat = FakeChatRepository()
+        ..addPartnerMessage('Running late')
+        ..addPartnerMessage('Text me on 07700 900123', contactDetected: true);
+      final container = await _pump(tester, chat);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ContactTipSheet), findsOneWidget);
+      expect(find.text(ChatCopy.contactTip), findsOneWidget);
+      expect(container.read(contactTipStoreProvider).hasSeen('me'), isTrue);
+
+      await tester.tap(find.text(ChatCopy.contactTipDismiss));
+      await tester.pumpAndSettle();
+      expect(find.byType(ContactTipSheet), findsNothing);
+
+      // Another flagged message on the same screen doesn't bring it back.
+      chat.addPartnerMessage('Or email me', contactDetected: true);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      expect(find.byType(ContactTipSheet), findsNothing);
+
+      await _close(tester);
+    });
+
+    testWidgets('never shows again once seen, in any chat', (tester) async {
+      final chat = FakeChatRepository()..addPartnerMessage('My number is 07700 900123', contactDetected: true);
+      await _pump(tester, chat, prefs: {'chat_contact_tip_seen_me': true});
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ContactTipSheet), findsNothing);
+
+      await _close(tester);
+    });
+
+    testWidgets('shows to the sender too, once the server flags their message', (tester) async {
+      final chat = FakeChatRepository();
+      await _pump(tester, chat);
+      expect(find.byType(ContactTipSheet), findsNothing);
+
+      await _typeAndSend(tester, 'I\'m @alex_out');
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ContactTipSheet), findsOneWidget);
+      // It never blocks the send.
+      expect(chat.stored.single.contactDetected, isTrue);
+
+      await _close(tester);
+    });
+
+    testWidgets('doesn\'t show for unflagged messages', (tester) async {
+      await _pump(tester, FakeChatRepository()..addPartnerMessage('See you at 7'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ContactTipSheet), findsNothing);
 
       await _close(tester);
     });

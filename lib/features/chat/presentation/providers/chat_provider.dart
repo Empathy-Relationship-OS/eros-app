@@ -74,6 +74,16 @@ class ChatViewState {
     return highest;
   }
 
+  /// Seq of my newest message the partner has read, where "Seen" shows. Null when they
+  /// haven't read any of mine.
+  int? get seenSeq {
+    final partnerLastReadSeq = chat?.partnerLastReadSeq ?? 0;
+    for (final m in messages.reversed) {
+      if (m.fromMe && m.seq != null && m.seq! <= partnerLastReadSeq) return m.seq;
+    }
+    return null;
+  }
+
   /// Lowest seq held, the cursor for scrolling back.
   int? get lowestSeq {
     int? lowest;
@@ -118,6 +128,10 @@ class ChatViewState {
 /// - [send] shows the message at once and confirms it by `clientMessageId`. [retry] sends
 ///   a failed one again with the same id, so the server can't store it twice.
 /// - Messages merge by `seq` ([ChatMessages]), so overlapping fetches never duplicate one.
+/// - While the app is in the foreground ([setForeground]), it marks the highest seq held as
+///   read, at most once per [readDebounce]. It never posts a lower seq than one already
+///   posted or than the server holds, and it does this while `CLOSED` too, so the unread
+///   dot clears.
 ///
 /// Logs ids and counts only, never message text (primer rule 20).
 class ChatNotifier extends StateNotifier<ChatViewState> {
@@ -126,6 +140,7 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
   final ServerClock _clock;
   final String Function() _newClientMessageId;
   final Duration pollInterval;
+  final Duration readDebounce;
   final Logger _logger;
 
   /// Default poll interval while the chat is open (RFC-006 §6.3).
@@ -134,8 +149,20 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
   /// Most newer pages fetched in one poll before leaving the rest to the next.
   static const int _maxPagesPerPoll = 5;
 
+  /// Shortest gap between two `POST .../chat/read` calls (CH-F3).
+  static const Duration defaultReadDebounce = Duration(seconds: 1);
+
   Timer? _pollTimer;
   bool _polling = false;
+
+  /// Waits [readDebounce] before posting the read position. Null when nothing is due.
+  Timer? _readTimer;
+
+  /// Highest seq posted as read. Only moves forward, except back to its old value when
+  /// that post failed.
+  int _postedReadSeq = 0;
+
+  bool _inForeground = true;
 
   ChatNotifier(
     this._repository,
@@ -143,12 +170,14 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
     required ServerClock clock,
     String Function()? newClientMessageId,
     this.pollInterval = defaultPollInterval,
+    this.readDebounce = defaultReadDebounce,
     Logger? logger,
     bool autoLoad = true,
   })  : _clock = clock,
         _newClientMessageId = newClientMessageId ?? const Uuid().v4,
         _logger = logger ?? Logger(),
         super(const ChatViewState()) {
+    addListener((_) => _scheduleRead(), fireImmediately: false);
     if (autoLoad) load();
   }
 
@@ -251,6 +280,21 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
     return _post(local);
   }
 
+  /// Sends a server-defined quick reply by its key. The bubble shows its text straight away.
+  Future<SendOutcome> sendQuickReply(QuickReply reply) async {
+    if (!state.canSend) return SendOutcome.invalid;
+
+    final local = ChatMessage.local(
+      clientMessageId: _newClientMessageId(),
+      text: reply.text,
+      createdAt: _clock.now(),
+      kind: ChatMessageKind.quickReply,
+      quickReplyKey: reply.key,
+    );
+    state = state.copyWith(messages: [...state.messages, local], clearNotice: true);
+    return _post(local);
+  }
+
   /// Sends a failed message again with the same `clientMessageId`.
   Future<SendOutcome> retry(String clientMessageId) async {
     final failed = state.messages.where(
@@ -263,6 +307,19 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
       clearNotice: true,
     );
     return _post(failed.first);
+  }
+
+  /// Whether the app is in the foreground with the chat screen showing. Reads are only
+  /// marked while it is.
+  void setForeground(bool inForeground) {
+    if (_inForeground == inForeground) return;
+    _inForeground = inForeground;
+    if (!inForeground) {
+      _readTimer?.cancel();
+      _readTimer = null;
+    } else {
+      _scheduleRead();
+    }
   }
 
   /// Hides the notice line.
@@ -341,6 +398,53 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
     _syncPolling();
   }
 
+  /// The seq to post as read, or null when the server already has it.
+  int? get _unpostedReadSeq {
+    if (!state.status.isReadable) return null;
+    final highest = state.highestSeq;
+    if (highest == null) return null;
+    final serverHas = state.chat?.yourLastReadSeq ?? 0;
+    return highest > _postedReadSeq && highest > serverHas ? highest : null;
+  }
+
+  /// Starts the wait before posting the read position, unless one is running already. A
+  /// timer that's already running isn't restarted, so steady polling can't hold it off.
+  void _scheduleRead() {
+    if (!mounted || !_inForeground || _readTimer != null) return;
+    if (_unpostedReadSeq == null) return;
+    _readTimer = Timer(readDebounce, () {
+      _readTimer = null;
+      _postRead();
+    });
+  }
+
+  Future<void> _postRead() async {
+    if (!_inForeground) return;
+    final seq = _unpostedReadSeq;
+    if (seq == null) return;
+
+    final previous = _postedReadSeq;
+    _postedReadSeq = seq;
+    try {
+      await _repository.markRead(_dateId, seq);
+    } catch (e) {
+      // Ignored: the next change posts again. Only undo if nothing newer was posted since.
+      if (_postedReadSeq == seq) _postedReadSeq = previous;
+    }
+  }
+
+  /// Posts a read position still waiting, so leaving the screen straight after a new
+  /// message still clears the unread dot. Nothing is waited for.
+  void _flushRead() {
+    if (_readTimer == null) return;
+    _readTimer!.cancel();
+    _readTimer = null;
+    final seq = _unpostedReadSeq;
+    if (seq == null || !_inForeground) return;
+    _postedReadSeq = seq;
+    _repository.markRead(_dateId, seq).catchError((Object _) {});
+  }
+
   /// Polls while the chat is `OPEN`, and stops otherwise.
   void _syncPolling() {
     if (!mounted) return;
@@ -356,6 +460,7 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
   void dispose() {
     _pollTimer?.cancel();
     _pollTimer = null;
+    _flushRead();
     super.dispose();
   }
 }

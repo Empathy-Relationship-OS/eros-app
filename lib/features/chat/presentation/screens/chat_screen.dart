@@ -15,6 +15,8 @@ import 'package:eros_app/features/chat/presentation/providers/chat_provider.dart
 import 'package:eros_app/features/chat/presentation/providers/chat_screen_providers.dart';
 import 'package:eros_app/features/chat/presentation/widgets/chat_bubble.dart';
 import 'package:eros_app/features/chat/presentation/widgets/chat_copy.dart';
+import 'package:eros_app/features/chat/presentation/widgets/contact_tip_sheet.dart';
+import 'package:eros_app/features/chat/presentation/widgets/quick_reply_chips.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/date_detail_provider.dart';
 import 'package:eros_app/features/safety/presentation/report_flow.dart';
@@ -46,6 +48,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
   bool _showIntro = false;
   bool _introRecorded = false;
 
+  /// Set once the contact tip has been shown on this screen, so it never shows twice.
+  bool _contactTipShown = false;
+
   /// Starts loading older messages this close to the top.
   static const double _loadOlderThreshold = 200;
 
@@ -66,6 +71,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
     if (uid != null) {
       _showIntro = !ref.read(chatIntroStoreProvider).hasSeen(uid, widget.dateId);
     }
+
+    // Reads are only marked while the app is in the foreground. Opening from a push can
+    // happen before the app has resumed.
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    if (lifecycle != null && lifecycle != AppLifecycleState.resumed) _notifier.setForeground(false);
+
+    ref.listenManual<bool>(
+      chatProvider(widget.dateId).select((s) => s.messages.any((m) => m.contactDetected)),
+      (previous, flagged) {
+        if (flagged) _maybeShowContactTip();
+      },
+      fireImmediately: true,
+    );
   }
 
   @override
@@ -83,6 +101,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    _notifier.setForeground(state == AppLifecycleState.resumed);
     // They may have turned notifications on in system settings.
     if (state == AppLifecycleState.resumed) ref.invalidate(chatNotificationsEnabledProvider);
   }
@@ -108,9 +127,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
     if (UserText.clean(raw, multiline: true).isEmpty) return;
 
     _input.clear();
-    if (_scroll.hasClients) {
-      unawaited(_scroll.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut));
-    }
+    _scrollToNewest();
 
     final outcome = await _notifier.send(raw);
     if (!mounted) return;
@@ -121,6 +138,38 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
         selection: TextSelection.collapsed(offset: raw.length),
       );
     }
+  }
+
+  Future<void> _sendQuickReply(QuickReply reply) async {
+    _scrollToNewest();
+    await _notifier.sendQuickReply(reply);
+  }
+
+  void _scrollToNewest() {
+    if (_scroll.hasClients) {
+      unawaited(_scroll.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut));
+    }
+  }
+
+  /// Shows the contact tip the first time this user sees a flagged message, in any chat. It
+  /// counts as seen once shown, and a dismissal is all it asks for.
+  void _maybeShowContactTip() {
+    if (_contactTipShown) return;
+    final uid = _uid;
+    if (uid == null) return;
+    final store = ref.read(contactTipStoreProvider);
+    if (store.hasSeen(uid)) return;
+
+    _contactTipShown = true;
+    unawaited(store.markSeen(uid));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: AppColors.white,
+        builder: (context) => const ContactTipSheet(),
+      );
+    });
   }
 
   /// Opens CH-F5's report flow (origin `REPORT`) for this date, loading the date first if this
@@ -255,6 +304,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
     }
 
     final messages = chatState.messages;
+    final seenSeq = chatState.seenSeq;
     final showIntro = _showIntro && !chatState.hasMoreOlder;
     if (showIntro) _recordIntroShown();
 
@@ -277,6 +327,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
         return ChatBubble(
           key: ValueKey(message.clientMessageId ?? message.seq),
           message: message,
+          seen: seenSeq != null && message.seq == seenSeq,
           onRetry: chatState.canSend && message.clientMessageId != null
               ? () => _notifier.retry(message.clientMessageId!)
               : null,
@@ -303,6 +354,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
       null => null,
     };
     final canSend = UserText.clean(_input.text, multiline: true).isNotEmpty;
+    final quickReplies = chatState.canSend ? chatState.chat!.quickReplies : const <QuickReply>[];
 
     return Container(
       color: AppColors.white,
@@ -311,6 +363,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (quickReplies.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4, right: 8),
+              child: QuickReplyChips(replies: quickReplies, onSelected: _sendQuickReply),
+            ),
           if (notice != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 8, right: 8),

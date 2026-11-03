@@ -23,6 +23,26 @@ final chatIntroStoreProvider = Provider<ChatIntroStore>(
   (ref) => ChatIntroStore(ref.watch(sharedPreferencesProvider)),
 );
 
+/// Remembers that this user has seen the one-time contact details tip (RFC-006 D-6).
+///
+/// Stored per user, not per chat: it shows the first time the app shows any flagged
+/// message. `SignOutService` clears it with the other per-user keys, and that's fine.
+class ContactTipStore {
+  final SharedPreferences _prefs;
+
+  ContactTipStore(this._prefs);
+
+  static String key(String uid) => 'chat_contact_tip_seen_$uid';
+
+  bool hasSeen(String uid) => _prefs.getBool(key(uid)) ?? false;
+
+  Future<void> markSeen(String uid) => _prefs.setBool(key(uid), true);
+}
+
+final contactTipStoreProvider = Provider<ContactTipStore>(
+  (ref) => ContactTipStore(ref.watch(sharedPreferencesProvider)),
+);
+
 /// Whether the system lets the app show notifications, for the "notifications are off"
 /// banner. The chat screen refreshes it when the app comes back to the foreground.
 final chatNotificationsEnabledProvider = FutureProvider.autoDispose<bool>(
