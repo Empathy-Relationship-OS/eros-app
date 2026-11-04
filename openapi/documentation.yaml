@@ -41,6 +41,16 @@ tags:
     description: User question and answer responses
   - name: Matching
     description: Daily batch matching and actions
+  - name: Dates
+    description: Date lifecycle. The full dates contract is docs/dates-api-contract.yaml; only the RFC-006 additions are here.
+  - name: Date chat
+    description: Messaging between two people on a confirmed date (RFC-006)
+  - name: Safety
+    description: Reports and safety cancels (RFC-006)
+  - name: Devices
+    description: Push notification device tokens (RFC-006)
+  - name: Safety admin
+    description: Ops review of reports (RFC-006, ADMIN and EMPLOYEE)
 
 security:
   - firebaseAuth: []
@@ -52,6 +62,31 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: Firebase ID token
+
+  parameters:
+    DateId:
+      name: dateId
+      in: path
+      required: true
+      description: The unique identifier for a date
+      schema:
+        type: integer
+        format: int64
+    ReportId:
+      name: id
+      in: path
+      required: true
+      description: A safety report's id
+      schema:
+        type: integer
+        format: int64
+    Uid:
+      name: uid
+      in: path
+      required: true
+      description: A user's Firebase uid
+      schema:
+        type: string
 
   schemas:
     Error:
@@ -369,6 +404,318 @@ components:
         message:
           type: string
 
+    ApiError:
+      type: object
+      description: The error body every RFC-006 route returns
+      properties:
+        error:
+          type: string
+          description: A stable code, e.g. `conflict`, `message_rejected`, `rate_limited`
+        message:
+          type: string
+      required:
+        - error
+        - message
+
+    # RFC-006 date chat (§5)
+    ChatSummary:
+      type: object
+      description: The date's chat window (RFC-006 §4.1). The app shows the chat from this, never from `state`.
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [NOT_OPEN, OPEN, CLOSED, ARCHIVED]
+        closesAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the chat closes or closed. Null while `NOT_OPEN`.
+        readableUntil:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the chat is archived, 30 days after `closesAt`. Null while `NOT_OPEN`.
+      example:
+        status: OPEN
+        closesAt: "2026-11-07T21:00:00Z"
+        readableUntil: "2026-12-07T21:00:00Z"
+
+    ChatStatus:
+      type: object
+      properties:
+        dateId:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum: [NOT_OPEN, OPEN, CLOSED, ARCHIVED]
+          description: |
+            `NOT_OPEN` until both confirm presence; `OPEN` until the date's scheduled end (or a
+            cancel); `CLOSED` (readable, can't send) for 30 days; then `ARCHIVED`.
+        closesAt:
+          type: string
+          format: date-time
+          nullable: true
+        readableUntil:
+          type: string
+          format: date-time
+          nullable: true
+        lastSeq:
+          type: integer
+        unreadCount:
+          type: integer
+        yourLastReadSeq:
+          type: integer
+        partnerLastReadSeq:
+          type: integer
+        partnerName:
+          type: string
+        partnerThumbnailUrl:
+          type: string
+          nullable: true
+        quickReplies:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuickReply'
+      example:
+        dateId: 42
+        status: OPEN
+        closesAt: "2026-11-07T21:00:00Z"
+        readableUntil: "2026-12-07T21:00:00Z"
+        lastSeq: 18
+        unreadCount: 2
+        yourLastReadSeq: 16
+        partnerLastReadSeq: 18
+        partnerName: Alex
+        partnerThumbnailUrl: https://cdn.example.com/photos/alex-thumb.jpg
+        quickReplies:
+          - key: ON_MY_WAY
+            text: On my way
+
+    QuickReply:
+      type: object
+      properties:
+        key:
+          type: string
+          example: ON_MY_WAY
+        text:
+          type: string
+          example: On my way
+
+    ChatMessage:
+      type: object
+      properties:
+        seq:
+          type: integer
+          description: The message's position in the chat, from 1. The only cursor.
+        fromMe:
+          type: boolean
+        kind:
+          type: string
+          enum: [TEXT, QUICK_REPLY]
+        quickReplyKey:
+          type: string
+          nullable: true
+        text:
+          type: string
+          description: The message, or the quick reply's text
+        contactDetected:
+          type: boolean
+          description: The text looks like it holds contact details (shown as a warning; not blocked)
+        createdAt:
+          type: string
+          format: date-time
+      example:
+        seq: 17
+        fromMe: false
+        kind: TEXT
+        quickReplyKey: null
+        text: Just parking, 5 minutes
+        contactDetected: false
+        createdAt: "2026-11-07T18:58:03Z"
+
+    ChatMessagesPage:
+      type: object
+      properties:
+        messages:
+          type: array
+          description: Ascending `seq` order
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+        hasMore:
+          type: boolean
+          description: There are more messages beyond this page, in the direction of the cursor
+
+    SendChatMessageRequest:
+      type: object
+      required: [clientMessageId]
+      description: Exactly one of `text` and `quickReplyKey`.
+      properties:
+        clientMessageId:
+          type: string
+          format: uuid
+          description: Made by the app; reused on every retry of this message
+        text:
+          type: string
+          maxLength: 1000
+        quickReplyKey:
+          type: string
+          description: A `key` from `quickReplies`
+
+    MarkChatReadRequest:
+      type: object
+      required: [seq]
+      properties:
+        seq:
+          type: integer
+          minimum: 0
+          example: 18
+
+    PresenceConfirmationStatus:
+      type: object
+      properties:
+        dateId:
+          type: integer
+          format: int64
+        user1:
+          $ref: '#/components/schemas/ParticipantPresence'
+        user2:
+          $ref: '#/components/schemas/ParticipantPresence'
+
+    ParticipantPresence:
+      type: object
+      properties:
+        userId:
+          type: string
+        confirmed:
+          type: boolean
+        confirmedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    SafetyReason:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [FEELS_UNSAFE, THREATENING, HARASSMENT, SEXUAL_CONTENT, FAKE_PROFILE, OTHER]
+        label:
+          type: string
+          example: I feel unsafe
+
+    EvidenceUploadRequest:
+      type: object
+      required: [contentType, fileSizeBytes]
+      properties:
+        contentType:
+          type: string
+          enum: [image/jpeg, image/png, image/heic]
+        fileSizeBytes:
+          type: integer
+          format: int64
+          maximum: 10485760
+          example: 123456
+
+    EvidenceUploadResponse:
+      type: object
+      properties:
+        evidenceId:
+          type: string
+          format: uuid
+        uploadUrl:
+          type: string
+          description: Presigned PUT link
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          description: Headers the upload must send
+          example:
+            Content-Type: image/jpeg
+        expiresAt:
+          type: string
+          format: date-time
+
+    ReportRequest:
+      type: object
+      required: [origin, reason]
+      properties:
+        origin:
+          type: string
+          enum: [REPORT, CANCEL]
+        reason:
+          type: string
+          enum: [FEELS_UNSAFE, THREATENING, HARASSMENT, SEXUAL_CONTENT, FAKE_PROFILE, OTHER]
+        description:
+          type: string
+          nullable: true
+          maxLength: 1000
+        evidenceIds:
+          type: array
+          maxItems: 3
+          items:
+            type: string
+            format: uuid
+      example:
+        origin: REPORT
+        reason: HARASSMENT
+        description: They kept messaging after I asked them to stop
+        evidenceIds: []
+
+    ReportResult:
+      type: object
+      properties:
+        reportId:
+          type: integer
+          format: int64
+        dateEnded:
+          type: boolean
+          description: This report ended the date. False if it had already ended.
+        yourRefund:
+          type: string
+          enum: [REFUNDED, UNDER_REVIEW, NONE]
+          description: What happened to the caller's own deposit. `UNDER_REVIEW` means no refund has been issued yet.
+      example:
+        reportId: 7
+        dateEnded: true
+        yourRefund: REFUNDED
+
+    RegisterDeviceRequest:
+      type: object
+      required: [token, platform]
+      properties:
+        token:
+          type: string
+          description: The FCM registration token. A secret; never logged.
+        platform:
+          type: string
+          enum: [IOS, ANDROID]
+
+    RemoveDeviceRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+
+    SafetyDecisionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [UPHELD, NOT_UPHELD, INCONCLUSIVE]
+        note:
+          type: string
+
+    SafetyBanRequest:
+      type: object
+      properties:
+        note:
+          type: string
+
   responses:
     Unauthorized:
       description: Missing or invalid Firebase token
@@ -414,6 +761,41 @@ components:
           example:
             message: "Daily batch limit exceeded"
             status: 429
+
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error: bad_request
+            message: Use afterSeq or beforeSeq, not both
+
+    MessageRejected:
+      description: The message failed the chat filter (`message_rejected`). The response never repeats the text.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error: message_rejected
+            message: This message can't be sent
+
+    ChatRateLimited:
+      description: Over 30 messages a minute in this chat (`rate_limited`)
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the next message can be sent
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error: rate_limited
+            message: Too many requests, try again in 12 seconds
 
 paths:
   /:
@@ -999,7 +1381,7 @@ paths:
       tags:
         - Preferences
       summary: Get another user's preferences
-      description: Get preferences for another user (access controlled)
+      description: Get preferences for another user. Only the caller or a user they have a mutual match with; 403 otherwise.
       parameters:
         - name: id
           in: path
@@ -1384,5 +1766,585 @@ paths:
           description: Invalid action
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # RFC-006 date chat (§5). Chat and safety routes need the USER role.
+  /dates/{dateId}/chat:
+    get:
+      summary: Get chat status
+      description: |
+        The date chat's status, counts, partner and quick replies (RFC-006 §5). `status` comes from
+        the one chat window rule (§4.1): the app reads it rather than working it out from the date's
+        state. `closesAt` and `readableUntil` are null while `NOT_OPEN`; the counts are 0 while
+        `NOT_OPEN` or `ARCHIVED`.
+      operationId: getChatStatus
+      tags:
+        - Date chat
+      parameters:
+        - $ref: '#/components/parameters/DateId'
+      responses:
+        '200':
+          description: The chat's status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /dates/{dateId}/chat/messages:
+    get:
+      summary: List chat messages
+      description: |
+        One page of messages, always in ascending `seq` order. Use `afterSeq` to catch up (newer
+        messages), `beforeSeq` to scroll back (older ones), or neither for the latest page. Sending
+        both is a 400. `seq` is the only cursor (D-18).
+      operationId: listChatMessages
+      tags:
+        - Date chat
+      parameters:
+        - $ref: '#/components/parameters/DateId'
+        - name: afterSeq
+          in: query
+          required: false
+          description: Messages after this `seq`. 0 or more.
+          schema:
+            type: integer
+            minimum: 0
+        - name: beforeSeq
+          in: query
+          required: false
+          description: Messages before this `seq`. 1 or more.
+          schema:
+            type: integer
+            minimum: 1
+        - name: limit
+          in: query
+          required: false
+          description: Page size. Larger values are capped at 100.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: One page of messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessagesPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: The chat is `NOT_OPEN` or `ARCHIVED`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    post:
+      summary: Send a chat message
+      description: |
+        Sends text or a quick reply: exactly one of `text` and `quickReplyKey`. Replaying a
+        `clientMessageId` returns the original message with 200 and stores nothing (RFC-006 §4.4).
+        Retries must reuse the same `clientMessageId`.
+      operationId: sendChatMessage
+      tags:
+        - Date chat
+      parameters:
+        - $ref: '#/components/parameters/DateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendChatMessageRequest'
+            examples:
+              text:
+                value:
+                  clientMessageId: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+                  text: Just parking
+              quickReply:
+                value:
+                  clientMessageId: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+                  quickReplyKey: ON_MY_WAY
+      responses:
+        '200':
+          description: The stored message, or the original one for a replayed `clientMessageId`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+        '400':
+          description: |
+            Empty, over 1,000 characters, both or neither of `text` and `quickReplyKey`, an unknown
+            key, or a `clientMessageId` that isn't a UUID (`bad_request`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Not a participant, or banned (`forbidden`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: The chat isn't `OPEN` (`conflict`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          $ref: '#/components/responses/MessageRejected'
+        '429':
+          $ref: '#/components/responses/ChatRateLimited'
+
+  /dates/{dateId}/chat/read:
+    post:
+      summary: Mark chat messages read
+      description: |
+        Everything up to `seq` has been read. A `seq` at or below the stored position is a no-op.
+        Allowed while `OPEN` or `CLOSED`.
+      operationId: markChatRead
+      tags:
+        - Date chat
+      parameters:
+        - $ref: '#/components/parameters/DateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkChatReadRequest'
+      responses:
+        '204':
+          description: Read position saved, or unchanged
+        '400':
+          description: A missing or negative `seq`, or one above `lastSeq`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: The chat is `NOT_OPEN` or `ARCHIVED`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /dates/{dateId}/chat/stream:
+    get:
+      summary: Live chat signals
+      description: |
+        A `text/event-stream` of signals while the chat is `OPEN` (RFC-006 §4.5). Signals carry only
+        sequence numbers: the app fetches messages with `GET .../messages?afterSeq=` as always (D-17).
+
+        | Event | Data | App does |
+        |---|---|---|
+        | `messages` | `{"lastSeq":19}` | Fetches `afterSeq` |
+        | `read` | `{"partnerLastReadSeq":19}` | Updates "Seen" |
+        | `closed` | `{}` | Refetches status and goes read-only |
+        | `heartbeat` | none | Ignores it |
+
+        A heartbeat is sent every 25 seconds. The stream ends after 50 minutes, or with `closed`
+        within 30 seconds of the chat closing; reconnect and catch up with `afterSeq`. The checks run
+        before the stream starts, so a chat that isn't open is a normal 409.
+      operationId: streamChat
+      tags:
+        - Date chat
+      parameters:
+        - $ref: '#/components/parameters/DateId'
+      responses:
+        '200':
+          description: The event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              example: |
+                event: messages
+                data: {"lastSeq":19}
+
+                event: heartbeat
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: The chat isn't `OPEN`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /dates/{dateId}/presence-status:
+    get:
+      summary: Get presence status
+      description: Both participants' presence confirmations, as `confirm-presence` returns them (RFC-006 §2 defect 1).
+      operationId: getPresenceStatus
+      tags:
+        - Dates
+      parameters:
+        - $ref: '#/components/parameters/DateId'
+      responses:
+        '200':
+          description: Both participants' presence confirmations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresenceConfirmationStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /safety/reasons:
+    get:
+      summary: List report reasons
+      description: The reasons a report or safety cancel can give, in display order. The app hard-codes no list.
+      operationId: listSafetyReasons
+      tags:
+        - Safety
+      responses:
+        '200':
+          description: The reasons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SafetyReason'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /dates/{dateId}/report/evidence-url:
+    post:
+      summary: Get an evidence upload link
+      description: |
+        A presigned upload link for one image of evidence: JPEG, PNG or HEIC, up to 10 MB, with the
+        size locked into the request. Upload with the returned `headers`, then pass `evidenceId` in
+        `POST /dates/{dateId}/report`. At most 3 unattached uploads per person and date. The link
+        lasts 15 minutes. Being built in CH-B8.
+      operationId: createEvidenceUploadUrl
+      tags:
+        - Safety
+      parameters:
+        - $ref: '#/components/parameters/DateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvidenceUploadRequest'
+      responses:
+        '200':
+          description: The upload link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvidenceUploadResponse'
+        '400':
+          description: An unsupported type, a file over 10 MB, or a fourth unattached upload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Evidence uploads are turned off on this server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /dates/{dateId}/report:
+    post:
+      summary: Report or cancel for safety
+      description: |
+        Reports the partner (`origin: REPORT`) or cancels the date on safety grounds
+        (`origin: CANCEL`). Ends the date if it hasn't ended: contact stops at once and the pair
+        can't match again. `yourRefund` says what happened to the caller's own deposit (RFC-006 §4.8).
+        `description` is optional, at most 1,000 characters, and never logged. `evidenceIds` holds at
+        most 3 ids from `POST /dates/{dateId}/report/evidence-url`.
+      operationId: reportDate
+      tags:
+        - Safety
+      parameters:
+        - $ref: '#/components/parameters/DateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+      responses:
+        '200':
+          description: The report was made
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResult'
+        '400':
+          description: An unknown `origin` or `reason`, a description over 1,000 characters, or a bad evidence id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: |
+            A second report by the same person on this date, a safety cancel on an ended date, or more
+            than 30 days after a finished date
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /users/me/devices:
+    post:
+      summary: Register a push device
+      description: Saves an FCM token for the caller. Upserts by token, so a phone that changes account moves to the new user.
+      operationId: registerDevice
+      tags:
+        - Devices
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDeviceRequest'
+      responses:
+        '204':
+          description: Saved
+        '400':
+          description: A blank or over-long token, or an unknown platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /users/me/devices/remove:
+    post:
+      summary: Remove a push device
+      description: Removes the token only if it belongs to the caller. Someone else's token, or one that isn't registered, is left alone.
+      operationId: removeDevice
+      tags:
+        - Devices
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemoveDeviceRequest'
+      responses:
+        '204':
+          description: Removed, or nothing to remove
+        '400':
+          description: A blank or over-long token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # RFC-006 §5 "Admin" (ADMIN, EMPLOYEE). Not built yet: CH-B9 builds these and CH-B13 the ban.
+  # Response bodies are filled in when they are.
+  /admin/safety/reports:
+    get:
+      summary: List safety reports (planned, CH-B9)
+      description: Reports, oldest first, without transcripts. Not built yet.
+      operationId: listSafetyReports
+      tags:
+        - Safety admin
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [OPEN, DECIDED]
+      responses:
+        '200':
+          description: Reports, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/safety/reports/{id}:
+    get:
+      summary: Get one safety report (planned, CH-B9)
+      description: |
+        One report with its transcript and presigned evidence links. Every view writes a
+        `safety_report_access` row (D-14). Not built yet.
+      operationId: getSafetyReport
+      tags:
+        - Safety admin
+      parameters:
+        - $ref: '#/components/parameters/ReportId'
+      responses:
+        '200':
+          description: The report
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/safety/reports/{id}/decision:
+    post:
+      summary: Decide a safety report (planned, CH-B9)
+      description: Records a decision and applies the RFC-006 §4.8 money rules. Not built yet.
+      operationId: decideSafetyReport
+      tags:
+        - Safety admin
+      parameters:
+        - $ref: '#/components/parameters/ReportId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SafetyDecisionRequest'
+      responses:
+        '200':
+          description: The decision was applied
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Already decided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /admin/safety/users/{uid}/summary:
+    get:
+      summary: Get a user's safety summary (planned, CH-B9)
+      description: |
+        Claims made, reports received, distinct people, refunds and upheld counts, over 12 months and
+        over all kept data. Not built yet.
+      operationId: getSafetyUserSummary
+      tags:
+        - Safety admin
+      parameters:
+        - $ref: '#/components/parameters/Uid'
+      responses:
+        '200':
+          description: The summary
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/safety/flagged:
+    get:
+      summary: List flagged accounts (planned, CH-B9)
+      description: Accounts with a flag from RFC-006 §4.8, with which flag and the numbers behind it. Flags are for humans; nothing bans anyone automatically (D-23). Not built yet.
+      operationId: listFlaggedAccounts
+      tags:
+        - Safety admin
+      responses:
+        '200':
+          description: Flagged accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/safety/users/{uid}/ban:
+    post:
+      summary: Ban a user (planned, CH-B13)
+      description: Bans the account and applies RFC-006 §4.8. `ADMIN` only. Not built yet.
+      operationId: banUser
+      tags:
+        - Safety admin
+      parameters:
+        - $ref: '#/components/parameters/Uid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SafetyBanRequest'
+      responses:
+        '200':
+          description: The user was banned
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
