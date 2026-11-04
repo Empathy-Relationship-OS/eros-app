@@ -17,6 +17,12 @@ class RetryInterceptor extends Interceptor {
   ) async {
     final statusCode = err.response?.statusCode;
 
+    // A stream (SSE) is never retried here: a retry would come back buffered, and the
+    // caller already reconnects with backoff (RFC-006 §6.3).
+    if (err.requestOptions.responseType == ResponseType.stream) {
+      return handler.next(err);
+    }
+
     // Handle 401 Unauthorized - refresh token and retry
     if (statusCode == 401) {
       _logger.w('🔄 401 Unauthorized - Refreshing token and retrying...');

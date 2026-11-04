@@ -76,6 +76,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
     // happen before the app has resumed.
     final lifecycle = WidgetsBinding.instance.lifecycleState;
     if (lifecycle != null && lifecycle != AppLifecycleState.resumed) _notifier.setForeground(false);
+    // Lifecycle callbacks aren't replayed to a new observer, so a screen built in the
+    // background must pause now, or it streams and polls until the app resumes.
+    if (lifecycle == AppLifecycleState.paused) _notifier.pause();
 
     ref.listenManual<bool>(
       chatProvider(widget.dateId).select((s) => s.messages.any((m) => m.contactDetected)),
@@ -102,6 +105,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _notifier.setForeground(state == AppLifecycleState.resumed);
+    // The live stream closes in the background and catches up on return (RFC-006 §6.3).
+    if (state == AppLifecycleState.paused) _notifier.pause();
+    if (state == AppLifecycleState.resumed) _notifier.resume();
     // They may have turned notifications on in system settings.
     if (state == AppLifecycleState.resumed) ref.invalidate(chatNotificationsEnabledProvider);
   }

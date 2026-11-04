@@ -158,6 +158,19 @@ class ChatRepository {
     }
   }
 
+  /// `GET /dates/{dateId}/chat/stream`: the chat's live signals (RFC-006 §4.5).
+  ///
+  /// Connects when listened to and disconnects when cancelled. [onOpen] runs once the server
+  /// has accepted it. Unknown events are skipped. Errors are [ApiException]s: a
+  /// [ConflictException] when the chat isn't `OPEN`, a [ForbiddenException] for a
+  /// non-participant, and a [NetworkException] when the connection drops.
+  Stream<ChatSignal> signals(String dateId, {void Function()? onOpen}) {
+    return _apiClient.stream(ApiEndpoints.chat.stream(dateId), onOpen: onOpen).expand((event) {
+      final signal = ChatSignal.fromSse(event.event, event.data);
+      return signal == null ? const <ChatSignal>[] : [signal];
+    });
+  }
+
   /// `POST /dates/{dateId}/chat/read`: everything up to [seq] has been read (204).
   ///
   /// A lower [seq] than the server holds is a no-op there. Allowed while `OPEN` or `CLOSED`.
