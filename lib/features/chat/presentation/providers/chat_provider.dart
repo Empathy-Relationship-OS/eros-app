@@ -134,9 +134,11 @@ class ChatViewState {
 ///   isn't, so a broken stream only makes the chat slower. Both stop as soon as the status
 ///   isn't `OPEN`.
 /// - When the stream ends or fails it reconnects after [reconnectBackoff], fetching by cursor
-///   first. The backoff resets once a connection has delivered a signal (a heartbeat comes
-///   every 25 seconds), and a clean end of such a connection (the server's 50 minute limit)
-///   reconnects at once. `closed`, a 409 or a 403 stops it until [resume].
+///   first. The backoff resets once a connection has stayed up for [stableConnectionAfter],
+///   and a clean end of such a connection (the server's 50 minute limit) reconnects at once.
+///   A shorter one backs off. A connection silent for [streamSilenceTimeout] (a heartbeat
+///   comes every 25 seconds) is half-open, so it's dropped and counts as a failure. `closed`,
+///   a 409 or a 403 stops it until [resume], and refetches the status straight away.
 /// - [pause] closes the stream and stops polling while the app is in the background, and
 ///   [resume] fetches by cursor, then reconnects.
 /// - [send] shows the message at once and confirms it by `clientMessageId`. [retry] sends
@@ -156,6 +158,8 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
   final Duration pollInterval;
   final Duration connectedPollInterval;
   final List<Duration> reconnectBackoff;
+  final Duration streamSilenceTimeout;
+  final Duration stableConnectionAfter;
   final Duration readDebounce;
   final Logger _logger;
 
@@ -173,6 +177,14 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
     Duration(seconds: 8),
     Duration(seconds: 30),
   ];
+
+  /// Longest the stream may go without a signal before it counts as dropped. The server sends
+  /// a heartbeat every 25 seconds (RFC-006 §5).
+  static const Duration defaultStreamSilenceTimeout = Duration(seconds: 35);
+
+  /// How long a connection must stay up before the backoff resets and a clean end of it
+  /// reconnects at once.
+  static const Duration defaultStableConnectionAfter = Duration(minutes: 1);
 
   /// Most newer pages fetched in one poll before leaving the rest to the next.
   static const int _maxPagesPerPoll = 5;
@@ -193,11 +205,19 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
   /// True once the server has accepted the current connection.
   bool _streamConnected = false;
 
-  /// True once the current connection has delivered a signal.
-  bool _streamHealthy = false;
+  /// True once the current connection has stayed up for [stableConnectionAfter].
+  bool _streamStable = false;
 
-  /// Failed connections since the last healthy one: the index into [reconnectBackoff].
+  Timer? _stableTimer;
+
+  /// Runs out when the current connection has been silent for [streamSilenceTimeout].
+  Timer? _silenceTimer;
+
+  /// Failed connections since the last stable one: the index into [reconnectBackoff].
   int _failures = 0;
+
+  /// Bumped on every status request, so an answer to an older one is ignored.
+  int _statusRequest = 0;
 
   Timer? _reconnectTimer;
 
@@ -233,6 +253,8 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
     this.pollInterval = defaultPollInterval,
     this.connectedPollInterval = defaultConnectedPollInterval,
     this.reconnectBackoff = defaultReconnectBackoff,
+    this.streamSilenceTimeout = defaultStreamSilenceTimeout,
+    this.stableConnectionAfter = defaultStableConnectionAfter,
     this.readDebounce = defaultReadDebounce,
     Logger? logger,
     bool autoLoad = true,
@@ -476,8 +498,15 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
   }
 
   Future<void> _refreshStatus() async {
-    final chat = await _repository.getChat(_dateId);
-    if (!mounted) return;
+    final request = ++_statusRequest;
+    var chat = await _repository.getChat(_dateId);
+    // A newer request was sent while this one ran: its answer is the one to keep.
+    if (!mounted || request != _statusRequest) return;
+    // A `read` signal may have moved it on since this was requested. It only moves forward.
+    final current = state.chat;
+    if (current != null && current.partnerLastReadSeq > chat.partnerLastReadSeq) {
+      chat = chat.withPartnerLastReadSeq(current.partnerLastReadSeq);
+    }
     if (chat.status != state.status) {
       _logger.d('💬 Chat $_dateId is now ${chat.status}');
     }
@@ -561,7 +590,7 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
 
   void _connect() {
     final connection = ++_connection;
-    _streamHealthy = false;
+    _streamStable = false;
     _signals = _repository
         .signals(_dateId, onOpen: () {
           if (connection == _connection) _onStreamOpen();
@@ -588,20 +617,48 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     _streamConnected = false;
+    _cancelConnectionTimers();
+  }
+
+  void _cancelConnectionTimers() {
+    _stableTimer?.cancel();
+    _stableTimer = null;
+    _silenceTimer?.cancel();
+    _silenceTimer = null;
   }
 
   void _onStreamOpen() {
     _logger.d('📡 Chat stream connected for $_dateId');
     _streamConnected = true;
+    final connection = _connection;
+    _stableTimer = Timer(stableConnectionAfter, () {
+      if (connection != _connection) return;
+      _streamStable = true;
+      _failures = 0;
+    });
+    _watchSilence();
     _sync();
+  }
+
+  /// Restarts the wait for the next signal. Nothing else notices a half-open connection, as
+  /// the stream has no receive timeout, so one that stays silent past [streamSilenceTimeout]
+  /// is dropped and reconnected like a failure.
+  void _watchSilence() {
+    _silenceTimer?.cancel();
+    final connection = _connection;
+    _silenceTimer = Timer(streamSilenceTimeout, () {
+      if (connection != _connection || !mounted) return;
+      _logger.w('⚠️  Chat stream for $_dateId went silent, reconnecting');
+      // Ignore anything the old subscription still delivers.
+      _connection++;
+      _signals?.cancel();
+      _onStreamEnded(const NetworkException('Chat stream went silent'));
+    });
   }
 
   void _onSignal(ChatSignal signal) {
     if (!mounted) return;
-    if (!_streamHealthy) {
-      _streamHealthy = true;
-      _failures = 0;
-    }
+    _watchSilence();
     switch (signal) {
       case MessagesSignal(:final lastSeq):
         _signalledSeq = max(_signalledSeq, lastSeq);
@@ -644,14 +701,28 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
     _streamStopped = true;
     _closeStream();
     _sync();
-    poll();
+    _catchUpAfterStop();
+  }
+
+  /// Refetches the status straight away rather than through [poll], which skips while one
+  /// is running, so the composer goes read-only before anyone can send into a closed chat.
+  /// Then fetches by cursor, for a message sent just before it closed.
+  Future<void> _catchUpAfterStop() async {
+    try {
+      await _refreshStatus();
+      if (mounted && state.status.isReadable) await _fetchNewer();
+    } catch (e) {
+      // The poll, while still OPEN, or the next resume tries again.
+      _logger.w('⚠️  Chat status refresh failed for $_dateId');
+    }
   }
 
   /// The stream ended cleanly ([error] null) or failed.
   void _onStreamEnded(Object? error) {
-    final wasHealthy = _streamHealthy;
+    final wasStable = _streamStable;
     _signals = null;
     _streamConnected = false;
+    _cancelConnectionTimers();
     if (!mounted) return;
 
     switch (error) {
@@ -667,8 +738,9 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
         return;
     }
 
-    // A clean end of a working connection is the server's time limit: no reason to wait.
-    final immediately = error == null && wasHealthy;
+    // A clean end of a long connection is the server's time limit: no reason to wait. A
+    // short one backs off, so a connection that keeps closing can't cause a reconnect loop.
+    final immediately = error == null && wasStable;
     final delay = immediately ? Duration.zero : reconnectBackoff[min(_failures, reconnectBackoff.length - 1)];
     if (!immediately) _failures++;
     _logger.d('📡 Chat stream for $_dateId ended, reconnecting in ${delay.inSeconds}s');

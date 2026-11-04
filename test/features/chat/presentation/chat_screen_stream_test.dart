@@ -75,6 +75,39 @@ void main() {
     await _close(tester, container);
   });
 
+  testWidgets('a screen built while the app is in the background waits until it resumes', (tester) async {
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    final chat = FakeChatRepository()..addPartnerMessage('Hi');
+    final container = ProviderContainer(overrides: await chatOverrides(chat: chat, date: chatDate()));
+    addTearDown(container.dispose);
+    await tester.pumpWidget(UncontrolledProviderScope(
+      container: container,
+      child: const MaterialApp(home: ChatScreen(dateId: '42')),
+    ));
+    // No frames are drawn while paused unless forced, and the screen is built in one.
+    for (var i = 0; i < 3; i++) {
+      tester.binding.scheduleForcedFrame();
+      await tester.pump();
+    }
+    expect(find.byType(ChatScreen), findsOneWidget);
+
+    chat.calls.clear();
+    await tester.pump(const Duration(minutes: 1));
+    expect(chat.streams, isEmpty, reason: 'no stream in the background');
+    expect(chat.calls, isEmpty, reason: 'no polling in the background');
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    await tester.pump();
+    expect(chat.streams, hasLength(1));
+
+    await _close(tester, container);
+  });
+
   testWidgets('leaving the screen closes the stream', (tester) async {
     final chat = FakeChatRepository();
     final container = await _pump(tester, chat);

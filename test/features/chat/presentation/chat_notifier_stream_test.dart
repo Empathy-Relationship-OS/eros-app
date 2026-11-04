@@ -71,6 +71,20 @@ Future<void> _settle(WidgetTester tester) async {
   }
 }
 
+/// Keeps the newest stream alive for [duration] with a heartbeat every 25 seconds, as the
+/// server sends.
+Future<void> _heartbeatsFor(WidgetTester tester, FakeChatRepository repo, Duration duration) async {
+  const every = Duration(seconds: 25);
+  var elapsed = Duration.zero;
+  while (elapsed < duration) {
+    final step = duration - elapsed < every ? duration - elapsed : every;
+    await tester.pump(step);
+    elapsed += step;
+    repo.stream.send(const HeartbeatSignal());
+    await _settle(tester);
+  }
+}
+
 void main() {
   group('connecting', () {
     _test('connects once loaded OPEN, and polls slower once connected', (tester) async {
@@ -167,6 +181,21 @@ void main() {
       expect(notifier.state.chat!.partnerLastReadSeq, 2);
     });
 
+    _test('a status answer never moves "Seen" back', (tester) async {
+      final (:notifier, :repo) = await _loaded();
+      await notifier.send('See you at 7');
+      await notifier.send('Table by the window');
+      repo.stream.send(const ReadSignal(2));
+      await _settle(tester);
+
+      // The status answer was read before the partner's read reached it.
+      repo.chat = chatState(ChatStatus.open, partnerLastReadSeq: 1);
+      await notifier.poll();
+
+      expect(notifier.state.chat!.partnerLastReadSeq, 2);
+      expect(notifier.state.seenSeq, 2);
+    });
+
     _test('heartbeat does nothing', (tester) async {
       final (:notifier, :repo) = await _loaded();
 
@@ -196,6 +225,28 @@ void main() {
       await tester.pump(const Duration(minutes: 2));
       expect(repo.streams, hasLength(1));
       expect(repo.calls, isEmpty);
+    });
+
+    _test('closed goes read-only at once, even while a poll is waiting for the status', (tester) async {
+      final (:notifier, :repo) = await _loaded();
+      final pollStatus = Completer<void>();
+      repo.chatGate = pollStatus;
+      final polling = notifier.poll();
+      await _settle(tester);
+      expect(repo.calls.last, 'getChat', reason: 'the poll is waiting on an OPEN status');
+
+      repo.chatGate = null;
+      repo.chat = chatState(ChatStatus.closed);
+      repo.stream.send(const ClosedSignal());
+      await _settle(tester);
+      expect(notifier.state.canSend, isFalse);
+
+      // The poll's older OPEN answer lands last, and is ignored.
+      pollStatus.complete();
+      await polling;
+      await _settle(tester);
+      expect(notifier.state.status, ChatStatus.closed);
+      expect(notifier.isPolling, isFalse);
     });
   });
 
@@ -250,9 +301,21 @@ void main() {
       }
     });
 
-    _test('the backoff resets once a connection delivers a signal', (tester) async {
+    _test('the backoff resets once a connection stays up for a minute', (tester) async {
       final (notifier: _, :repo) = await _loaded(connected: false);
       for (final seconds in [1, 2, 4]) {
+        await failAndExpectReconnectAfter(tester, repo, Duration(seconds: seconds));
+      }
+
+      repo.stream.open();
+      await _heartbeatsFor(tester, repo, ChatNotifier.defaultStableConnectionAfter);
+
+      await failAndExpectReconnectAfter(tester, repo, const Duration(seconds: 1));
+    });
+
+    _test('a short connection does not reset the backoff, even after a signal', (tester) async {
+      final (notifier: _, :repo) = await _loaded(connected: false);
+      for (final seconds in [1, 2]) {
         await failAndExpectReconnectAfter(tester, repo, Duration(seconds: seconds));
       }
 
@@ -260,14 +323,13 @@ void main() {
       repo.stream.send(const HeartbeatSignal());
       await _settle(tester);
 
-      await failAndExpectReconnectAfter(tester, repo, const Duration(seconds: 1));
+      await failAndExpectReconnectAfter(tester, repo, const Duration(seconds: 4));
     });
 
-    _test('a clean end of a working stream (the 50 minute limit) reconnects at once, cursor first',
+    _test('a clean end of a long stream (the 50 minute limit) reconnects at once, cursor first',
         (tester) async {
       final (:notifier, :repo) = await _loaded(seed: (repo) => repo.addPartnerMessage('Hi'));
-      repo.stream.send(const HeartbeatSignal());
-      await _settle(tester);
+      await _heartbeatsFor(tester, repo, ChatNotifier.defaultStableConnectionAfter);
       repo.addPartnerMessage('Sent while reconnecting');
       repo.calls.clear();
 
@@ -279,8 +341,10 @@ void main() {
       expect(_seqs(notifier), [1, 2]);
     });
 
-    _test('a clean end before any signal backs off', (tester) async {
+    _test('a clean end of a short stream backs off, even after a signal', (tester) async {
       final (notifier: _, :repo) = await _loaded();
+      repo.stream.send(const HeartbeatSignal());
+      await _settle(tester);
 
       repo.stream.end();
       await _settle(tester);
@@ -289,6 +353,33 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       await _settle(tester);
       expect(repo.streams, hasLength(2));
+    });
+
+    _test('a stream silent for 35 seconds counts as dropped: polls speed up and it reconnects', (tester) async {
+      final (:notifier, :repo) = await _loaded();
+
+      await tester.pump(ChatNotifier.defaultStreamSilenceTimeout - const Duration(seconds: 1));
+      await _settle(tester);
+      expect(notifier.isStreamConnected, isTrue);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _settle(tester);
+      expect(repo.stream.cancelled, isTrue);
+      expect(notifier.isStreamConnected, isFalse);
+      expect(notifier.activePollInterval, _fastPoll);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _settle(tester);
+      expect(repo.streams, hasLength(2));
+    });
+
+    _test('heartbeats keep a quiet stream connected', (tester) async {
+      final (:notifier, :repo) = await _loaded();
+
+      await _heartbeatsFor(tester, repo, const Duration(minutes: 3));
+
+      expect(repo.streams, hasLength(1));
+      expect(notifier.isStreamConnected, isTrue);
     });
 
     _test('a 409 refetches the status and stops', (tester) async {

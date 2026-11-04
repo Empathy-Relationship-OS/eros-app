@@ -68,6 +68,9 @@ class FakeChatRepository implements ChatRepository {
   /// When set, sends wait for it before answering.
   Completer<void>? sendGate;
 
+  /// When set, `getChat` waits for it, then answers with the status as it was when called.
+  Completer<void>? chatGate;
+
   int _seq = 0;
 
   ChatMessage addPartnerMessage(String text, {bool contactDetected = false}) =>
@@ -98,7 +101,10 @@ class FakeChatRepository implements ChatRepository {
   @override
   Future<ChatState> getChat(String dateId) async {
     calls.add('getChat');
-    return chat;
+    final answer = chat;
+    final gate = chatGate;
+    if (gate != null) await gate.future;
+    return answer;
   }
 
   @override
