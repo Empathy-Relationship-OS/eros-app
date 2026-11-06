@@ -370,5 +370,10 @@ class DatePreferenceOptions {
 List<T> _list<T>(Object? json, T Function(Map<String, dynamic>) fromJson) =>
     (json as List<dynamic>).map((e) => fromJson(e as Map<String, dynamic>)).toList();
 
-/// The server sends `BigDecimal` fields as strings. A number is accepted too.
-double _decimal(Object? json) => json is num ? json.toDouble() : double.parse(json as String);
+/// The server sends `BigDecimal` fields as strings. A number is accepted too. `"NaN"` and
+/// `"Infinity"` are rejected, since `double.parse` accepts them.
+double _decimal(Object? json) {
+  final value = json is num ? json.toDouble() : double.parse(json as String);
+  if (!value.isFinite) throw FormatException('Not a finite decimal', json);
+  return value;
+}

@@ -143,6 +143,21 @@ void main() {
     });
   });
 
+  group('DateActivityOption', () {
+    Map<String, dynamic> activity(Object? tokenCost) =>
+        ((_fixture('get_date_preferences_options') as Map<String, dynamic>)['activities']
+                as List<dynamic>)
+            .single as Map<String, dynamic>
+          ..['tokenCost'] = tokenCost;
+
+    test('rejects a token cost that is not a finite number', () {
+      for (final cost in ['NaN', 'Infinity', '-Infinity', double.infinity]) {
+        expect(() => DateActivityOption.fromJson(activity(cost)), throwsFormatException,
+            reason: '$cost');
+      }
+    });
+  });
+
   group('CityDistrict', () {
     test('round-trips the districts list', () {
       final json = _fixture('get_city_districts') as List<dynamic>;
