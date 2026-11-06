@@ -40,7 +40,7 @@ Map<String, dynamic> _withBowling() {
     'name': 'Bowling',
     'category': 'ACTIVE',
     'status': 'COMING_SOON',
-    'tokenCost': 1.50,
+    'tokenCost': '1.50',
     'durationMinutes': 120,
     'description': 'A few frames and a drink',
     'iconUrl': null,
@@ -130,7 +130,7 @@ void main() {
       activities.insert(0, coffee
         ..['name'] = 'Coffee and cake'
         ..['description'] = 'An hour or so somewhere cosy'
-        ..['tokenCost'] = 0.25);
+        ..['tokenCost'] = '0.25');
       await _open(tester, _api(options: options));
 
       expect(find.text('Coffee and cake'), findsOneWidget);

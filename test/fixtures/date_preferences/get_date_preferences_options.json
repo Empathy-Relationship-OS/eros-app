@@ -1,7 +1,7 @@
 {
   "activities": [
     { "activityId": 3, "name": "Dinner", "category": "FOOD", "status": "ACTIVE",
-      "tokenCost": 1.00, "durationMinutes": 120, "description": "…", "iconUrl": "…",
+      "tokenCost": "1.00", "durationMinutes": 120, "description": "…", "iconUrl": "…",
       "ageNote": null }
   ],
   "cuisines":       [ { "value": "THAI", "displayName": "Thai" } ],

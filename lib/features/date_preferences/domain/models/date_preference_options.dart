@@ -66,6 +66,7 @@ class DateActivityOption {
   /// `ACTIVE` or `COMING_SOON`. Users can rate either (RFC-005 D-7).
   final String status;
 
+  /// Sent as a decimal string, such as `"0.50"`, like every money amount the server returns.
   final double tokenCost;
   final int durationMinutes;
   final String? description;
@@ -93,7 +94,7 @@ class DateActivityOption {
       name: json['name'] as String,
       category: json['category'] as String,
       status: json['status'] as String,
-      tokenCost: (json['tokenCost'] as num).toDouble(),
+      tokenCost: _decimal(json['tokenCost']),
       durationMinutes: json['durationMinutes'] as int,
       description: json['description'] as String?,
       iconUrl: json['iconUrl'] as String?,
@@ -106,7 +107,7 @@ class DateActivityOption {
         'name': name,
         'category': category,
         'status': status,
-        'tokenCost': tokenCost,
+        'tokenCost': tokenCost.toStringAsFixed(2),
         'durationMinutes': durationMinutes,
         'description': description,
         'iconUrl': iconUrl,
@@ -368,3 +369,6 @@ class DatePreferenceOptions {
 
 List<T> _list<T>(Object? json, T Function(Map<String, dynamic>) fromJson) =>
     (json as List<dynamic>).map((e) => fromJson(e as Map<String, dynamic>)).toList();
+
+/// The server sends `BigDecimal` fields as strings. A number is accepted too.
+double _decimal(Object? json) => json is num ? json.toDouble() : double.parse(json as String);
