@@ -143,6 +143,32 @@ void main() {
     });
   });
 
+  group('DateActivityOption', () {
+    Map<String, dynamic> activity(Object? tokenCost) =>
+        ((_fixture('get_date_preferences_options') as Map<String, dynamic>)['activities']
+                as List<dynamic>)
+            .single as Map<String, dynamic>
+          ..['tokenCost'] = tokenCost;
+
+    test('reads a token cost sent as a number as well as a decimal string', () {
+      expect(DateActivityOption.fromJson(activity('0.50')).tokenCost, 0.5);
+      expect(DateActivityOption.fromJson(activity(1)).tokenCost, 1.0);
+      expect(DateActivityOption.fromJson(activity(0.5)).tokenCost, 0.5);
+    });
+
+    test('writes a fractional token cost as a two-place string', () {
+      expect(DateActivityOption.fromJson(activity('0.50')).toJson()['tokenCost'], '0.50');
+      expect(DateActivityOption.fromJson(activity(0.5)).toJson()['tokenCost'], '0.50');
+    });
+
+    test('rejects a token cost that is not a finite number', () {
+      for (final cost in ['NaN', 'Infinity', '-Infinity', double.infinity]) {
+        expect(() => DateActivityOption.fromJson(activity(cost)), throwsFormatException,
+            reason: '$cost');
+      }
+    });
+  });
+
   group('CityDistrict', () {
     test('round-trips the districts list', () {
       final json = _fixture('get_city_districts') as List<dynamic>;
