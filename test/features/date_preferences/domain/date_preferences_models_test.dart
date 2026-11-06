@@ -150,6 +150,17 @@ void main() {
             .single as Map<String, dynamic>
           ..['tokenCost'] = tokenCost;
 
+    test('reads a token cost sent as a number as well as a decimal string', () {
+      expect(DateActivityOption.fromJson(activity('0.50')).tokenCost, 0.5);
+      expect(DateActivityOption.fromJson(activity(1)).tokenCost, 1.0);
+      expect(DateActivityOption.fromJson(activity(0.5)).tokenCost, 0.5);
+    });
+
+    test('writes a fractional token cost as a two-place string', () {
+      expect(DateActivityOption.fromJson(activity('0.50')).toJson()['tokenCost'], '0.50');
+      expect(DateActivityOption.fromJson(activity(0.5)).toJson()['tokenCost'], '0.50');
+    });
+
     test('rejects a token cost that is not a finite number', () {
       for (final cost in ['NaN', 'Infinity', '-Infinity', double.infinity]) {
         expect(() => DateActivityOption.fromJson(activity(cost)), throwsFormatException,
