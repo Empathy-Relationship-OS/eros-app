@@ -39,6 +39,10 @@ class MatchBatchState {
   final int? batchesUsed;
   final int? maxBatches;
 
+  /// `GET /match/` answered 409 `MATCH_PREFERENCES_REQUIRED`: the user hasn't said who they're
+  /// interested in, so the Matches tab asks before loading the batch (RFC-007 §6.5).
+  final bool matchPreferencesRequired;
+
   const MatchBatchState({
     this.profiles = const [],
     this.batchNumber = 0,
@@ -48,6 +52,7 @@ class MatchBatchState {
     this.limitResetAt,
     this.batchesUsed,
     this.maxBatches,
+    this.matchPreferencesRequired = false,
   });
 
   bool get hasProfiles => profiles.isNotEmpty;
@@ -63,6 +68,7 @@ class MatchBatchState {
     DateTime? limitResetAt,
     int? batchesUsed,
     int? maxBatches,
+    bool? matchPreferencesRequired,
     bool clearError = false,
     bool clearLimit = false,
   }) {
@@ -75,6 +81,7 @@ class MatchBatchState {
       limitResetAt: clearLimit ? null : (limitResetAt ?? this.limitResetAt),
       batchesUsed: clearLimit ? null : (batchesUsed ?? this.batchesUsed),
       maxBatches: clearLimit ? null : (maxBatches ?? this.maxBatches),
+      matchPreferencesRequired: matchPreferencesRequired ?? this.matchPreferencesRequired,
     );
   }
 }
@@ -116,7 +123,12 @@ class MatchBatchNotifier extends StateNotifier<MatchBatchState> {
       return false;
     }
 
-    state = state.copyWith(isLoading: true, clearError: true, clearLimit: true);
+    state = state.copyWith(
+      isLoading: true,
+      matchPreferencesRequired: false,
+      clearError: true,
+      clearLimit: true,
+    );
 
     try {
       final response = await _repository.fetchDailyBatch();
@@ -209,6 +221,11 @@ class MatchBatchNotifier extends StateNotifier<MatchBatchState> {
       );
       return false;
     } on ApiException catch (e) {
+      if (_isMatchPreferencesRequired(e)) {
+        _logger.i('💞 Match preferences required before a batch (409)');
+        state = state.copyWith(isLoading: false, matchPreferencesRequired: true);
+        return false;
+      }
       _logger.e('🚨 Caught ApiException in provider: ${e.runtimeType}');
       _logger.d('Message: ${e.message}, Status: ${e.statusCode}');
       state = state.copyWith(
@@ -224,6 +241,15 @@ class MatchBatchNotifier extends StateNotifier<MatchBatchState> {
       );
       return false;
     }
+  }
+
+  /// True for the 409 `GET /match/` sends a user with no match preferences (RFC-007 §5). Any
+  /// other 409 is an ordinary error.
+  static bool _isMatchPreferencesRequired(ApiException e) {
+    final body = e.originalError;
+    return e is ConflictException &&
+        body is Map<String, dynamic> &&
+        body['error'] == 'MATCH_PREFERENCES_REQUIRED';
   }
 
   /// Remove a profile from the current batch (after user action)

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/profile/domain/models/create_user_request.dart';
@@ -10,6 +10,8 @@ import 'package:eros_app/features/profile/presentation/providers/profile_creatio
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 import 'package:eros_app/features/auth/presentation/providers/marketing_consent_provider.dart';
 import 'package:eros_app/features/auth/data/repositories/marketing_preference_repository.dart';
+import 'package:eros_app/features/match_preferences/domain/models/filter_patch.dart';
+import 'package:eros_app/features/match_preferences/presentation/providers/match_preferences_provider.dart';
 
 /// Profile submission screen - final step before creating user
 class ProfileSubmissionScreen extends ConsumerStatefulWidget {
@@ -150,7 +152,7 @@ class _ProfileSubmissionScreenState
 
     try {
       // Get Firebase user ID
-      final user = FirebaseAuth.instance.currentUser;
+      final user = ref.read(authServiceProvider).currentUser;
       if (user == null) {
         throw Exception('User not authenticated');
       }
@@ -177,6 +179,8 @@ class _ProfileSubmissionScreenState
         // Log but don't block user flow - marketing preference is non-critical
         debugPrint('Warning: Failed to save marketing preference: ${e.message}');
       }
+
+      await _saveInterestedIn();
 
       // Navigate to Q&A section (user account is now created)
       if (mounted) {
@@ -206,6 +210,19 @@ class _ProfileSubmissionScreenState
         _isSubmitting = false;
         _errorMessage = 'An unexpected error occurred: $e';
       });
+    }
+  }
+
+  /// Saves the Interested in step's choice now that the user exists (RFC-007 §4.9). A failure
+  /// doesn't hold up sign-up: the Matches tab asks again when `GET /match/` returns 409.
+  Future<void> _saveInterestedIn() async {
+    final genders = ref.read(profileCreationProvider).interestedIn;
+    if (genders == null || genders.isEmpty) return;
+    try {
+      await ref.read(matchPreferencesProvider.notifier).save(GenderPatch(genders));
+    } catch (e) {
+      // The type only: the message could hold the choice, which is private (RFC-007 D-9).
+      debugPrint('Warning: Failed to save Interested in (${e.runtimeType})');
     }
   }
 
