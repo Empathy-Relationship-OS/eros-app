@@ -149,6 +149,17 @@ void main() {
             .having((e) => e.message, 'message', contains('Your change was saved'))),
       );
     });
+
+    test('says the change was saved when the response isn\'t an object', () async {
+      final api = FakeMatchPreferencesApi(responses: {
+        'PATCH $_preferencesPath': <dynamic>[],
+      });
+
+      await expectLater(
+        _repository(api).patch(GenderPatch([Gender.male])),
+        throwsA(isA<MatchPreferencesSavedException>()),
+      );
+    });
   });
 
   group('options', () {

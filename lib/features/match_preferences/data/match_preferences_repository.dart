@@ -61,7 +61,9 @@ class MatchPreferencesRepository {
     try {
       _logger.i('✏️  Saving match preference: ${patch.filter}');
 
-      final response = await _apiClient.patch<Map<String, dynamic>>(
+      // Typed as dynamic so a body that isn't a map fails in _parse, as a saved change, rather
+      // than in ApiClient, as a failed save.
+      final response = await _apiClient.patch<dynamic>(
         ApiEndpoints.matchPreferences.updateCurrentUser(),
         data: patch.toJson(),
       );
@@ -69,7 +71,7 @@ class MatchPreferencesRepository {
       _logger.i('✅ Match preference saved: ${patch.filter}');
       // The PATCH has already been saved here, so a parse failure must not read as a failed save.
       return _parse(
-        () => MatchPreferences.fromJson(response, onDropped: _logDropped),
+        () => MatchPreferences.fromJson(response as Map<String, dynamic>, onDropped: _logDropped),
         'match preferences',
         'Your change was saved, but we couldn\'t show it. Please reload your match preferences.',
         saved: true,
