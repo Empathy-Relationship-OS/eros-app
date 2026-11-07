@@ -5,6 +5,7 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/widgets/auth_error_boundary.dart';
 import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
 import 'package:eros_app/features/date_preferences/presentation/screens/date_preferences_screen.dart';
+import 'package:eros_app/features/match_preferences/presentation/screens/match_preferences_screen.dart';
 import 'package:eros_app/features/profile/presentation/providers/user_profile_provider.dart';
 import 'package:eros_app/features/wallet/presentation/screens/wallet_screen.dart';
 import 'package:eros_app/features/settings/presentation/screens/app_settings_screen.dart';
@@ -82,6 +83,18 @@ class ProfileScreen extends ConsumerWidget {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => const EditProfileScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    _SettingsTile(
+                      icon: Icons.tune,
+                      title: 'Match preferences',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const MatchPreferencesScreen(),
                           ),
                         );
                       },
