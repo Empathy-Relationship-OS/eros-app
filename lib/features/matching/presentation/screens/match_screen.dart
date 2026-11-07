@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/features/match_preferences/presentation/widgets/interested_in_sheet.dart';
 import 'package:eros_app/features/matching/presentation/providers/match_provider.dart';
 import 'package:eros_app/features/matching/presentation/widgets/match_state_views.dart';
 import 'package:eros_app/features/matching/presentation/screens/last_24_hours_screen.dart';
@@ -19,6 +20,7 @@ class MatchScreen extends ConsumerStatefulWidget {
 class _MatchScreenState extends ConsumerState<MatchScreen> {
   Timer? _countdownTimer;
   late PageController _pageController;
+  bool _askingInterestedIn = false;
 
   @override
   void initState() {
@@ -54,10 +56,23 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
     });
   }
 
+  /// Asks who the user is interested in, then loads the batch the 409 held back (RFC-007 §6.5).
+  Future<void> _askInterestedIn() async {
+    if (_askingInterestedIn) return;
+    _askingInterestedIn = true;
+    await showInterestedInSheet(context);
+    _askingInterestedIn = false;
+    if (mounted) ref.read(matchBatchProvider.notifier).fetchDailyBatch();
+  }
+
   @override
   Widget build(BuildContext context) {
     final matchState = ref.watch(matchBatchProvider);
     final matchNotifier = ref.read(matchBatchProvider.notifier);
+
+    ref.listen<bool>(matchBatchProvider.select((s) => s.matchPreferencesRequired), (_, required) {
+      if (required) _askInterestedIn();
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -110,6 +125,11 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
           color: AppColors.primary,
         ),
       );
+    }
+
+    // Behind the Interested in sheet: nothing to show until it's answered
+    if (state.matchPreferencesRequired) {
+      return const SizedBox.shrink();
     }
 
     // Daily limit exceeded

@@ -15,6 +15,7 @@ import 'features/profile/presentation/screens/name_input_screen.dart';
 import 'features/profile/presentation/screens/location_input_screen.dart';
 import 'features/profile/presentation/screens/dating_cities_screen.dart';
 import 'features/profile/presentation/screens/gender_screen.dart';
+import 'features/profile/presentation/screens/interested_in_step_screen.dart';
 import 'features/profile/presentation/screens/date_of_birth_screen.dart';
 import 'features/profile/presentation/screens/languages_screen.dart';
 import 'features/profile/presentation/screens/height_input_screen.dart';
@@ -120,6 +121,7 @@ class ErosApp extends StatelessWidget {
         '/profile-creation/location': (context) => const LocationInputScreen(),
         '/profile-creation/dating-cities': (context) => const DatingCitiesScreen(),
         '/profile-creation/gender': (context) => const GenderScreen(),
+        '/profile-creation/interested-in': (context) => const InterestedInStepScreen(),
         '/profile-creation/dob': (context) => const DateOfBirthScreen(),
         '/profile-creation/languages': (context) => const LanguagesScreen(),
         '/profile-creation/height': (context) => const HeightInputScreen(),

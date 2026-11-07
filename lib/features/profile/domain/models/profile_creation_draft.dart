@@ -21,6 +21,11 @@ class ProfileCreationDraft {
   double? coordinatesLongitude;
   EducationLevel? educationLevel;
   Gender? gender;
+
+  /// Who the user is interested in (RFC-007 §4.9). Not part of [CreateUserRequest]: it's saved
+  /// with `PATCH /users/me/match-preferences` once the user exists.
+  List<Gender>? interestedIn;
+
   Language? preferredLanguage;
 
   /// The cities chosen on the dating-cities screen, as backend city ids, in the order chosen.
@@ -69,6 +74,7 @@ class ProfileCreationDraft {
     this.coordinatesLongitude,
     this.educationLevel,
     this.gender,
+    this.interestedIn,
     this.preferredLanguage,
     this.datingCityIds,
     this.occupation,
@@ -194,6 +200,8 @@ class ProfileCreationDraft {
       if (educationLevel != null)
         'educationLevel': educationLevel!.toBackend(),
       if (gender != null) 'gender': gender!.toBackend(),
+      if (interestedIn != null)
+        'interestedIn': interestedIn!.map((g) => g.toBackend()).toList(),
       if (preferredLanguage != null)
         'preferredLanguage': preferredLanguage!.code,
       if (datingCityIds != null) 'datingCityIds': datingCityIds,
@@ -267,6 +275,11 @@ class ProfileCreationDraft {
           : null,
       gender: json['gender'] != null
           ? Gender.fromStored(json['gender'] as String)
+          : null,
+      interestedIn: json['interestedIn'] != null
+          ? (json['interestedIn'] as List)
+              .map((g) => Gender.fromStored(g as String))
+              .toList()
           : null,
       preferredLanguage: json['preferredLanguage'] != null
           ? Language.fromCode(json['preferredLanguage'] as String)
@@ -429,6 +442,7 @@ class ProfileCreationDraft {
     double? coordinatesLongitude,
     EducationLevel? educationLevel,
     Gender? gender,
+    List<Gender>? interestedIn,
     Language? preferredLanguage,
     List<int>? datingCityIds,
     String? occupation,
@@ -466,6 +480,7 @@ class ProfileCreationDraft {
       coordinatesLongitude: coordinatesLongitude ?? this.coordinatesLongitude,
       educationLevel: educationLevel ?? this.educationLevel,
       gender: gender ?? this.gender,
+      interestedIn: interestedIn ?? this.interestedIn,
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
       datingCityIds: datingCityIds ?? this.datingCityIds,
       occupation: occupation ?? this.occupation,
