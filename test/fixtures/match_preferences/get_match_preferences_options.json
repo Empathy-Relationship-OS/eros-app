@@ -1,0 +1,6 @@
+{
+  "age": { "min": 18, "max": 99, "default": { "min": 24, "max": 34 } },
+  "height": { "minCm": 120, "maxCm": 220 },
+  "distance": { "unit": "MILES", "stopsMeters": [1609, 3219, 4828, 8047, 16093, 24140], "from": "Clapham" },
+  "suggestedGenders": ["FEMALE"]
+}

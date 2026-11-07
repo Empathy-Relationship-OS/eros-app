@@ -92,6 +92,31 @@ void main() {
     expect(output.lines.join('\n'), isNot(contains(_secret)));
   });
 
+  test('prints no match preference body, sent or returned', () async {
+    final (:dio, :output) = _dio();
+
+    await dio.patch('/users/me/match-preferences', data: {
+      'religion': {'values': [_secret], 'dealbreaker': true},
+    });
+
+    final log = output.lines.join('\n');
+    expect(log, isNot(contains(_secret)));
+    expect(log, contains('PATCH /users/me/match-preferences'));
+  });
+
+  test('prints no match preference body on an error response', () async {
+    final (:dio, :output) = _dio(status: 400);
+
+    await expectLater(
+      dio.patch('/users/me/match-preferences', data: {'religion': {'values': [_secret]}}),
+      throwsA(isA<DioException>()),
+    );
+
+    final log = output.lines.join('\n');
+    expect(log, isNot(contains(_secret)));
+    expect(log, contains('400'));
+  });
+
   test('still prints bodies for other paths', () async {
     final (:dio, :output) = _dio();
 
@@ -100,10 +125,12 @@ void main() {
     expect(output.lines.join('\n'), contains('Something came up'));
   });
 
-  test('treats only /chat and /report paths as private', () {
+  test('treats only /chat, /report and /match-preferences paths as private', () {
     expect(LoggingInterceptor.isPrivatePath('/dates/42/chat'), isTrue);
     expect(LoggingInterceptor.isPrivatePath('/dates/42/chat/messages'), isTrue);
     expect(LoggingInterceptor.isPrivatePath('/dates/42/report/evidence-url'), isTrue);
+    expect(LoggingInterceptor.isPrivatePath('/users/me/match-preferences'), isTrue);
+    expect(LoggingInterceptor.isPrivatePath('/match-preferences/options'), isTrue);
     expect(LoggingInterceptor.isPrivatePath('/dates/42'), isFalse);
   });
 }
