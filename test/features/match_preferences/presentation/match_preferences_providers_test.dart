@@ -27,12 +27,30 @@ ProviderContainer _container(FakeMatchPreferencesApi api) {
   return container;
 }
 
-/// Holds each GET until the test answers it, so responses can land out of order.
+/// Holds each GET, and each PATCH when [holdPatches], until the test answers it, so responses can
+/// land out of order.
 class _HeldApi extends FakeMatchPreferencesApi {
-  _HeldApi()
+  _HeldApi({this.holdPatches = false})
       : super(responses: {'GET $_preferencesPath': mpFixture('get_users_me_match_preferences')});
 
+  final bool holdPatches;
   final held = <Completer<void>>[];
+  final heldPatches = <Completer<void>>[];
+
+  @override
+  Future<T> patch<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    if (holdPatches) {
+      final answer = Completer<void>();
+      heldPatches.add(answer);
+      await answer.future;
+    }
+    return super.patch<T>(path, data: data, queryParameters: queryParameters, options: options);
+  }
 
   @override
   Future<T> get<T>(String path, {Map<String, dynamic>? queryParameters, Options? options}) async {
@@ -112,6 +130,76 @@ void main() {
       await container.read(matchPreferencesProvider.notifier).save(GenderPatch([Gender.male]));
       api.held.last.complete();
       await reload;
+
+      expect(container.read(matchPreferencesProvider).requireValue.isSet, isFalse);
+    });
+
+    test('the first load doesn\'t replace a save that lands before it', () async {
+      final api = _HeldApi()
+        ..responses['PATCH $_preferencesPath'] =
+            mpFixture('get_users_me_match_preferences_defaults');
+      final container = _container(api);
+      final subscription = container.listen(matchPreferencesProvider, (_, _) {});
+      addTearDown(subscription.close);
+
+      await container.read(matchPreferencesProvider.notifier).save(GenderPatch([Gender.male]));
+      final firstGet = api.held.single;
+      firstGet.complete();
+      // The GET's answer is in only once the held request has returned to the notifier.
+      await firstGet.future;
+      await pumpEventQueue();
+
+      expect(container.read(matchPreferencesProvider).requireValue.isSet, isFalse);
+    });
+    test('saves run one at a time, in order', () async {
+      final api = _HeldApi(holdPatches: true)
+        ..responses['PATCH $_preferencesPath'] =
+            mpFixture('get_users_me_match_preferences_defaults');
+      final container = _container(api);
+      final first = container.read(matchPreferencesProvider.future);
+      api.held.single.complete();
+      await first;
+      final notifier = container.read(matchPreferencesProvider.notifier);
+
+      final male = notifier.save(GenderPatch([Gender.male]));
+      final female = notifier.save(GenderPatch([Gender.female]));
+      await pumpEventQueue();
+      expect(api.heldPatches, hasLength(1));
+
+      api.heldPatches.single.complete();
+      await male;
+      await pumpEventQueue();
+      expect(api.heldPatches, hasLength(2));
+      api.heldPatches.last.complete();
+      await female;
+
+      expect(api.requests.where((r) => r.method == 'PATCH').map((r) => r.data), [
+        GenderPatch([Gender.male]).toJson(),
+        GenderPatch([Gender.female]).toJson(),
+      ]);
+    });
+
+    test('a failed save doesn\'t stop the next one', () async {
+      final api = _HeldApi(holdPatches: true)
+        ..responses['PATCH $_preferencesPath'] =
+            mpFixture('get_users_me_match_preferences_defaults');
+      final container = _container(api);
+      final first = container.read(matchPreferencesProvider.future);
+      api.held.single.complete();
+      await first;
+      final notifier = container.read(matchPreferencesProvider.notifier);
+
+      final failed = notifier.save(GenderPatch([Gender.male]));
+      final next = notifier.save(GenderPatch([Gender.female]));
+      api.error = const ValidationException('Choose who you\'re interested in first');
+      await pumpEventQueue();
+      api.heldPatches.single.complete();
+      await expectLater(failed, throwsA(isA<MatchPreferencesValidationException>()));
+
+      api.error = null;
+      await pumpEventQueue();
+      api.heldPatches.last.complete();
+      await next;
 
       expect(container.read(matchPreferencesProvider).requireValue.isSet, isFalse);
     });
