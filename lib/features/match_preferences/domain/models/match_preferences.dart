@@ -8,14 +8,15 @@ import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 /// Preferences are private, so [toString] never shows the values.
 @immutable
 class ValueFilter<T extends Enum> {
-  /// Null means open to all. Ticking every value is saved as null too (RFC-007 §4.1).
+  /// Null means open to all. Ticking every value is saved as null too (RFC-007 §4.1). Never
+  /// holds `preferNotToSay`, which the server rejects: the constructor drops it.
   final List<T>? values;
 
   /// True: never show anyone outside [values]. False: show people who fit first.
   final bool dealbreaker;
 
   ValueFilter({required List<T>? values, required this.dealbreaker})
-      : values = values == null ? null : List.unmodifiable(values);
+      : values = values == null ? null : List.unmodifiable(values.where(isFilterValue));
 
   /// Open to all, as a preference: every value filter's default.
   const ValueFilter.openToAll()

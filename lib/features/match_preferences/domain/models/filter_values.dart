@@ -14,12 +14,15 @@ String filterValueName(Enum value) =>
 
 /// The values one filter can hold: the profile enum's values except `preferNotToSay`, which is an
 /// unknown answer and never a filter value (RFC-007 §4.1).
+/// False for `preferNotToSay`, which is an unknown answer and never a filter value.
+bool isFilterValue(Enum value) => value.name != 'preferNotToSay';
+
 class FilterChoices<T extends Enum> {
   /// The values a user can tick, in the profile enum's order.
   final List<T> choices;
 
   FilterChoices(List<T> values)
-      : choices = List.unmodifiable(values.where((v) => v.name != 'preferNotToSay'));
+      : choices = List.unmodifiable(values.where(isFilterValue));
 
   /// The value with this API name, or null if the app doesn't know it.
   T? parse(String name) {

@@ -134,6 +134,18 @@ void main() {
       expect(FilterValues.kidsPreference.choices, isNot(contains(KidsPreference.preferNotToSay)));
       expect(FilterValues.religion.parse('PREFER_NOT_TO_SAY'), isNull);
     });
+
+    test('a value filter never sends Prefer not to say', () {
+      final filter = ValueFilter(
+        values: [Religion.preferNotToSay, Religion.atheist],
+        dealbreaker: true,
+      );
+
+      expect(filter.values, [Religion.atheist]);
+      expect(ReligionPatch(filter).toJson(), {
+        'religion': {'values': ['ATHEIST'], 'dealbreaker': true},
+      });
+    });
   });
 
   group('FilterPatch', () {
