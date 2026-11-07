@@ -17,6 +17,7 @@ class ApiEndpoints {
   static final marketing = _MarketingEndpoints();
   static final wallet = _WalletEndpoints();
   static final datePreferences = _DatePreferencesEndpoints();
+  static final matchPreferences = _MatchPreferencesEndpoints();
   static final safety = _SafetyEndpoints();
 }
 
@@ -264,6 +265,21 @@ class _DatePreferencesEndpoints {
 
   /// GET /city/all - Every city users can date in (RFC-004 D-14)
   String cities() => '/city/all';
+}
+
+// ====================
+// MATCH PREFERENCES ENDPOINTS (RFC-007 §5)
+// ====================
+class _MatchPreferencesEndpoints {
+  /// GET /users/me/match-preferences - The user's match preferences, or the defaults
+  String getCurrentUser() => '/users/me/match-preferences';
+
+  /// PATCH /users/me/match-preferences - Replace one or more filters
+  String updateCurrentUser() => '/users/me/match-preferences';
+
+  /// GET /match-preferences/options - Bounds, distance stops, the age default and the gender
+  /// suggestion
+  String options() => '/match-preferences/options';
 }
 
 // ====================

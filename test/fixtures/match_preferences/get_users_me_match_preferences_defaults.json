@@ -1,0 +1,14 @@
+{
+  "isSet": false,
+  "gender": { "values": [], "dealbreaker": true },
+  "age": { "min": 25, "max": 35, "dealbreaker": true },
+  "height": { "minCm": null, "maxCm": null, "dealbreaker": false },
+  "distance": { "maxMeters": null, "dealbreaker": false },
+  "ethnicity": { "values": null, "dealbreaker": false },
+  "religion": { "values": null, "dealbreaker": false },
+  "relationshipType": { "values": null, "dealbreaker": false },
+  "dateIntentions": { "values": null, "dealbreaker": false },
+  "kidsPreference": { "values": null, "dealbreaker": false },
+  "smokingStatus": { "values": null, "dealbreaker": false },
+  "alcoholConsumption": { "values": null, "dealbreaker": false }
+}
