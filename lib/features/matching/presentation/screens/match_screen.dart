@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/features/match_preferences/presentation/providers/match_preferences_provider.dart';
+import 'package:eros_app/features/match_preferences/presentation/screens/match_preferences_screen.dart';
 import 'package:eros_app/features/match_preferences/presentation/widgets/interested_in_sheet.dart';
 import 'package:eros_app/features/matching/presentation/providers/match_provider.dart';
 import 'package:eros_app/features/matching/presentation/widgets/match_state_views.dart';
@@ -163,10 +165,32 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
     MatchBatchState state,
     MatchBatchNotifier notifier,
   ) {
+    if (state.isBatchEmpty && _hasDealbreakers()) {
+      return DealbreakersEmptyView(
+        onOpenMatchPreferences: () => _openMatchPreferences(notifier),
+        onRefresh: () => notifier.fetchDailyBatch(),
+      );
+    }
     return NoMatchesView(
       errorMessage: state.errorMessage,
       onRefresh: () => notifier.fetchDailyBatch(),
     );
+  }
+
+  /// Whether the user has a dealbreaker on. False while the preferences load or when they fail,
+  /// so the usual empty state shows.
+  bool _hasDealbreakers() {
+    final preferences = ref.watch(matchPreferencesProvider);
+    if (preferences.hasError) return false;
+    return preferences.valueOrNull?.hasDealbreakers ?? false;
+  }
+
+  /// Opens Match preferences, then loads the batch again in case a change lets someone through.
+  Future<void> _openMatchPreferences(MatchBatchNotifier notifier) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const MatchPreferencesScreen()),
+    );
+    if (mounted) notifier.fetchDailyBatch();
   }
 
   Widget _buildEmptyStateView(MatchBatchNotifier notifier) {

@@ -71,6 +71,23 @@ void main() {
       expect(dropped, [('religion', 1), ('smokingStatus', 2)]);
     });
 
+    test('hasDealbreakers counts every switch but Interested in (RFC-007 §6.4)', () {
+      final defaults = MatchPreferences.fromJson(
+          mpFixture('get_users_me_match_preferences_defaults') as Map<String, dynamic>);
+      final none = defaults.copyWith(age: defaults.age.copyWith(dealbreaker: false));
+
+      expect(defaults.hasDealbreakers, isTrue, reason: 'Age starts as a dealbreaker (D-5)');
+      expect(none.gender.dealbreaker, isTrue);
+      expect(none.hasDealbreakers, isFalse, reason: 'Interested in always is one (D-4)');
+      expect(
+          none.copyWith(religion: ValueFilter(values: [Religion.values.first], dealbreaker: true))
+              .hasDealbreakers,
+          isTrue);
+      expect(none.copyWith(distance: const DistanceFilter(maxMeters: 8047, dealbreaker: true))
+              .hasDealbreakers,
+          isTrue);
+    });
+
     test('copyWith replaces one filter and can clear values to open to all', () {
       final preferences = MatchPreferences.fromJson(
           mpFixture('get_users_me_match_preferences') as Map<String, dynamic>);

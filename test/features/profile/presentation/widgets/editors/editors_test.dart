@@ -116,6 +116,49 @@ void main() {
       expect(find.byType(CheckboxListTile), findsOneWidget);
     });
 
+    testWidgets('usedForMatching adds the hidden answers note under the checkbox', (tester) async {
+      await _pump(
+        tester,
+        DisplayableChoiceEditor<Religion>(
+          values: Religion.values,
+          selected: Religion.values.first,
+          visible: false,
+          labelOf: (value) => value.displayName,
+          onSelected: (_) {},
+          onVisibleChanged: (_) {},
+          usedForMatching: true,
+        ),
+      );
+
+      expect(find.text(HiddenAnswersNote.text), findsOneWidget);
+      expect(HiddenAnswersNote.text, 'Hidden answers are still used to match you.');
+    });
+
+    testWidgets('no hidden answers note without usedForMatching', (tester) async {
+      await _pump(tester, editor(selected: AlcoholConsumption.never));
+
+      expect(find.byType(HiddenAnswersNote), findsNothing);
+    });
+
+    testWidgets('no hidden answers note when "prefer not to say" hides the checkbox',
+        (tester) async {
+      await _pump(
+        tester,
+        DisplayableChoiceEditor<AlcoholConsumption>(
+          values: AlcoholConsumption.values,
+          selected: AlcoholConsumption.preferNotToSay,
+          visible: false,
+          labelOf: (value) => value.displayName,
+          onSelected: (_) {},
+          onVisibleChanged: (_) {},
+          preferNotToSay: AlcoholConsumption.preferNotToSay,
+          usedForMatching: true,
+        ),
+      );
+
+      expect(find.byType(HiddenAnswersNote), findsNothing);
+    });
+
     test('effectiveVisible is false only when "prefer not to say" is selected', () {
       const pnts = AlcoholConsumption.preferNotToSay;
 

@@ -223,6 +223,28 @@ void main() {
     }
   });
 
+  testWidgets('the hidden answers note shows by the fields match preferences filter on, and only '
+      'those (RFC-007 D-15)', (tester) async {
+    await _pumpHub(tester);
+
+    const filtered = [
+      'Drinking', 'Smoking', 'Dating intentions', 'Relationship type', 'Kids', 'Religion',
+      'Ethnicity',
+    ];
+    const others = ['Star sign', 'Diet', 'Sexual orientation', 'Pronouns', 'Politics'];
+    for (final label in [...filtered, ...others]) {
+      await tester.tap(find.text(label).last);
+      await tester.pumpAndSettle();
+      expect(find.text('Show on my profile'), findsOneWidget, reason: label);
+      expect(find.text('Hidden answers are still used to match you.'),
+          filtered.contains(label) ? findsOneWidget : findsNothing,
+          reason: label);
+
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pumpAndSettle();
+    }
+  });
+
   group('section screens', () {
     testWidgets('Save is disabled until the value changes, then saves only that field', (tester) async {
       final repository = await _pumpHub(tester);

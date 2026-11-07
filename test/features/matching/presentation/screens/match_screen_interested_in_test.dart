@@ -128,8 +128,8 @@ void main() {
       });
       expect(find.text('Who are you interested in?'), findsNothing);
       expect(matches.fetches, 2);
-      // The reload answered 204, which shows the usual empty state.
-      expect(find.text('No matches available right now'), findsOneWidget);
+      // The reload answered 204. Age starts as a dealbreaker (D-5), so the empty state says so.
+      expect(find.text('You\'ve seen everyone who fits your dealbreakers for now'), findsOneWidget);
     });
 
     testWidgets('a failed save keeps the sheet open with the error', (tester) async {

@@ -5,13 +5,15 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/domain/models/update_user_request.dart';
 import 'package:eros_app/features/profile/presentation/providers/my_profile_provider.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_section_scaffold.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/displayable_choice_editor.dart';
 import 'package:eros_app/features/profile/presentation/widgets/editors/multi_choice_editor.dart';
 
 /// Edits a list field with [MultiChoiceEditor]: interests (tabs, via [groups]), traits, spoken
 /// languages (list rows, via [listTileBuilder]), ethnicity.
 ///
 /// For a `DisplayableField` list, pass [initialVisible] to show a "Show on my profile" checkbox;
-/// [buildRequest] then receives the visibility too. Save needs [min]–[max] choices and a change.
+/// [buildRequest] then receives the visibility too, and [usedForMatching] adds [HiddenAnswersNote]
+/// under it for a field match preferences filter on. Save needs [min]–[max] choices and a change.
 class EditMultiChoiceScreen<T> extends ConsumerStatefulWidget {
   final String title;
   final String question;
@@ -22,6 +24,7 @@ class EditMultiChoiceScreen<T> extends ConsumerStatefulWidget {
   final int? max;
   final List<T> initial;
   final bool? initialVisible;
+  final bool usedForMatching;
   final String? searchHint;
   final String emptyText;
   final MultiChoiceTileBuilder<T>? listTileBuilder;
@@ -39,6 +42,7 @@ class EditMultiChoiceScreen<T> extends ConsumerStatefulWidget {
     this.min = 0,
     this.max,
     this.initialVisible,
+    this.usedForMatching = false,
     this.searchHint,
     this.emptyText = 'Nothing found',
     this.listTileBuilder,
@@ -132,6 +136,11 @@ class _EditMultiChoiceScreenState<T> extends ConsumerState<EditMultiChoiceScreen
                 controlAffinity: ListTileControlAffinity.leading,
                 activeColor: AppColors.primary,
               ),
+            ),
+          if (widget.initialVisible != null && widget.usedForMatching)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(32, 0, 32, 12),
+              child: Align(alignment: Alignment.centerLeft, child: HiddenAnswersNote()),
             ),
           if (!isValid && widget.min > 0)
             Padding(
