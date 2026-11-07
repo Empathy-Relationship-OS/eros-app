@@ -13,7 +13,7 @@ void main() {
     // Every gender against every orientation, as MP-B3's `suggestedGenders` maps them.
     final expected = <SexualOrientation, Map<Gender, List<Gender>>>{
       SexualOrientation.straight: {male: [female], female: [male], nonBinary: [], other: []},
-      SexualOrientation.gay: {male: [male], female: [], nonBinary: [], other: []},
+      SexualOrientation.gay: {male: [male], female: [female], nonBinary: [], other: []},
       SexualOrientation.lesbian: {for (final g in Gender.values) g: [female]},
       SexualOrientation.bisexual: {
         for (final g in Gender.values) g: [male, female],

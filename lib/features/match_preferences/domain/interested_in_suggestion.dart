@@ -6,7 +6,9 @@ import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 /// §4.9). The same mapping as `suggestedGenders` in `GET /match-preferences/options` (MP-B3):
 ///
 /// - straight: the opposite of male or female, and nothing for anyone else;
-/// - gay man: men; lesbian: women; bisexual: men and women; pansexual: everyone;
+/// - gay: their own gender if male or female (a gay man: men, a gay woman: women), and nothing
+///   for anyone else;
+/// - lesbian: women; bisexual: men and women; pansexual: everyone;
 /// - anything else, or no orientation yet: nothing.
 ///
 /// Onboarding uses this because options need the user to exist. Once they do, the server's
@@ -18,7 +20,11 @@ List<Gender> suggestedInterestedIn(Gender? gender, SexualOrientation? orientatio
         Gender.female => [Gender.male],
         _ => [],
       },
-    SexualOrientation.gay => gender == Gender.male ? [Gender.male] : [],
+    SexualOrientation.gay => switch (gender) {
+        Gender.male => [Gender.male],
+        Gender.female => [Gender.female],
+        _ => [],
+      },
     SexualOrientation.lesbian => [Gender.female],
     SexualOrientation.bisexual => [Gender.male, Gender.female],
     SexualOrientation.pansexual => FilterValues.gender.choices,
