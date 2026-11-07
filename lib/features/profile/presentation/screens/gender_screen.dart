@@ -58,7 +58,7 @@ class _GenderScreenState extends ConsumerState<GenderScreen> {
 
     // Navigate to next screen
     if (mounted) {
-      Navigator.pushNamed(context, '/profile-creation/dob');
+      Navigator.pushNamed(context, '/profile-creation/interested-in');
     }
   }
 
