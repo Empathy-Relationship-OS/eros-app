@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/date_preferences/data/date_preferences_repository.dart';
+import 'package:eros_app/features/match_preferences/data/match_preferences_repository.dart';
 import 'package:eros_app/features/profile/data/repositories/photo_repository.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 import 'package:eros_app/features/profile/data/repositories/qa_repository.dart';
@@ -10,11 +11,11 @@ import 'package:eros_app/features/profile/data/repositories/qa_repository.dart';
 ///
 /// - **Save** is enabled when [canSave] (the value is valid and has changed) and calls
 ///   [onSave]. On success the screen pops. A failure stays on the screen and shows in the banner:
-///   the server's validation message, a repository error (profile, Q&A or date preferences), or
-///   a local `ArgumentError` from `UpdateUserRequest`. A [PhotoRepositoryException] shows no
-///   banner, because the photo editor shows its notifier's error itself. Any other error is
-///   reported through `FlutterError.reportError` and shown as a generic message, so Save is
-///   always usable again.
+///   the server's validation message, a repository error (profile, Q&A, date or match
+///   preferences), or a local `ArgumentError` from `UpdateUserRequest`. A
+///   [PhotoRepositoryException] shows no banner, because the photo editor shows its notifier's
+///   error itself. Any other error is reported through `FlutterError.reportError` and shown as a
+///   generic message, so Save is always usable again.
 /// - **Back** with [isDirty] asks before throwing the change away.
 ///
 /// [body] fills the space under the banner. Editors that return an `Expanded` (the choice and
@@ -69,6 +70,10 @@ class _EditSectionScaffoldState extends State<EditSectionScaffold> {
     } on DatePreferencesValidationException catch (e) {
       _fail(e.message);
     } on DatePreferencesRepositoryException catch (e) {
+      _fail(e.message);
+    } on MatchPreferencesValidationException catch (e) {
+      _fail(e.message);
+    } on MatchPreferencesRepositoryException catch (e) {
       _fail(e.message);
     } catch (e, stack) {
       // Anything else is a bug. Report it, and never leave Save disabled and back blocked.

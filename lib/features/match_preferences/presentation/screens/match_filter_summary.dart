@@ -88,11 +88,13 @@ String _valuesSummary<T extends Enum>(ValueFilter<T> filter, String Function(T) 
 List<T> _inEnumOrder<T extends Enum>(List<T> values) =>
     values.toSet().toList()..sort((a, b) => a.index.compareTo(b.index));
 
+String _ageSummary(RangeFilter age, AgeOptions bounds) => formatAgeRange(age.min, age.max, bounds);
+
 /// "24–32". The top of the slider means "99+".
-String _ageSummary(RangeFilter age, AgeOptions bounds) {
-  final max = age.max >= bounds.max ? '${bounds.max}+' : '${age.max}';
-  return '${age.min}–$max';
-}
+String formatAgeRange(int min, int max, AgeOptions bounds) => '$min–${formatAge(max, bounds)}';
+
+/// "32", or "99+" at the top of the slider.
+String formatAge(int age, AgeOptions bounds) => age >= bounds.max ? '${bounds.max}+' : '$age';
 
 /// "160–185 cm", "Up to 185 cm", "160 cm or more", or "Open to all". The slider's ends mean "or
 /// less" and "or more" (RFC-007 §4.1). In centimetres, as the Edit profile screen shows height.
@@ -113,16 +115,21 @@ String _heightSummary(HeightFilter height, HeightOptions bounds) {
 String _distanceSummary(DistanceFilter distance, DistanceOptions options) {
   final meters = distance.maxMeters;
   if (meters == null) return _Copy.anywhere;
-  final value = _isMiles(options.unit)
-      ? '${_oneDecimal(meters / 1609.344)} mi'
-      : '${_oneDecimal(meters / 1000)} km';
+  final number = distanceInUnit(meters, options.unit);
+  final value = isMiles(options.unit) ? '$number mi' : '$number km';
   final from = options.from;
   return from == null ? _Copy.upTo(value) : _Copy.fromNear(value, from);
 }
 
-/// The server sends the city's `DistanceUnit` (`MI` or `KM`); RFC-007 §5's first example said
-/// `MILES`, so both are read as miles.
-bool _isMiles(String unit) => unit == 'MI' || unit == 'MILES';
+/// True when [unit], the city's `DistanceUnit` from options, is `MI`. Anything else is `KM`.
+bool isMiles(String unit) => unit == 'MI';
+
+/// [meters] in [unit] (miles for `MI`, km otherwise), to one decimal place at most: "5", "2.5".
+String distanceInUnit(int meters, String unit) =>
+    _oneDecimal(isMiles(unit) ? meters / metersPerMile : meters / 1000);
+
+/// Metres in a mile.
+const metersPerMile = 1609.344;
 
 String _oneDecimal(double value) {
   final rounded = (value * 10).round() / 10;

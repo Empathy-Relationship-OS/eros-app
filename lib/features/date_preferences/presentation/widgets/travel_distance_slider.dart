@@ -19,11 +19,16 @@ class TravelDistanceSlider extends StatelessWidget {
   final int? meters;
   final ValueChanged<int?> onChanged;
 
+  /// The line under the slider. By default it explains that dates aim to stay within the
+  /// distance; null shows none.
+  final String? note;
+
   const TravelDistanceSlider({
     super.key,
     required this.stops,
     required this.meters,
     required this.onChanged,
+    this.note = _Copy.softLimit,
   });
 
   /// [meters] as the slider shows it: null (Anywhere) stays null, anything else becomes the
@@ -89,8 +94,10 @@ class TravelDistanceSlider extends StatelessWidget {
             ),
           ),
         ],
-        const SizedBox(height: 12),
-        Text(_Copy.softLimit, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+        if (note != null) ...[
+          const SizedBox(height: 12),
+          Text(note!, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+        ],
       ],
     );
   }

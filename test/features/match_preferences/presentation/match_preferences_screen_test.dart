@@ -3,7 +3,6 @@ import 'package:eros_app/features/match_preferences/data/match_preferences_banne
 import 'package:eros_app/features/match_preferences/data/match_preferences_repository.dart';
 import 'package:eros_app/features/match_preferences/domain/models/match_filter.dart';
 import 'package:eros_app/features/match_preferences/presentation/providers/match_preferences_banner_providers.dart';
-import 'package:eros_app/features/match_preferences/presentation/screens/match_filter_editors.dart';
 import 'package:eros_app/features/match_preferences/presentation/screens/match_preferences_screen.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 import 'package:flutter/material.dart';
@@ -314,17 +313,15 @@ void main() {
 
     group('each row', () {
       for (final filter in MatchFilter.values) {
-        testWidgets('opens ${filter.label}\'s placeholder', (tester) async {
+        testWidgets('opens ${filter.label}\'s editor', (tester) async {
           await _pump(tester, _api(), prefs: prefs);
 
           await tester.tap(_row(filter.label));
           await tester.pumpAndSettle();
 
-          final placeholder = tester.widget<MatchFilterPlaceholderScreen>(
-            find.byType(MatchFilterPlaceholderScreen),
-          );
-          expect(placeholder.filter, filter);
-          expect(find.text(MatchFilterPlaceholderScreen.placeholder), findsOneWidget);
+          // Interested in is MP-F2's screen, with Continue; every other editor saves with Save.
+          expect(find.byType(MatchPreferencesScreen), findsNothing);
+          expect(find.text(filter == MatchFilter.gender ? 'Continue' : 'Save'), findsOneWidget);
 
           await tester.tap(find.byTooltip('Back'));
           await tester.pumpAndSettle();
