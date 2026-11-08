@@ -92,7 +92,10 @@ class _EditMultiChoiceScreenState<T> extends ConsumerState<EditMultiChoiceScreen
               labels: [for (final group in groups) group.label],
               isScrollable: true,
             ),
-      body: Column(
+      // The rows under the options never take more than 30% of the height, and scroll inside it,
+      // so on a short screen with large text the options keep their room.
+      body: LayoutBuilder(
+        builder: (context, constraints) => Column(
         children: [
           MultiChoiceEditor<T>(
             options: widget.options,
@@ -117,6 +120,12 @@ class _EditMultiChoiceScreenState<T> extends ConsumerState<EditMultiChoiceScreen
                       child: widget.listTileBuilder!(context, option, isSelected, onTap),
                     ),
           ),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: constraints.maxHeight * 0.3),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
           if (_selected.isNotEmpty && widget.listTileBuilder == null)
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
@@ -152,7 +161,12 @@ class _EditMultiChoiceScreenState<T> extends ConsumerState<EditMultiChoiceScreen
                 style: TextStyle(color: Colors.grey[600]),
               ),
             ),
+                ],
+              ),
+            ),
+          ),
         ],
+        ),
       ),
     );
   }
