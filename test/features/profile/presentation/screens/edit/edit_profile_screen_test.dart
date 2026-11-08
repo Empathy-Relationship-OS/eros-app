@@ -231,7 +231,8 @@ void main() {
       'Drinking', 'Smoking', 'Dating intentions', 'Relationship type', 'Kids', 'Religion',
       'Ethnicity',
     ];
-    const others = ['Star sign', 'Diet', 'Sexual orientation', 'Pronouns', 'Politics'];
+    // Languages uses the same screen as Ethnicity, so it is the likeliest to get the note by mistake.
+    const others = ['Star sign', 'Diet', 'Sexual orientation', 'Pronouns', 'Politics', 'Languages'];
     for (final label in [...filtered, ...others]) {
       await tester.tap(find.text(label).last);
       await tester.pumpAndSettle();
