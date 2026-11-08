@@ -211,6 +211,27 @@ void main() {
       expect(_saveEnabled(tester), isFalse);
     });
 
+    testWidgets('a city removed and chosen again keeps the pin picked for it', (tester) async {
+      final api = _api();
+      await _pump(tester, api, WherePreferences(cities: [_houston, _london1], maxTravelMeters: 8047));
+      await _openMap(tester, 1);
+      await tester.tap(find.widgetWithText(ActionChip, 'Brixton'));
+      await tester.pumpAndSettle();
+      await _tapOnMap(tester, 'Set starting point');
+
+      await tester.tap(_chip('London'));
+      await tester.pumpAndSettle();
+      await tester.tap(_chip('London'));
+      await tester.pumpAndSettle();
+
+      expect(_startLabel(tester, 1), 'Brixton');
+      final where = await _save(tester, api);
+      expect(where['cities'], [
+        {'cityId': 2, 'start': null},
+        {'cityId': 1, 'start': {'latitude': 51.461, 'longitude': -0.116}},
+      ]);
+    });
+
     testWidgets('a pin with no district reads "Your starting point", not "City centre"',
         (tester) async {
       const pinNoDistrict = StartPoint(latitude: 29.76, longitude: -95.37);

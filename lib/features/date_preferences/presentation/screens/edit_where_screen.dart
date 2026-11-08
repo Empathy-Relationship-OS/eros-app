@@ -57,6 +57,10 @@ class _EditWhereScreenState extends ConsumerState<EditWhereScreen> {
   /// The city whose stops are shown. Kept while no city is chosen, so the slider doesn't jump.
   late int? _stopsCityId = widget.initial.cities.firstOrNull?.cityId;
 
+  /// Cities removed since the editor opened, as they were then, so choosing one again brings back
+  /// the starting point the user had picked for it.
+  final Map<int, DatingCityPreference> _removed = {};
+
   /// True while the map's city is loading, so a second tap doesn't open it twice.
   bool _openingMap = false;
 
@@ -70,17 +74,22 @@ class _EditWhereScreenState extends ConsumerState<EditWhereScreen> {
 
   void _toggleCity(DatingCity city) {
     setState(() {
-      if (_cities.any((c) => c.cityId == city.cityId)) {
+      final current = _cities.where((c) => c.cityId == city.cityId).firstOrNull;
+      if (current != null) {
+        _removed[city.cityId] = current;
         _cities = [
           for (final c in _cities)
             if (c.cityId != city.cityId) c,
         ];
       } else {
-        // A city removed and chosen again keeps its saved starting point.
+        // A city removed and chosen again keeps the starting point it had: the one picked here,
+        // or else the saved one.
         final saved = widget.initial.cities.where((c) => c.cityId == city.cityId).firstOrNull;
         _cities = [
           ..._cities,
-          saved ?? DatingCityPreference(cityId: city.cityId, cityName: city.cityName),
+          _removed.remove(city.cityId) ??
+              saved ??
+              DatingCityPreference(cityId: city.cityId, cityName: city.cityName),
         ];
       }
       if (_cities.isNotEmpty) _stopsCityId = _cities.first.cityId;
