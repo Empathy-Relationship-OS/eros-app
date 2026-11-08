@@ -9,7 +9,9 @@ import 'package:eros_app/features/date_preferences/domain/models/dating_city.dar
 import 'package:eros_app/features/date_preferences/domain/models/section_patch.dart';
 import 'package:eros_app/features/date_preferences/presentation/providers/date_preference_options_provider.dart';
 import 'package:eros_app/features/date_preferences/presentation/providers/date_preferences_provider.dart';
+import 'package:eros_app/features/date_preferences/presentation/screens/start_point_map_screen.dart';
 import 'package:eros_app/features/date_preferences/presentation/widgets/dating_city_picker.dart';
+import 'package:eros_app/features/date_preferences/presentation/widgets/nearest_district.dart';
 import 'package:eros_app/features/date_preferences/presentation/widgets/travel_distance_slider.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_section_scaffold.dart';
 
@@ -23,11 +25,15 @@ abstract final class _Copy {
   static const yourStartingPoint = 'Your starting point';
   static const distance = 'Travel distance';
   static const optionsError = 'We couldn\'t load the travel distances. Please try again.';
+  static const mapError = 'We couldn\'t open the map. Please try again.';
   static const retry = 'Try again';
 }
 
 /// The "Where" editor (RFC-005 §6.2): dating cities, a starting point per city, and how far the
 /// user will travel. Saves `WherePatch` alone (D-2); the hub then shows the server's response.
+///
+/// A city's "Starting from" row opens the [StartPointMapScreen]. What the user chooses there is
+/// kept here and saved with the rest.
 ///
 /// The travel stops are the first chosen city's (D-27), so they change when the first city does.
 /// A saved distance that isn't one of them shows, and saves, as the nearest stop.
@@ -51,10 +57,16 @@ class _EditWhereScreenState extends ConsumerState<EditWhereScreen> {
   /// The city whose stops are shown. Kept while no city is chosen, so the slider doesn't jump.
   late int? _stopsCityId = widget.initial.cities.firstOrNull?.cityId;
 
-  /// The options to read the stops from. The saved first city is the one the hub already loaded
-  /// as "my first city", so it reuses that.
-  int? get _optionsCityId =>
-      _stopsCityId == widget.initial.cities.firstOrNull?.cityId ? null : _stopsCityId;
+  /// True while the map's city is loading, so a second tap doesn't open it twice.
+  bool _openingMap = false;
+
+  /// The options to read the stops from.
+  int? get _optionsCityId => _optionsKey(_stopsCityId);
+
+  /// The options key for [cityId]. The saved first city is the one the hub already loaded as
+  /// "my first city", so it reuses that.
+  int? _optionsKey(int? cityId) =>
+      cityId == widget.initial.cities.firstOrNull?.cityId ? null : cityId;
 
   void _toggleCity(DatingCity city) {
     setState(() {
@@ -73,6 +85,80 @@ class _EditWhereScreenState extends ConsumerState<EditWhereScreen> {
       }
       if (_cities.isNotEmpty) _stopsCityId = _cities.first.cityId;
     });
+  }
+
+  /// Opens the map for [city] and puts the user's choice in its `start`. Going back changes
+  /// nothing.
+  Future<void> _editStart(DatingCityPreference city) async {
+    if (_openingMap) return;
+    _openingMap = true;
+    try {
+      final OptionsCity? optionsCity;
+      try {
+        final options =
+            await ref.read(datePreferenceOptionsProvider(_optionsKey(city.cityId)).future);
+        optionsCity = options.city;
+      } catch (_) {
+        if (mounted) _showMessage(_Copy.mapError);
+        return;
+      }
+      if (!mounted) return;
+      if (optionsCity == null) {
+        _showMessage(_Copy.mapError);
+        return;
+      }
+
+      final choice = await StartPointMapScreen.open(
+        context,
+        city: optionsCity,
+        cityName: city.cityName,
+        start: city.start?.point,
+      );
+      if (!mounted || choice == null) return;
+
+      final updated = switch (choice) {
+        StartPointCityCentre() => city.copyWith(clearStart: true),
+        // The same pin again keeps the server's district for it.
+        StartPointPinned(:final point) when point == city.start?.point => city,
+        StartPointPinned(:final point) => city.copyWith(
+            start: StartPoint(
+              latitude: point.latitude,
+              longitude: point.longitude,
+              district: _districtOf(point, optionsCity),
+            ),
+          ),
+      };
+      setState(() {
+        _cities = [
+          for (final c in _cities) c.cityId == city.cityId ? updated : c,
+        ];
+      });
+    } finally {
+      _openingMap = false;
+    }
+  }
+
+  /// The district the row shows for a new pin until it's saved, worked out as the map did. Null
+  /// if the districts didn't load or the city has none; the server works it out when it saves.
+  DistrictRef? _districtOf(GeoPoint point, OptionsCity city) {
+    final districts = ref.read(cityDistrictsProvider(city.cityId)).valueOrNull ?? const [];
+    final lookup = nearestDistrict(
+      pin: point,
+      cityCentre: city.centre,
+      reachMeters: city.reachMeters,
+      districts: districts,
+    );
+    return switch (lookup) {
+      NearDistrict(:final district) =>
+        DistrictRef(districtId: district.districtId, name: district.name),
+      NoDistricts() || OutsideCity() => null,
+    };
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// Sends the cities with each one's current starting point, and the distance as shown.
@@ -117,9 +203,7 @@ class _EditWhereScreenState extends ConsumerState<EditWhereScreen> {
             _StartingFromRow(
               key: Key('starting-from-${city.cityId}'),
               city: city,
-              // TODO(DP-F4): open StartPointMapScreen for this city, then replace its `start`
-              // with the pin the user confirms. Until DP-F4 lands the row is read-only.
-              onTap: null,
+              onTap: () => _editStart(city),
             ),
           ],
           const SizedBox(height: 32),
@@ -167,8 +251,8 @@ class _Heading extends StatelessWidget {
 class _StartingFromRow extends StatelessWidget {
   final DatingCityPreference city;
 
-  /// Opens the map. Null keeps the row read-only.
-  final VoidCallback? onTap;
+  /// Opens the map.
+  final VoidCallback onTap;
 
   const _StartingFromRow({super.key, required this.city, required this.onTap});
 
@@ -202,10 +286,8 @@ class _StartingFromRow extends StatelessWidget {
                   ),
                 ),
                 Text(startLabel),
-                if (onTap != null) ...[
-                  const SizedBox(width: 8),
-                  Icon(Icons.chevron_right, color: Colors.grey[400]),
-                ],
+                const SizedBox(width: 8),
+                Icon(Icons.chevron_right, color: Colors.grey[400]),
               ],
             ),
           ),
