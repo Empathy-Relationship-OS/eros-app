@@ -94,12 +94,15 @@ class _EditWhereScreenState extends ConsumerState<EditWhereScreen> {
     _openingMap = true;
     try {
       final OptionsCity? optionsCity;
+      final optionsKey = _optionsKey(city.cityId);
       try {
-        final options =
-            await ref.read(datePreferenceOptionsProvider(_optionsKey(city.cityId)).future);
+        final options = await ref.read(datePreferenceOptionsProvider(optionsKey).future);
         optionsCity = options.city;
       } catch (_) {
-        if (mounted) _showMessage(_Copy.mapError);
+        if (!mounted) return;
+        // The provider keeps its error, so drop it: the next tap asks the server again.
+        ref.invalidate(datePreferenceOptionsProvider(optionsKey));
+        _showMessage(_Copy.mapError);
         return;
       }
       if (!mounted) return;

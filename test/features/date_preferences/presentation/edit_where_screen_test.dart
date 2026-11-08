@@ -330,6 +330,11 @@ void main() {
 
       expect(find.byType(StartPointMapScreen), findsNothing);
       expect(find.text('We couldn\'t open the map. Please try again.'), findsOneWidget);
+
+      // Once the server answers, the next tap opens the map: the failure isn't kept.
+      api.responses['GET /date-preferences/options?cityId=2'] = _texas();
+      await _openMap(tester, 2);
+      expect(find.byType(StartPointMapScreen), findsOneWidget);
     });
 
     testWidgets('the slider\'s stops and labels come from the London options', (tester) async {
