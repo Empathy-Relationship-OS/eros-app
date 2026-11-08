@@ -132,6 +132,10 @@ void main() {
 
       expect(find.text(HiddenAnswersNote.text), findsOneWidget);
       expect(HiddenAnswersNote.text, 'Hidden answers are still used to match you.');
+      expect(
+        tester.getTopLeft(find.text(HiddenAnswersNote.text)).dy,
+        greaterThanOrEqualTo(tester.getBottomLeft(find.byType(CheckboxListTile)).dy),
+      );
     });
 
     testWidgets('no hidden answers note without usedForMatching', (tester) async {
