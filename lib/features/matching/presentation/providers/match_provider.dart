@@ -43,6 +43,10 @@ class MatchBatchState {
   /// interested in, so the Matches tab asks before loading the batch (RFC-007 §6.5).
   final bool matchPreferencesRequired;
 
+  /// `GET /match/` answered 204: there's no one to show right now. The Matches tab then says
+  /// whether the user's dealbreakers are why (RFC-007 §6.4).
+  final bool isBatchEmpty;
+
   const MatchBatchState({
     this.profiles = const [],
     this.batchNumber = 0,
@@ -53,6 +57,7 @@ class MatchBatchState {
     this.batchesUsed,
     this.maxBatches,
     this.matchPreferencesRequired = false,
+    this.isBatchEmpty = false,
   });
 
   bool get hasProfiles => profiles.isNotEmpty;
@@ -69,6 +74,7 @@ class MatchBatchState {
     int? batchesUsed,
     int? maxBatches,
     bool? matchPreferencesRequired,
+    bool? isBatchEmpty,
     bool clearError = false,
     bool clearLimit = false,
   }) {
@@ -82,6 +88,7 @@ class MatchBatchState {
       batchesUsed: clearLimit ? null : (batchesUsed ?? this.batchesUsed),
       maxBatches: clearLimit ? null : (maxBatches ?? this.maxBatches),
       matchPreferencesRequired: matchPreferencesRequired ?? this.matchPreferencesRequired,
+      isBatchEmpty: isBatchEmpty ?? this.isBatchEmpty,
     );
   }
 }
@@ -126,10 +133,12 @@ class MatchBatchNotifier extends StateNotifier<MatchBatchState> {
     state = state.copyWith(
       isLoading: true,
       matchPreferencesRequired: false,
+      isBatchEmpty: false,
       clearError: true,
       clearLimit: true,
     );
 
+    // Every outcome below sets isBatchEmpty, so an older fetch's 204 can't outlive a newer answer.
     try {
       final response = await _repository.fetchDailyBatch();
 
@@ -139,6 +148,7 @@ class MatchBatchNotifier extends StateNotifier<MatchBatchState> {
           isLoading: false,
           profiles: [],
           errorMessage: 'No matches available right now',
+          isBatchEmpty: true,
         );
         return false;
       }
@@ -149,6 +159,7 @@ class MatchBatchNotifier extends StateNotifier<MatchBatchState> {
         profiles: response.profiles,
         batchNumber: response.batchNumber,
         remainingBatches: response.remainingBatches,
+        isBatchEmpty: false,
         clearError: true,
         clearLimit: true,
       );
@@ -218,12 +229,17 @@ class MatchBatchNotifier extends StateNotifier<MatchBatchState> {
         batchesUsed: batchesUsed,
         maxBatches: maxBatches,
         errorMessage: errorMessage ?? 'Daily batch limit exceeded',
+        isBatchEmpty: false,
       );
       return false;
     } on ApiException catch (e) {
       if (_isMatchPreferencesRequired(e)) {
         _logger.i('💞 Match preferences required before a batch (409)');
-        state = state.copyWith(isLoading: false, matchPreferencesRequired: true);
+        state = state.copyWith(
+          isLoading: false,
+          matchPreferencesRequired: true,
+          isBatchEmpty: false,
+        );
         return false;
       }
       _logger.e('🚨 Caught ApiException in provider: ${e.runtimeType}');
@@ -231,6 +247,7 @@ class MatchBatchNotifier extends StateNotifier<MatchBatchState> {
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.message,
+        isBatchEmpty: false,
       );
       return false;
     } catch (e, stackTrace) {
@@ -238,6 +255,7 @@ class MatchBatchNotifier extends StateNotifier<MatchBatchState> {
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Unexpected error: $e',
+        isBatchEmpty: false,
       );
       return false;
     }

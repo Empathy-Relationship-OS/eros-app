@@ -109,7 +109,8 @@ class _Hub extends ConsumerWidget {
     );
   }
 
-  /// Rows for a `DisplayableField` enum edited with [EditDisplayableChoiceScreen].
+  /// Rows for a `DisplayableField` enum edited with [EditDisplayableChoiceScreen]. Set
+  /// [usedForMatching] for the fields match preferences filter on (RFC-007 D-15).
   Widget _choiceRow<T extends Enum>(
     BuildContext context,
     WidgetRef ref, {
@@ -120,6 +121,7 @@ class _Hub extends ConsumerWidget {
     required DisplayableField<T?> field,
     required UpdateUserRequest Function(DisplayableField<T?>) buildRequest,
     T? preferNotToSay,
+    bool usedForMatching = false,
   }) {
     final value = field.field;
     return _EditRow(
@@ -136,6 +138,7 @@ class _Hub extends ConsumerWidget {
           labelOf: labelOf,
           initial: field,
           preferNotToSay: preferNotToSay,
+          usedForMatching: usedForMatching,
           buildRequest: buildRequest,
         ),
       ),
@@ -296,6 +299,7 @@ class _Hub extends ConsumerWidget {
               values: AlcoholConsumption.values,
               labelOf: (v) => v.displayName,
               field: p.alcoholConsumption,
+              usedForMatching: true,
               preferNotToSay: AlcoholConsumption.preferNotToSay,
               buildRequest: (f) => UpdateUserRequest(alcoholConsumption: f)),
           _choiceRow<SmokingStatus>(context, ref,
@@ -304,6 +308,7 @@ class _Hub extends ConsumerWidget {
               values: SmokingStatus.values,
               labelOf: (v) => v.displayName,
               field: p.smokingStatus,
+              usedForMatching: true,
               preferNotToSay: SmokingStatus.preferNotToSay,
               buildRequest: (f) => UpdateUserRequest(smokingStatus: f)),
           _choiceRow<Diet>(context, ref,
@@ -322,6 +327,7 @@ class _Hub extends ConsumerWidget {
               values: DateIntentions.values,
               labelOf: (v) => v.displayName,
               field: p.dateIntentions,
+              usedForMatching: true,
               buildRequest: (f) => UpdateUserRequest(dateIntentions: DisplayableField(field: f.field!, visible: f.visible))),
           _choiceRow<RelationshipType>(context, ref,
               label: 'Relationship type',
@@ -329,6 +335,7 @@ class _Hub extends ConsumerWidget {
               values: RelationshipType.values,
               labelOf: (v) => v.displayName,
               field: p.relationshipType,
+              usedForMatching: true,
               buildRequest: (f) => UpdateUserRequest(relationshipType: DisplayableField(field: f.field!, visible: f.visible))),
           _choiceRow<KidsPreference>(context, ref,
               label: 'Kids',
@@ -336,6 +343,7 @@ class _Hub extends ConsumerWidget {
               values: KidsPreference.values,
               labelOf: (v) => v.displayName,
               field: p.kidsPreference,
+              usedForMatching: true,
               preferNotToSay: KidsPreference.preferNotToSay,
               buildRequest: (f) => UpdateUserRequest(kidsPreference: DisplayableField(field: f.field!, visible: f.visible))),
         ]),
@@ -362,6 +370,7 @@ class _Hub extends ConsumerWidget {
               values: Religion.values,
               labelOf: (v) => v.displayName,
               field: p.religion,
+              usedForMatching: true,
               preferNotToSay: Religion.preferNotToSay,
               buildRequest: (f) => UpdateUserRequest(religion: f)),
           _choiceRow<PoliticalView>(context, ref,
@@ -387,6 +396,7 @@ class _Hub extends ConsumerWidget {
                 min: 1, // the backend rejects an empty list
                 initial: ethnicity,
                 initialVisible: p.ethnicity.visible,
+                usedForMatching: true,
                 buildRequest: (selected, visible) =>
                     UpdateUserRequest(ethnicity: DisplayableField(field: selected, visible: visible)),
               ),

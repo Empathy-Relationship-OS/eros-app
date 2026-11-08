@@ -260,6 +260,20 @@ class MatchPreferences {
     );
   }
 
+  /// Whether the user has switched any filter to a dealbreaker. Interested in doesn't count: it
+  /// always is one (D-4), so counting it would make this true for everyone (RFC-007 §6.4).
+  bool get hasDealbreakers =>
+      age.dealbreaker ||
+      height.dealbreaker ||
+      distance.dealbreaker ||
+      ethnicity.dealbreaker ||
+      religion.dealbreaker ||
+      relationshipType.dealbreaker ||
+      dateIntentions.dealbreaker ||
+      kidsPreference.dealbreaker ||
+      smokingStatus.dealbreaker ||
+      alcoholConsumption.dealbreaker;
+
   Map<String, dynamic> toJson() => {
         'isSet': isSet,
         'gender': gender.toJson(),

@@ -231,3 +231,62 @@ class EmptyStateView extends StatelessWidget {
     );
   }
 }
+
+/// Widget displayed when `GET /match/` has no one to show and the user has dealbreakers on
+/// (RFC-007 §6.4). The only hint that dealbreakers are strict: never a count of people (D-16).
+class DealbreakersEmptyView extends StatelessWidget {
+  final VoidCallback onOpenMatchPreferences;
+  final VoidCallback onRefresh;
+
+  const DealbreakersEmptyView({
+    super.key,
+    required this.onOpenMatchPreferences,
+    required this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.tune,
+              size: 80,
+              color: AppColors.textSecondary,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'You\'ve seen everyone who fits your dealbreakers for now',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: onOpenMatchPreferences,
+              icon: const Icon(Icons.tune),
+              label: const Text('Match preferences'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: onRefresh,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Refresh'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

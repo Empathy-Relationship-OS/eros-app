@@ -11,6 +11,9 @@ import 'package:eros_app/features/profile/presentation/widgets/editors/single_ch
 /// When [preferNotToSay] is given and selected, the checkbox is hidden, and the value must be
 /// saved hidden: use [effectiveVisible] when building the `DisplayableField`.
 ///
+/// Set [usedForMatching] for a field match preferences filter on: the checkbox then has
+/// [HiddenAnswersNote] under it (RFC-007 D-15).
+///
 /// The cards scroll in an `Expanded`, so this must be a direct child of a `Column` (it fills
 /// the space left above the screen's buttons).
 class DisplayableChoiceEditor<T extends Enum> extends StatelessWidget {
@@ -21,6 +24,7 @@ class DisplayableChoiceEditor<T extends Enum> extends StatelessWidget {
   final ValueChanged<T> onSelected;
   final ValueChanged<bool> onVisibleChanged;
   final T? preferNotToSay;
+  final bool usedForMatching;
 
   const DisplayableChoiceEditor({
     super.key,
@@ -31,6 +35,7 @@ class DisplayableChoiceEditor<T extends Enum> extends StatelessWidget {
     required this.onSelected,
     required this.onVisibleChanged,
     this.preferNotToSay,
+    this.usedForMatching = false,
   });
 
   /// The visibility to save: always false when "prefer not to say" is selected.
@@ -67,9 +72,26 @@ class DisplayableChoiceEditor<T extends Enum> extends StatelessWidget {
               activeColor: AppColors.primary,
               contentPadding: EdgeInsets.zero,
             ),
+          if (_showCheckbox && usedForMatching) const HiddenAnswersNote(),
           if (_showCheckbox) const SizedBox(height: 16),
         ],
       ),
+    );
+  }
+}
+
+/// One line under a "Show on my profile" checkbox: hiding an answer keeps it off the profile, not
+/// out of matching (RFC-007 §4.8, D-15).
+class HiddenAnswersNote extends StatelessWidget {
+  static const text = 'Hidden answers are still used to match you.';
+
+  const HiddenAnswersNote({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
     );
   }
 }

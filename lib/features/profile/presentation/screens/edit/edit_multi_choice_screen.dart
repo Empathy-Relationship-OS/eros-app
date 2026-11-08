@@ -5,13 +5,15 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/domain/models/update_user_request.dart';
 import 'package:eros_app/features/profile/presentation/providers/my_profile_provider.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_section_scaffold.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/displayable_choice_editor.dart';
 import 'package:eros_app/features/profile/presentation/widgets/editors/multi_choice_editor.dart';
 
 /// Edits a list field with [MultiChoiceEditor]: interests (tabs, via [groups]), traits, spoken
 /// languages (list rows, via [listTileBuilder]), ethnicity.
 ///
 /// For a `DisplayableField` list, pass [initialVisible] to show a "Show on my profile" checkbox;
-/// [buildRequest] then receives the visibility too. Save needs [min]–[max] choices and a change.
+/// [buildRequest] then receives the visibility too, and [usedForMatching] adds [HiddenAnswersNote]
+/// under it for a field match preferences filter on. Save needs [min]–[max] choices and a change.
 class EditMultiChoiceScreen<T> extends ConsumerStatefulWidget {
   final String title;
   final String question;
@@ -22,6 +24,7 @@ class EditMultiChoiceScreen<T> extends ConsumerStatefulWidget {
   final int? max;
   final List<T> initial;
   final bool? initialVisible;
+  final bool usedForMatching;
   final String? searchHint;
   final String emptyText;
   final MultiChoiceTileBuilder<T>? listTileBuilder;
@@ -39,6 +42,7 @@ class EditMultiChoiceScreen<T> extends ConsumerStatefulWidget {
     this.min = 0,
     this.max,
     this.initialVisible,
+    this.usedForMatching = false,
     this.searchHint,
     this.emptyText = 'Nothing found',
     this.listTileBuilder,
@@ -88,7 +92,10 @@ class _EditMultiChoiceScreenState<T> extends ConsumerState<EditMultiChoiceScreen
               labels: [for (final group in groups) group.label],
               isScrollable: true,
             ),
-      body: Column(
+      // The rows under the options never take more than 30% of the height, and scroll inside it,
+      // so on a short screen with large text the options keep their room.
+      body: LayoutBuilder(
+        builder: (context, constraints) => Column(
         children: [
           MultiChoiceEditor<T>(
             options: widget.options,
@@ -113,6 +120,12 @@ class _EditMultiChoiceScreenState<T> extends ConsumerState<EditMultiChoiceScreen
                       child: widget.listTileBuilder!(context, option, isSelected, onTap),
                     ),
           ),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: constraints.maxHeight * 0.3),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
           if (_selected.isNotEmpty && widget.listTileBuilder == null)
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
@@ -133,6 +146,11 @@ class _EditMultiChoiceScreenState<T> extends ConsumerState<EditMultiChoiceScreen
                 activeColor: AppColors.primary,
               ),
             ),
+          if (widget.initialVisible != null && widget.usedForMatching)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(32, 0, 32, 12),
+              child: Align(alignment: Alignment.centerLeft, child: HiddenAnswersNote()),
+            ),
           if (!isValid && widget.min > 0)
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
@@ -143,7 +161,12 @@ class _EditMultiChoiceScreenState<T> extends ConsumerState<EditMultiChoiceScreen
                 style: TextStyle(color: Colors.grey[600]),
               ),
             ),
+                ],
+              ),
+            ),
+          ),
         ],
+        ),
       ),
     );
   }

@@ -11,6 +11,7 @@ import 'package:eros_app/features/profile/presentation/widgets/editors/single_ch
 /// Edits one `DisplayableField` enum (habits, relationship goals, identity) with
 /// [DisplayableChoiceEditor]. Saves only that field: [buildRequest] wraps it in an
 /// `UpdateUserRequest`. With [preferNotToSay] chosen, the field is always saved hidden.
+/// [usedForMatching] adds [HiddenAnswersNote] for a field match preferences filter on.
 class EditDisplayableChoiceScreen<T extends Enum> extends ConsumerStatefulWidget {
   final String title;
   final String question;
@@ -18,6 +19,7 @@ class EditDisplayableChoiceScreen<T extends Enum> extends ConsumerStatefulWidget
   final String Function(T value) labelOf;
   final DisplayableField<T?> initial;
   final T? preferNotToSay;
+  final bool usedForMatching;
   final UpdateUserRequest Function(DisplayableField<T?> field) buildRequest;
 
   const EditDisplayableChoiceScreen({
@@ -29,6 +31,7 @@ class EditDisplayableChoiceScreen<T extends Enum> extends ConsumerStatefulWidget
     required this.initial,
     required this.buildRequest,
     this.preferNotToSay,
+    this.usedForMatching = false,
   });
 
   @override
@@ -68,6 +71,7 @@ class _EditDisplayableChoiceScreenState<T extends Enum> extends ConsumerState<Ed
               onSelected: (value) => setState(() => _selected = value),
               onVisibleChanged: (visible) => setState(() => _visible = visible),
               preferNotToSay: widget.preferNotToSay,
+              usedForMatching: widget.usedForMatching,
             ),
           ],
         ),
