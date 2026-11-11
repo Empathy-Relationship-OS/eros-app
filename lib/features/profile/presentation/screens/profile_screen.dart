@@ -10,6 +10,7 @@ import 'package:eros_app/features/profile/presentation/providers/user_profile_pr
 import 'package:eros_app/features/wallet/presentation/screens/wallet_screen.dart';
 import 'package:eros_app/features/settings/presentation/screens/app_settings_screen.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_profile_screen.dart';
+import 'package:eros_app/features/verification/presentation/widgets/verification_profile_row.dart';
 
 /// Profile Screen - Displays user profile and settings
 class ProfileScreen extends ConsumerWidget {
@@ -76,6 +77,9 @@ class ProfileScreen extends ConsumerWidget {
               sliver: SliverToBoxAdapter(
                 child: _SettingsCard(
                   children: [
+                    // The user's own verification (RFC-008 VF-F3). Nothing on anyone else's.
+                    const VerificationProfileRow(),
+                    const Divider(height: 1, indent: 56),
                     _SettingsTile(
                       icon: Icons.edit_outlined,
                       title: 'Edit profile',

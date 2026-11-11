@@ -9,6 +9,7 @@ import 'package:eros_app/features/match_preferences/presentation/widgets/interes
 import 'package:eros_app/features/matching/presentation/providers/match_provider.dart';
 import 'package:eros_app/features/matching/presentation/widgets/match_state_views.dart';
 import 'package:eros_app/features/matching/presentation/screens/last_24_hours_screen.dart';
+import 'package:eros_app/features/verification/presentation/widgets/verification_prompt_card.dart';
 import '../widgets/match_carousel_v2.dart';
 
 /// Main matching screen showing daily batch of matches
@@ -203,13 +204,22 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
     MatchBatchState state,
     MatchBatchNotifier notifier,
   ) {
-    return MatchCarouselV2(
-      profiles: state.profiles,
-      notifier: notifier,
-      initialIndex: 0,
-      onPageChanged: (index) {
-        // Optional: Handle page changes if needed
-      },
+    return Column(
+      children: [
+        // Verify before a date's deadline is running (RFC-008 §5.3, VF-F3). Shows only when
+        // there's something to do, and can be dismissed.
+        const VerificationPromptCard(),
+        Expanded(
+          child: MatchCarouselV2(
+            profiles: state.profiles,
+            notifier: notifier,
+            initialIndex: 0,
+            onPageChanged: (index) {
+              // Optional: Handle page changes if needed
+            },
+          ),
+        ),
+      ],
     );
   }
 }

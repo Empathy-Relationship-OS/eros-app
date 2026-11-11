@@ -53,6 +53,51 @@ class VerificationCopy {
         SelfieProblem.other => 'We couldn\'t use that picture. Try again',
       };
 
+  // The status screen, the Profile row and the Matches card (VF-F3). The status screen also
+  // shows [inReview], [verified], [locked], [retryReason], [verifyNow] and [tryAgain].
+
+  /// The Profile row's title, and the status screen's.
+  static const String verifyYourProfile = 'Verify your profile';
+
+  /// Why we ask, on the status screen before the first attempt.
+  static const String whyWeAsk =
+      'Everyone on Muse verifies before a date, so you know who you\'re meeting.';
+
+  /// What it takes, on the status screen and the Matches card.
+  static const String whatItTakes = 'One selfie, about a minute.';
+
+  /// Under [inReview] on the status screen.
+  static const String inReviewDetail = 'We\'ll let you know as soon as it\'s done.';
+
+  /// The status screen's heading in retry, worded as the decision push is (VF-B6).
+  static const String retryTitle = 'We need another selfie';
+
+  /// The link to the photo editor when the reason is about the profile photos.
+  static const String updatePhotos = 'Update your photos';
+
+  /// Attempts left today, shown only when that's 1 or 0.
+  static String attemptsLeft(int left) => left <= 0
+      ? 'You\'ve used today\'s attempts. Try again tomorrow.'
+      : left == 1
+          ? 'You have 1 attempt left today.'
+          : 'You have $left attempts left today.';
+
+  /// The status couldn't be loaded and there's no earlier one to show.
+  static const String statusFailed =
+      'We couldn\'t load your verification status. Pull down to try again.';
+
+  /// The Profile row's hint for [state]. An unknown state reads as not verified.
+  static String profileHint(VerificationState state) => switch (state) {
+        VerificationState.notVerified || VerificationState.unknown => 'Not started',
+        VerificationState.inReview => 'In review',
+        VerificationState.retry || VerificationState.locked => 'Action needed',
+        VerificationState.verified => 'Verified',
+      };
+
+  /// The card above the batch on the Matches tab.
+  static const String cardTitle = 'Verify before your first date';
+  static const String cardDismiss = 'Dismiss';
+
   // Consent (VF-F2). PLACEHOLDER until the lawyer answers RFC-008 Q-8: the wording may change,
   // and the server's `consentVersion` with it. Keep every consent line here.
 
