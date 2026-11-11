@@ -66,6 +66,12 @@ Map<String, dynamic> _availabilityJson({List<Map<String, dynamic>> mySlots = con
       'blockedSlots': <Object>[],
     };
 
+/// The viewer's ranking of the harness's two venue options, as `myRankings` sends it.
+const List<Map<String, int>> _sentRanking = [
+  {'venueId': 1, 'rank': 1},
+  {'venueId': 2, 'rank': 2},
+];
+
 DateDetail _detail(String state, {bool verificationRequired = false}) =>
     DateDetail.fromJson(wallDateJson(state, verificationRequired: verificationRequired));
 
@@ -353,6 +359,19 @@ void main() {
 
       expect(_wall, findsNothing);
       expect(find.text('The Ivy'), findsOneWidget);
+    });
+
+    testWidgets('a ranking the server says was sent is a read too: no wall', (tester) async {
+      final api = wallApi(date: wallDateJson('AWAITING_VENUE_RANKING'));
+      api.responses['GET /dates/7/venue-options'] = {
+        ...api.responses['GET /dates/7/venue-options']! as Map<String, dynamic>,
+        'myRankings': _sentRanking,
+      };
+      await pumpWall(tester, api, const VenueRankingScreen(dateId: '7'));
+
+      expect(_wall, findsNothing);
+      expect(find.text('The Ivy'), findsOneWidget);
+      expect(find.text(DatesCopy.venueRankingSendButton), findsNothing);
     });
 
     testWidgets('the deposit sheet shows the wall, not the commit button', (tester) async {

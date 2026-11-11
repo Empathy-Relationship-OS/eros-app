@@ -74,8 +74,12 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
   Widget build(BuildContext context) {
     final venueOptionsAsync = ref.watch(venueOptionsProvider(widget.dateId));
     // Opened while the wall is up (a deep link, a stale screen): the wall, not the list.
-    // Viewing a ranking already sent is a read, so read-only never walls.
-    final walled = !widget.readOnly && ref.watch(dateVerificationWallProvider(widget.dateId));
+    // Viewing a ranking already sent is a read, so read-only never walls: neither the route's
+    // flag nor a ranking the server says the viewer already sent.
+    final alreadyRanked = venueOptionsAsync.valueOrNull?.myRankings.isNotEmpty ?? false;
+    final walled = !widget.readOnly &&
+        !alreadyRanked &&
+        ref.watch(dateVerificationWallProvider(widget.dateId));
 
     return Scaffold(
       appBar: AppBar(
