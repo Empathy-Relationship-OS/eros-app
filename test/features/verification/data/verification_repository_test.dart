@@ -231,6 +231,17 @@ void main() {
       expect(retake.expiresAt, failure.expiresAt);
     });
 
+    test('a fresh link without an expiry does not inherit the old link\'s expiry', () async {
+      final first = await start();
+      expect(first.expiresAt, isNotNull);
+
+      final retake = first.withUpload(
+        const SelfieUpload(url: 'https://s3.example/fresh', headers: {}),
+      );
+
+      expect(retake.expiresAt, isNull);
+    });
+
     test('each problem parses, an unknown one as other, and a missing link as null', () async {
       const problems = {
         'NO_FACE': SelfieProblem.noFace,

@@ -162,12 +162,15 @@ class VerificationAttemptStart {
       );
 
   /// The same attempt with the fresh link from a `SELFIE_UNUSABLE`, for the retake.
+  ///
+  /// [expiresAt] is the fresh link's own expiry. It is never carried over from the old link,
+  /// which may already have passed: no expiry from the server means an unknown one (null).
   VerificationAttemptStart withUpload(SelfieUpload upload, {DateTime? expiresAt}) =>
       VerificationAttemptStart(
         attemptId: attemptId,
         pose: pose,
         upload: upload,
-        expiresAt: expiresAt ?? this.expiresAt,
+        expiresAt: expiresAt,
       );
 
   @override
