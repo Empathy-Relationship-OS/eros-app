@@ -46,10 +46,15 @@ class _VerificationWallState extends ConsumerState<VerificationWall> {
     ref.listenManual<AsyncValue<VerificationStatus>>(
       verificationStatusProvider,
       (previous, next) {
-        final was = previous?.valueOrNull?.isVerified ?? false;
-        final now = next.valueOrNull?.isVerified ?? false;
+        final status = next.valueOrNull;
+        // Every fresh verified answer, not only the first: if the date still required
+        // verification last time, a later refresh (a resume, a push) must check it again, or
+        // the wall could stay up for good. A failed refresh keeps the same value, so it
+        // doesn't count.
+        if (status == null || !status.isVerified) return;
+        if (identical(status, previous?.valueOrNull)) return;
         // After the build: the host refetches its date, which changes providers.
-        if (!was && now) scheduleMicrotask(() => widget.onVerified?.call());
+        scheduleMicrotask(() => widget.onVerified?.call());
       },
       fireImmediately: true,
     );

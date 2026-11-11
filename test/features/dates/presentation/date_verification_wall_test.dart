@@ -276,6 +276,46 @@ void main() {
       expect(_wall, findsOneWidget);
       expect(_action(_steps.first), findsNothing);
     });
+
+    testWidgets('a later verified refresh checks the date again, and the wall goes',
+        (tester) async {
+      final api = wallApi(date: wallDateJson('AWAITING_AVAILABILITY'));
+      await _pumpDetail(tester, api);
+      final container = containerOf(tester, find.byType(DateDetailScreen));
+
+      // Verified, but the server hasn't cleared the date yet: the wall stays.
+      api.responses[statusRequest] = statusJson('VERIFIED');
+      await container.read(verificationStatusNotifierProvider).refresh();
+      await tester.pumpAndSettle();
+      expect(_wall, findsOneWidget);
+
+      // Later (a resume, a push) the status is still verified and the date is clear.
+      api.responses[dateRequest] =
+          wallDateJson('AWAITING_AVAILABILITY', verificationRequired: false);
+      final dateReads = count(api, dateRequest);
+      await container.read(verificationStatusNotifierProvider).refresh();
+      await tester.pumpAndSettle();
+
+      expect(count(api, dateRequest), dateReads + 1);
+      expect(_wall, findsNothing);
+      expect(_action(_steps.first), findsOneWidget);
+    });
+
+    testWidgets('a failed status refresh does not refetch the date', (tester) async {
+      final api = wallApi(date: wallDateJson('AWAITING_AVAILABILITY'));
+      await _pumpDetail(tester, api);
+      final container = containerOf(tester, find.byType(DateDetailScreen));
+      api.responses[statusRequest] = statusJson('VERIFIED');
+      await container.read(verificationStatusNotifierProvider).refresh();
+      await tester.pumpAndSettle();
+
+      api.responses[statusRequest] = const NetworkException('offline');
+      final dateReads = count(api, dateRequest);
+      await container.read(verificationStatusNotifierProvider).refresh();
+      await tester.pumpAndSettle();
+
+      expect(count(api, dateRequest), dateReads);
+    });
   });
 
   group('entry screens opened behind the wall', () {
