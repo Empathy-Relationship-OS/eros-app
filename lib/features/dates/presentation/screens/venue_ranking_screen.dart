@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -5,10 +7,12 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/date_preferences/presentation/widgets/date_preferences_prompts.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
+import 'package:eros_app/features/dates/presentation/providers/date_verification_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/venue_ranking_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/deadline_countdown.dart';
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
+import 'package:eros_app/features/dates/presentation/widgets/date_verification_wall.dart';
 import 'package:eros_app/features/dates/presentation/widgets/error_state_widget.dart';
 import 'package:eros_app/features/dates/presentation/widgets/venue_price_and_menu.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
@@ -69,6 +73,13 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
   @override
   Widget build(BuildContext context) {
     final venueOptionsAsync = ref.watch(venueOptionsProvider(widget.dateId));
+    // Opened while the wall is up (a deep link, a stale screen): the wall, not the list.
+    // Viewing a ranking already sent is a read, so read-only never walls: neither the route's
+    // flag nor a ranking the server says the viewer already sent.
+    final alreadyRanked = venueOptionsAsync.valueOrNull?.myRankings.isNotEmpty ?? false;
+    final walled = !widget.readOnly &&
+        !alreadyRanked &&
+        ref.watch(dateVerificationWallProvider(widget.dateId));
 
     return Scaffold(
       appBar: AppBar(
@@ -88,7 +99,7 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
         ),
       ),
       backgroundColor: AppColors.background,
-      body: venueOptionsAsync.when(
+      body: walled ? _buildVerificationWall(context) : venueOptionsAsync.when(
         data: (venueOptions) {
           // Initialize ordered venues - always sync with latest data
           // This ensures we don't have stale venues in the list
@@ -479,6 +490,17 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
     });
   }
 
+  /// In place of the list while the viewer must verify. Cancel stays (RFC-008 D-6).
+  Widget _buildVerificationWall(BuildContext context) {
+    return SingleChildScrollView(
+      child: DateVerificationWallBody(
+        dateId: widget.dateId,
+        deadline: widget.rankingDeadline,
+        onCancel: () => _showCancelDialog(context),
+      ),
+    );
+  }
+
   void _showCancelDialog(BuildContext context) async {
     if (_isLoadingCancelDialog) return;
 
@@ -559,6 +581,11 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
           ),
         );
       }
+    } on VerificationRequiredFailure {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      // The wall replaces the list, no error toast (VF-F4).
+      unawaited(ref.read(dateVerificationRaisedProvider(widget.dateId).notifier).raise());
     } on ValidationException catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);

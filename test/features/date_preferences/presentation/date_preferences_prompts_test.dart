@@ -8,6 +8,7 @@ import 'package:eros_app/features/date_preferences/presentation/providers/date_p
 import 'package:eros_app/features/date_preferences/presentation/screens/date_preferences_screen.dart';
 import 'package:eros_app/features/date_preferences/presentation/widgets/date_preferences_prompts.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
+import 'package:eros_app/features/dates/presentation/providers/date_verification_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/venue_ranking_provider.dart';
 import 'package:eros_app/features/dates/presentation/screens/venue_ranking_screen.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
@@ -211,6 +212,8 @@ void main() {
         prefs: prefs,
         api: _api(isSet: true),
         overrides: [
+          // Not behind the verification wall (VF-F4), so the date isn't fetched.
+          dateVerificationWallProvider('7').overrideWith((ref) => false),
           venueOptionsProvider('7').overrideWith((ref) async => const VenueOptions(
                 dateId: 7,
                 options: [

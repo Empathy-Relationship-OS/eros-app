@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
@@ -8,6 +11,8 @@ import 'package:eros_app/features/dates/presentation/widgets/push_permission_pro
 import 'package:eros_app/features/dates/presentation/widgets/venue_price_and_menu.dart';
 import 'package:eros_app/features/dates/presentation/providers/presence_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
+import 'package:eros_app/features/dates/presentation/providers/date_verification_provider.dart';
+import 'package:eros_app/features/dates/presentation/widgets/date_verification_wall.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:add_2_calendar/add_2_calendar.dart' as calendar;
 
@@ -285,7 +290,11 @@ class _BookingCardState extends ConsumerState<BookingCard> {
   }
 
   Widget _buildPresenceSection() {
-    final presenceAsync = ref.watch(presenceProvider(widget.dateDetail.dateId.toString()));
+    final dateId = widget.dateDetail.dateId.toString();
+    final presenceAsync = ref.watch(presenceProvider(dateId));
+    // The wall takes the confirm button's place while the viewer must verify (VF-F4).
+    final walled = widget.dateDetail.verificationRequired ||
+        ref.watch(dateVerificationRaisedProvider(dateId));
 
     return presenceAsync.when(
       data: (presenceStatus) {
@@ -308,7 +317,9 @@ class _BookingCardState extends ConsumerState<BookingCard> {
 
             // Confirm button or waiting message
             const SizedBox(height: 16),
-            if (!youConfirmed)
+            if (!youConfirmed && walled)
+              DateVerificationWall(dateId: dateId)
+            else if (!youConfirmed)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -441,6 +452,13 @@ class _BookingCardState extends ConsumerState<BookingCard> {
         // Trigger parent refetch
         // This is handled by the detail screen's refetch mechanism
       }
+    } on VerificationRequiredFailure {
+      if (!mounted) return;
+      setState(() => _isConfirming = false);
+      // The wall replaces the button, no error toast (VF-F4).
+      unawaited(ref
+          .read(dateVerificationRaisedProvider(widget.dateDetail.dateId.toString()).notifier)
+          .raise());
     } catch (e) {
       if (!mounted) return;
       setState(() => _isConfirming = false);

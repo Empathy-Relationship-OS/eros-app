@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
@@ -7,9 +9,11 @@ import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/availability_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_list_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
+import 'package:eros_app/features/dates/presentation/providers/date_verification_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/cancel_date_dialog.dart';
 import 'package:eros_app/features/dates/presentation/widgets/error_state_widget.dart';
+import 'package:eros_app/features/dates/presentation/widgets/date_verification_wall.dart';
 import 'package:eros_app/features/dates/presentation/screens/deposit_sheet.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:intl/intl.dart';
@@ -70,6 +74,8 @@ class _AvailabilityPickerScreenState
   @override
   Widget build(BuildContext context) {
     final availabilityAsync = ref.watch(availabilityProvider(widget.dateId));
+    // Opened while the wall is up (a deep link, a stale screen): the wall, not the grid.
+    final walled = ref.watch(dateVerificationWallProvider(widget.dateId));
 
     return Scaffold(
       appBar: AppBar(
@@ -102,7 +108,7 @@ class _AvailabilityPickerScreenState
         ),
       ),
       backgroundColor: AppColors.background,
-      body: availabilityAsync.when(
+      body: walled ? _buildVerificationWall(context) : availabilityAsync.when(
         data: (availability) {
           // Load mySlots into _marks on first build (excluding blocked slots)
           if (_marks.isEmpty && availability.mySlots.isNotEmpty) {
@@ -217,6 +223,16 @@ class _AvailabilityPickerScreenState
           onRetry: () => ref.refresh(availabilityProvider(widget.dateId)),
           onGoBack: () => Navigator.of(context).pop(),
         ),
+      ),
+    );
+  }
+
+  /// In place of the grid while the viewer must verify. Cancel stays (RFC-008 D-6).
+  Widget _buildVerificationWall(BuildContext context) {
+    return SingleChildScrollView(
+      child: DateVerificationWallBody(
+        dateId: widget.dateId,
+        onCancel: () => _showCancelDialog(context),
       ),
     );
   }
@@ -911,6 +927,10 @@ class _AvailabilityPickerScreenState
         // Still AWAITING_AVAILABILITY - waiting on partner
         Navigator.of(context).pop();
       }
+    } on VerificationRequiredFailure {
+      if (!mounted) return;
+      // The wall replaces the grid, no error toast (VF-F4).
+      unawaited(ref.read(dateVerificationRaisedProvider(widget.dateId).notifier).raise());
     } on ValidationException catch (e) {
       if (!mounted) return;
       // Usually a slot blocked since this grid loaded (a race): refresh, and the build drops it

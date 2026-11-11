@@ -14,6 +14,21 @@ class VerificationCopy {
   /// Shown while an attempt is with staff.
   static const String inReview = 'We\'re checking your selfie';
 
+  /// Starts the flow when the user has never verified.
+  static const String verifyNow = 'Verify now';
+
+  /// Starts the flow again after a rejection.
+  static const String tryAgain = 'Try again';
+
+  /// Out of attempts: only staff can unlock them (RFC-008 §5.8). Wording from VF-F3.
+  static const String locked = 'We couldn\'t verify you. Contact support and we\'ll help.';
+
+  /// The current step's deadline on the wall. [by] is already formatted for display.
+  static String keepYourDate(String by) => 'Do this by $by to keep your date.';
+
+  /// A date's call to action in the dates list while the wall is up on it.
+  static const String verifyToContinue = 'Verify to continue';
+
   /// Why the last attempt was rejected. A retry with no reason reads as [RetryReason.other].
   static String retryReason(RetryReason? reason) => switch (reason ?? RetryReason.other) {
         RetryReason.poseMissing => 'We couldn\'t see the pose',

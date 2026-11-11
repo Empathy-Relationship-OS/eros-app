@@ -1,6 +1,7 @@
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/data/repositories/dates_repository.dart';
+import 'package:eros_app/features/dates/presentation/providers/date_verification_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/venue_ranking_provider.dart';
 import 'package:eros_app/features/dates/presentation/screens/date_detail_screen.dart';
@@ -133,6 +134,8 @@ Future<void> _pumpRanking(WidgetTester tester, List<VenueOption> options) async 
   await tester.pumpWidget(ProviderScope(
     overrides: [
       authServiceProvider.overrideWithValue(_FakeAuthService()),
+      // Not behind the verification wall (VF-F4), so the date isn't fetched.
+      dateVerificationWallProvider('7').overrideWith((ref) => false),
       venueOptionsProvider('7').overrideWith((ref) async => _venueOptions(options)),
     ],
     child: const MaterialApp(home: VenueRankingScreen(dateId: '7')),
