@@ -42,6 +42,10 @@ StubResponse reply(int status, Object? body, {Map<String, String> headers = cons
 /// records every request, so the tests cover the client's own error mapping too.
 class StubHttp implements HttpClientAdapter {
   final Map<String, StubResponse> responses = {};
+
+  /// Answers handed out one per request, in order, ahead of [responses]. Each waits for its
+  /// `release` future, so a test can decide which of two overlapping requests finishes first.
+  final Map<String, List<({Future<void> release, StubResponse response})>> held = {};
   final List<RequestOptions> requests = [];
   final List<List<int>> sentBodies = [];
 
@@ -64,7 +68,16 @@ class StubHttp implements HttpClientAdapter {
     }
     sentBodies.add(bytes);
 
-    final stub = responses['${options.method} ${options.uri.path}'];
+    final key = '${options.method} ${options.uri.path}';
+    final queue = held[key];
+    StubResponse? stub;
+    if (queue != null && queue.isNotEmpty) {
+      final next = queue.removeAt(0);
+      await next.release;
+      stub = next.response;
+    } else {
+      stub = responses[key];
+    }
     if (stub == null) throw StateError('No stub for ${options.method} ${options.uri.path}');
     return ResponseBody.fromString(
       stub.body == null ? '' : jsonEncode(stub.body),
