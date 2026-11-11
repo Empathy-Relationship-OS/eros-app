@@ -6,7 +6,9 @@ import '../api_config.dart';
 ///
 /// Chat and report calls carry message text and report descriptions, which must never be
 /// printed (RFC-006 §4.11), and match preference calls carry who a user wants to meet, by
-/// religion or ethnicity among others (RFC-007 D-9). For those paths it logs the method, path and status only, with
+/// religion or ethnicity among others (RFC-007 D-9). Verification calls carry the selfie's
+/// presigned upload link, a credential that must never be printed (RFC-008 primer rule 4). For
+/// those paths it logs the method, path and status only, with
 /// no query, headers or bodies. A streamed response (`ResponseType.stream`) is never read
 /// here either: its body belongs to whoever listens to it.
 class LoggingInterceptor extends Interceptor {
@@ -14,10 +16,13 @@ class LoggingInterceptor extends Interceptor {
 
   LoggingInterceptor({Logger? logger}) : _logger = logger ?? Logger();
 
-  /// True for paths whose bodies are private: anything containing `/chat`, `/report` or
-  /// `/match-preferences`.
+  /// True for paths whose bodies are private: anything containing `/chat`, `/report`,
+  /// `/match-preferences` or `/verification`.
   static bool isPrivatePath(String path) =>
-      path.contains('/chat') || path.contains('/report') || path.contains('/match-preferences');
+      path.contains('/chat') ||
+      path.contains('/report') ||
+      path.contains('/match-preferences') ||
+      path.contains('/verification');
 
   /// True when only the method, path and status may be logged.
   static bool _bodyless(RequestOptions options) =>

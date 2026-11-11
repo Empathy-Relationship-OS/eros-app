@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- A pose this build has no illustration for: "copy this pose", with a hand beside the face -->
+  <circle cx="60" cy="48" r="20" fill="#FFF4EE" stroke="#000000" stroke-width="3"/><path d="M18 118 C18 92 38 80 60 80 C82 80 102 92 102 118" fill="#FFF4EE" stroke="#000000" stroke-width="3" stroke-linecap="round"/>
+  <rect x="86" y="36" width="20" height="24" rx="7" fill="none" stroke="#FF8A65" stroke-width="3" stroke-dasharray="5 4"/>
+  <path d="M100 20 l3 6 l6 3 l-6 3 l-3 6 l-3 -6 l-6 -3 l6 -3 z" fill="#FF8A65"/>
+</svg>
