@@ -74,5 +74,7 @@
 	<string>We need your permission to send you notifications about new matches, date reminders, and important updates.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Used to place your starting point on the map. We don't track your location.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Muse uses the camera to take a selfie that confirms you're the person in your photos.</string>
 </dict>
 </plist>

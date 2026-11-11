@@ -125,12 +125,15 @@ void main() {
     expect(output.lines.join('\n'), contains('Something came up'));
   });
 
-  test('treats only /chat, /report and /match-preferences paths as private', () {
+  test('treats only /chat, /report, /match-preferences and /verification paths as private', () {
     expect(LoggingInterceptor.isPrivatePath('/dates/42/chat'), isTrue);
     expect(LoggingInterceptor.isPrivatePath('/dates/42/chat/messages'), isTrue);
     expect(LoggingInterceptor.isPrivatePath('/dates/42/report/evidence-url'), isTrue);
     expect(LoggingInterceptor.isPrivatePath('/users/me/match-preferences'), isTrue);
     expect(LoggingInterceptor.isPrivatePath('/match-preferences/options'), isTrue);
+    // The start and 422 responses carry the selfie's presigned upload link (RFC-008).
+    expect(LoggingInterceptor.isPrivatePath('/users/me/verification/attempts'), isTrue);
+    expect(LoggingInterceptor.isPrivatePath('/users/me/verification'), isTrue);
     expect(LoggingInterceptor.isPrivatePath('/dates/42'), isFalse);
   });
 }

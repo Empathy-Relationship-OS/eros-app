@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- TWO_FINGERS_BY_CHIN: two fingers held up beside the chin -->
+  <circle cx="60" cy="48" r="20" fill="#FFF4EE" stroke="#000000" stroke-width="3"/><path d="M18 118 C18 92 38 80 60 80 C82 80 102 92 102 118" fill="#FFF4EE" stroke="#000000" stroke-width="3" stroke-linecap="round"/>
+  <path d="M100 100 L94 82" stroke="#000000" stroke-width="3" stroke-linecap="round"/>
+  <rect x="84" y="64" width="20" height="18" rx="6" fill="#FF8A65" stroke="#000000" stroke-width="3"/>
+  <path d="M88 64 L84 44 M98 64 L102 44" stroke="#000000" stroke-width="4" stroke-linecap="round"/>
+</svg>
