@@ -165,10 +165,10 @@ class _VerificationWallState extends ConsumerState<VerificationWall> {
       child: Row(
         children: [
           Expanded(
+            // No line limit: at large text sizes the locked message needs more than two lines,
+            // and its last words tell the user what to do.
             child: Text(
               text,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
             ),
           ),
