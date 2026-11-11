@@ -19,6 +19,7 @@ class ApiEndpoints {
   static final datePreferences = _DatePreferencesEndpoints();
   static final matchPreferences = _MatchPreferencesEndpoints();
   static final safety = _SafetyEndpoints();
+  static final verification = _VerificationEndpoints();
 }
 
 // ====================
@@ -294,4 +295,18 @@ class _SafetyEndpoints {
 
   /// POST /dates/{dateId}/report - Report the partner, or cancel on safety grounds
   String report(String dateId) => '/dates/$dateId/report';
+}
+
+// ====================
+// VERIFICATION ENDPOINTS (RFC-008 §6 "User")
+// ====================
+class _VerificationEndpoints {
+  /// GET /users/me/verification - The signed-in user's verification status
+  String status() => '/users/me/verification';
+
+  /// POST /users/me/verification/attempts - Start an attempt and get a selfie upload link
+  String attempts() => '/users/me/verification/attempts';
+
+  /// POST /users/me/verification/attempts/{attemptId}/submit - Say the selfie is uploaded
+  String submit(String attemptId) => '/users/me/verification/attempts/$attemptId/submit';
 }

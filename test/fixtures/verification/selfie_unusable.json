@@ -1,0 +1,12 @@
+{
+  "error": "SELFIE_UNUSABLE",
+  "message": "We couldn't use that picture",
+  "problem": "TOO_DARK",
+  "upload": {
+    "url": "https://selfies.s3.amazonaws.com/selfies/user1/3f2504e0.jpg?X-Amz-Signature=fresh",
+    "headers": {
+      "Content-Type": "image/jpeg"
+    }
+  },
+  "expiresAt": "2026-11-10T19:30:00Z"
+}

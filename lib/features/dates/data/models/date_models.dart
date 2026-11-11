@@ -322,6 +322,10 @@ class DateDetail {
   /// Never describes the partner.
   final bool yourRefundUnderReview;
 
+  /// The viewer must be selfie-verified before acting on this date (RFC-008 §5.3). Never
+  /// describes the partner.
+  final bool verificationRequired;
+
   const DateDetail({
     required this.dateId,
     required this.matchId,
@@ -355,6 +359,7 @@ class DateDetail {
     required this.createdAt,
     required this.updatedAt,
     this.yourRefundUnderReview = false,
+    this.verificationRequired = false,
   });
 
   factory DateDetail.fromJson(Map<String, dynamic> json) => DateDetail(
@@ -398,6 +403,8 @@ class DateDetail {
         updatedAt: _instant(json['updatedAt'])!,
         // Absent until the backend has CH-B7.
         yourRefundUnderReview: json['yourRefundUnderReview'] as bool? ?? false,
+        // Absent until the backend has VF-B5.
+        verificationRequired: json['verificationRequired'] as bool? ?? false,
       );
 
   // Helpers every screen needs

@@ -60,6 +60,26 @@ class ForbiddenException extends ApiException {
   });
 }
 
+/// 403 `VERIFICATION_REQUIRED`: a date or chat action was refused because the signed-in user
+/// isn't selfie-verified yet (RFC-008 §5.3).
+///
+/// It is a [ForbiddenException], so code that already handles a 403 keeps working. A screen
+/// that knows about verification catches this first and shows the wall instead of an error.
+class VerificationRequiredFailure extends ForbiddenException {
+  /// The `error` code of the 403 body.
+  static const String code = 'VERIFICATION_REQUIRED';
+
+  const VerificationRequiredFailure(
+    super.message, {
+    super.statusCode = 403,
+    super.originalError,
+    super.stackTrace,
+  });
+
+  @override
+  String toString() => 'VerificationRequiredFailure: $message';
+}
+
 /// 404 Not Found
 class NotFoundException extends ApiException {
   const NotFoundException(

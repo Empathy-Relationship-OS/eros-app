@@ -380,6 +380,15 @@ class ApiClient {
         );
 
       case 403:
+        // The selfie-verification gate (RFC-008 §5.3). Told apart by its code, so every other
+        // 403 stays a plain ForbiddenException.
+        if (_extractErrorCode(responseData) == VerificationRequiredFailure.code) {
+          return VerificationRequiredFailure(
+            message ?? 'Verification required',
+            statusCode: statusCode,
+            originalError: responseData,
+          );
+        }
         return ForbiddenException(
           message ?? 'Access denied',
           statusCode: statusCode,
@@ -491,6 +500,15 @@ class ApiClient {
       return responseData['message'] as String? ??
           responseData['error'] as String? ??
           responseData['detail'] as String?;
+    }
+    return null;
+  }
+
+  /// The code of a coded error, `{ "error": "CODE", "message": "…" }` (the backend's `ApiError`).
+  String? _extractErrorCode(dynamic responseData) {
+    if (responseData is Map<String, dynamic>) {
+      final code = responseData['error'];
+      if (code is String) return code;
     }
     return null;
   }
