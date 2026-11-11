@@ -154,6 +154,37 @@ void main() {
       expect(find.text('You\'ve committed. Waiting for Sam.'), findsOneWidget);
     });
 
+    testWidgets('a ranking already sent is a read: no wall', (tester) async {
+      final api = wallApi(date: wallDateJson('AWAITING_VENUE_RANKING'));
+      api.responses['GET /dates/7/venue-options'] = {
+        ...api.responses['GET /dates/7/venue-options']! as Map<String, dynamic>,
+        'myRankings': _sentRanking,
+      };
+      await _pumpDetail(tester, api);
+
+      expect(_wall, findsNothing);
+    });
+
+    testWidgets('presence already confirmed: no wall', (tester) async {
+      final api = wallApi(date: wallDateJson('AWAITING_PRESENCE_CONFIRMATION'))
+        ..responses['GET /dates/7/presence-status'] = {
+          'dateId': 7,
+          'user1': {'userId': 'user1', 'confirmed': true},
+          'user2': {'userId': 'user2', 'confirmed': false},
+        };
+      await _pumpDetail(tester, api);
+
+      expect(_wall, findsNothing);
+    });
+
+    testWidgets('times already sent can still be changed, so the wall stays', (tester) async {
+      final api = wallApi(date: wallDateJson('AWAITING_AVAILABILITY'))
+        ..responses['GET /dates/7/availability'] = _availabilityJson(mySlots: _threeFreeSlots());
+      await _pumpDetail(tester, api);
+
+      expect(_wall, findsOneWidget);
+    });
+
     testWidgets('never shows anything about the partner\'s verification', (tester) async {
       await _pumpDetail(tester, wallApi(date: wallDateJson('AWAITING_AVAILABILITY')));
 

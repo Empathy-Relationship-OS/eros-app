@@ -9,6 +9,8 @@ import 'package:eros_app/features/chat/presentation/widgets/date_chat_entry.dart
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/date_detail_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/date_verification_provider.dart';
+import 'package:eros_app/features/dates/presentation/providers/presence_provider.dart';
+import 'package:eros_app/features/dates/presentation/providers/venue_ranking_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_status_pill.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_stepper.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_verification_wall.dart';
@@ -707,17 +709,25 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
 
   /// Whether the viewer has something to do on the current step: the actions the
   /// verification gate blocks (RFC-008 §5.3). Waiting on the partner isn't one.
+  ///
+  /// Called only while the wall is up. The detail doesn't say what the viewer has done on
+  /// each step, so the step's own read says it. Until that read loads, the step counts as
+  /// still to do, so the wall errs towards showing.
   bool _viewerHasAction(DateDetail dateDetail, String currentUid) {
     switch (dateDetail.state) {
       case DateState.awaitingAvailability:
-        return !_hasUserSubmitted(dateDetail, currentUid);
+        // Times already sent can still be changed until the partner answers, and changing
+        // them is a gated action too.
+        return true;
       case DateState.awaitingDeposit:
         return !_hasUserPaid(dateDetail, currentUid);
       case DateState.awaitingVenueRanking:
-        // Viewing a ranking already sent is a read.
-        return dateDetail.myRankings.isEmpty;
+        // A sent ranking can't be changed: viewing it is a read.
+        final options = ref.watch(venueOptionsProvider(widget.dateId)).valueOrNull;
+        return options == null || options.myRankings.isEmpty;
       case DateState.awaitingPresenceConfirmation:
-        return !_hasUserConfirmed(dateDetail, currentUid);
+        final presence = ref.watch(presenceProvider(widget.dateId)).valueOrNull;
+        return presence == null || !presence.me(currentUid).confirmed;
       case DateState.venueAssigned:
       case DateState.venueConfirmationPending:
       case DateState.booked:
