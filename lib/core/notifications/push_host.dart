@@ -9,6 +9,7 @@ import 'package:eros_app/core/notifications/notification_router.dart';
 import 'package:eros_app/core/notifications/push_banner.dart';
 import 'package:eros_app/core/notifications/push_service.dart';
 import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
+import 'package:eros_app/features/verification/presentation/providers/verification_provider.dart';
 
 /// Uid of the signed-in user, or null.
 final signedInUidProvider = Provider<String?>((ref) => ref.watch(currentUserProvider)?.uid);
@@ -26,6 +27,9 @@ final notificationRouterProvider = Provider<NotificationRouter>((ref) {
 /// - routes a tapped push, from killed (`getInitialMessage`) and background (`onMessageOpenedApp`);
 /// - in the foreground (`onMessage`), shows [PushBanner] over every screen, unless the push is
 ///   about the chat already on screen ([activeChatDateIdProvider]). Tapping it routes the same way.
+/// - refetches the user's verification status on a foreground `VERIFICATION_DECIDED` push and
+///   whenever the app resumes, since pushes are best-effort (RFC-008 VF-F3). An open date's wall
+///   refetches its date when that status turns verified.
 class PushHost extends ConsumerStatefulWidget {
   const PushHost({super.key, required this.child});
 
@@ -38,6 +42,7 @@ class PushHost extends ConsumerStatefulWidget {
 class _PushHostState extends ConsumerState<PushHost> {
   final Logger _logger = Logger();
   final List<StreamSubscription<Object?>> _subscriptions = [];
+  AppLifecycleListener? _lifecycle;
 
   /// The foreground push on show, or null.
   PushMessage? _banner;
@@ -49,6 +54,9 @@ class _PushHostState extends ConsumerState<PushHost> {
   @override
   void initState() {
     super.initState();
+    // A verification decision may have landed while the app was in the background, push or no
+    // push. Outside the push setup, so it still runs if that fails.
+    _lifecycle = AppLifecycleListener(onResume: _refreshVerification);
     // Push must never take the app down with it: if Firebase Messaging can't start, the app
     // carries on without push.
     try {
@@ -94,6 +102,7 @@ class _PushHostState extends ConsumerState<PushHost> {
     if (!mounted) return;
     _logger.d('🔔 Push in foreground: type=${message.type} dateId=${message.dateId}');
     if (ref.read(signedInUidProvider) == null) return;
+    if (message.type == PushType.verificationDecided) _refreshVerification();
     final activeChat = ref.read(activeChatDateIdProvider);
     if (PushType.isChat(message.type) && activeChat != null && activeChat == message.dateId) return;
     if ((message.title ?? '').isEmpty && (message.body ?? '').isEmpty) return;
@@ -101,6 +110,15 @@ class _PushHostState extends ConsumerState<PushHost> {
       _banner = message;
       _bannerSerial++;
     });
+  }
+
+  /// Refetches the signed-in user's verification status if anything on screen is showing it.
+  /// If nothing is, the next screen that shows it loads it fresh, so there's nothing to fetch.
+  void _refreshVerification() {
+    if (!mounted) return;
+    final uid = ref.read(signedInUidProvider);
+    if (uid == null || !ref.exists(verificationStatusForUserProvider(uid))) return;
+    unawaited(ref.read(verificationStatusNotifierProvider).refresh());
   }
 
   void _dismissBanner() {
@@ -114,6 +132,7 @@ class _PushHostState extends ConsumerState<PushHost> {
 
   @override
   void dispose() {
+    _lifecycle?.dispose();
     for (final subscription in _subscriptions) {
       subscription.cancel();
     }

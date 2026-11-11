@@ -14,11 +14,19 @@ const String dateChatRoute = '/date-chat';
 /// Route name of date detail. Takes the date id as a String.
 const String dateDetailRoute = '/dates/detail';
 
+/// Route name of the signed-in user's own verification status (RFC-008 VF-F3). Takes no
+/// arguments.
+const String verificationStatusRoute = '/verification/status';
+
 /// Push `data.type` values (RFC-006 §4.6).
 abstract final class PushType {
   static const chatOpened = 'chat_opened';
   static const chatMessage = 'chat_message';
   static const dateCancelled = 'date_cancelled';
+
+  /// Staff decided the user's own selfie (RFC-008 §7, VF-B6). The payload carries nothing else:
+  /// the app refetches the status rather than reading it from the push (primer rule 22).
+  static const verificationDecided = 'VERIFICATION_DECIDED';
 
   static bool isChat(String? type) => type == chatOpened || type == chatMessage;
 }
@@ -29,7 +37,9 @@ class NotificationTarget {
   const NotificationTarget(this.routeName, this.dateId);
 
   final String routeName;
-  final String dateId;
+
+  /// Null for a route that takes no date, such as [verificationStatusRoute].
+  final String? dateId;
 
   @override
   bool operator ==(Object other) =>
@@ -70,11 +80,15 @@ class NotificationRouter {
   /// The tap waiting for home, if any.
   NotificationTarget? get pending => _pending;
 
-  /// Where [message] opens, or null for a type the app doesn't route (or no date id).
+  /// Where [message] opens, or null for a type the app doesn't route (or a date push with no
+  /// date id).
   NotificationTarget? targetFor(PushMessage message) {
+    final type = message.type;
+    if (type == PushType.verificationDecided) {
+      return const NotificationTarget(verificationStatusRoute, null);
+    }
     final dateId = message.dateId;
     if (dateId == null || dateId.isEmpty) return null;
-    final type = message.type;
     if (PushType.isChat(type)) {
       return NotificationTarget(chatRouteEnabled ? dateChatRoute : dateDetailRoute, dateId);
     }

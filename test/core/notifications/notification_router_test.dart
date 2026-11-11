@@ -37,6 +37,13 @@ void main() {
       expect(router().targetFor(push('date_cancelled')), const NotificationTarget('/dates/detail', '42'));
     });
 
+    test('VERIFICATION_DECIDED opens the verification status, with or without a date id', () {
+      final r = router();
+      const status = NotificationTarget('/verification/status', null);
+      expect(r.targetFor(push('VERIFICATION_DECIDED', dateId: null)), status);
+      expect(r.targetFor(push('VERIFICATION_DECIDED')), status);
+    });
+
     test('an unknown type, no type, or no date id routes nowhere', () {
       final r = router();
       expect(r.targetFor(push('match_found')), isNull);

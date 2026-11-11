@@ -56,6 +56,7 @@ import 'features/devtools/devtools_config.dart';
 import 'features/devtools/presentation/dev_menu_navigation.dart';
 import 'features/devtools/presentation/dev_menu_screen.dart';
 import 'features/devtools/presentation/widgets/dev_menu_button.dart';
+import 'features/verification/presentation/screens/verification_status_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -164,6 +165,9 @@ class ErosApp extends StatelessWidget {
 
         // Main app routes
         '/match': (context) => const HomeScreen(),
+
+        // The user's own verification status (RFC-008 VF-F3). A decision push opens it.
+        VerificationStatusScreen.routeName: (context) => const VerificationStatusScreen(),
 
         // Developer tools: only registered in local/develop builds with
         // DEVTOOLS=true. DT-F3 to DT-F5 must not edit this file.
