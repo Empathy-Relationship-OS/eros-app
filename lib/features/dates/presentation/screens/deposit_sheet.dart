@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
+import 'package:eros_app/features/dates/presentation/providers/date_verification_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/deposit_provider.dart';
+import 'package:eros_app/features/dates/presentation/widgets/date_verification_wall.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/token_amount.dart';
 import 'package:eros_app/features/dates/presentation/widgets/deadline_countdown.dart';
@@ -50,8 +54,13 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
     });
   }
 
+  String get _dateId => widget.dateDetail.dateId.toString();
+
   @override
   Widget build(BuildContext context) {
+    // Opened while the wall is up (a stale screen): the wall, not the commit button.
+    if (ref.watch(dateVerificationWallProvider(_dateId))) return _buildVerificationWall(context);
+
     final walletState = ref.watch(walletBalanceProvider);
     final balance = walletState.balance?.balance.toString() ?? '0.00';
     final balanceNum = walletState.balance?.balance ?? 0.0;
@@ -293,6 +302,23 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
     );
   }
 
+  /// In place of the sheet's form while the viewer must verify. Cancel stays (RFC-008 D-6).
+  Widget _buildVerificationWall(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: DateVerificationWallBody(
+          dateId: _dateId,
+          deadline: widget.dateDetail.depositDeadline,
+          onCancel: () => _showCancelDialog(context),
+        ),
+      ),
+    );
+  }
+
   void _showCancelDialog(BuildContext context) {
     final currentUid = ref.read(authServiceProvider).currentUser?.uid ?? '';
 
@@ -350,6 +376,11 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
           ),
         );
       }
+    } on VerificationRequiredFailure {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      // The wall replaces the sheet's form, no error toast (VF-F4).
+      unawaited(ref.read(dateVerificationRaisedProvider(_dateId).notifier).raise());
     } on ConflictException catch (e) {
       if (!mounted) return;
 

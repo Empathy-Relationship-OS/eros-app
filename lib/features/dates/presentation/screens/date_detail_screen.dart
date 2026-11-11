@@ -8,8 +8,10 @@ import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/chat/presentation/widgets/date_chat_entry.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/date_detail_provider.dart';
+import 'package:eros_app/features/dates/presentation/providers/date_verification_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_status_pill.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_stepper.dart';
+import 'package:eros_app/features/dates/presentation/widgets/date_verification_wall.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/deadline_countdown.dart';
 import 'package:eros_app/features/dates/presentation/widgets/token_amount.dart';
@@ -84,6 +86,8 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
     }
 
     final currentUid = authService.currentUser?.uid ?? '';
+    final walled = ref.watch(dateVerificationWallProvider(widget.dateId)) &&
+        _viewerHasAction(dateDetail, currentUid);
 
     return Stack(
       children: [
@@ -113,7 +117,10 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
 
             // Spacer for CTA panel
             SliverToBoxAdapter(
-              child: SizedBox(height: 120 + DateChatEntry.reservedHeight(dateDetail.chat)),
+              child: SizedBox(
+                height: (walled ? _wallPanelHeight : 120) +
+                    DateChatEntry.reservedHeight(dateDetail.chat),
+              ),
             ),
           ],
         ),
@@ -123,7 +130,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           left: 0,
           right: 0,
           bottom: 0,
-          child: _buildCTAPanel(context, dateDetail, currentUid),
+          child: _buildCTAPanel(context, dateDetail, currentUid, walled: walled),
         ),
 
         // Back button overlay
@@ -318,7 +325,15 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
     );
   }
 
-  Widget _buildCTAPanel(BuildContext context, DateDetail dateDetail, String currentUid) {
+  /// Room the wall needs above the bottom of the scroll view, so nothing hides behind it.
+  static const double _wallPanelHeight = 200;
+
+  Widget _buildCTAPanel(
+    BuildContext context,
+    DateDetail dateDetail,
+    String currentUid, {
+    required bool walled,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -337,7 +352,15 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           DateChatEntry(dateDetail: dateDetail),
-          _buildCTAContent(context, dateDetail, currentUid),
+          // The wall takes the current step's action only. Cancel and report stay in the
+          // overflow menu, untouched (RFC-008 D-6).
+          if (walled)
+            DateVerificationWall(
+              dateId: widget.dateId,
+              deadline: _stepDeadline(dateDetail),
+            )
+          else
+            _buildCTAContent(context, dateDetail, currentUid),
         ],
       ),
     );
@@ -681,6 +704,37 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
       ),
     );
   }
+
+  /// Whether the viewer has something to do on the current step: the actions the
+  /// verification gate blocks (RFC-008 §5.3). Waiting on the partner isn't one.
+  bool _viewerHasAction(DateDetail dateDetail, String currentUid) {
+    switch (dateDetail.state) {
+      case DateState.awaitingAvailability:
+        return !_hasUserSubmitted(dateDetail, currentUid);
+      case DateState.awaitingDeposit:
+        return !_hasUserPaid(dateDetail, currentUid);
+      case DateState.awaitingVenueRanking:
+        // Viewing a ranking already sent is a read.
+        return dateDetail.myRankings.isEmpty;
+      case DateState.awaitingPresenceConfirmation:
+        return !_hasUserConfirmed(dateDetail, currentUid);
+      case DateState.venueAssigned:
+      case DateState.venueConfirmationPending:
+      case DateState.booked:
+      case DateState.ready:
+      case DateState.completed:
+      case DateState.cancelled:
+      case DateState.expired:
+        return false;
+    }
+  }
+
+  /// The current step's deadline, for the wall.
+  DateTime? _stepDeadline(DateDetail dateDetail) => switch (dateDetail.state) {
+        DateState.awaitingDeposit => dateDetail.depositDeadline,
+        DateState.awaitingVenueRanking => dateDetail.rankingDeadline,
+        _ => null,
+      };
 
   bool _shouldShowOverflowMenu(DateDetail dateDetail) {
     // Don't show if not cancellable

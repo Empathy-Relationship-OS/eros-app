@@ -19,6 +19,8 @@ import 'package:eros_app/features/chat/presentation/widgets/contact_tip_sheet.da
 import 'package:eros_app/features/chat/presentation/widgets/quick_reply_chips.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/date_detail_provider.dart';
+import 'package:eros_app/features/dates/presentation/providers/date_verification_provider.dart';
+import 'package:eros_app/features/dates/presentation/widgets/date_verification_wall.dart';
 import 'package:eros_app/features/safety/presentation/report_flow.dart';
 import 'package:eros_app/features/settings/presentation/providers/app_settings_provider.dart';
 
@@ -137,6 +139,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
 
     final outcome = await _notifier.send(raw);
     if (!mounted) return;
+    _showWallIfRequired(outcome);
     // A refused message goes back in the box, unless they've already started a new one.
     if ((outcome == SendOutcome.rejected || outcome == SendOutcome.invalid) && _input.text.isEmpty) {
       _input.value = TextEditingValue(
@@ -148,7 +151,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
 
   Future<void> _sendQuickReply(QuickReply reply) async {
     _scrollToNewest();
-    await _notifier.sendQuickReply(reply);
+    final outcome = await _notifier.sendQuickReply(reply);
+    if (!mounted) return;
+    _showWallIfRequired(outcome);
+  }
+
+  Future<void> _retry(String clientMessageId) async {
+    final outcome = await _notifier.retry(clientMessageId);
+    if (!mounted) return;
+    _showWallIfRequired(outcome);
+  }
+
+  /// A send came back 403 `VERIFICATION_REQUIRED`: the wall replaces the composer, no toast.
+  /// The message stays in the list as failed (VF-F4).
+  void _showWallIfRequired(SendOutcome outcome) {
+    if (outcome != SendOutcome.verificationRequired) return;
+    unawaited(ref.read(dateVerificationRaisedProvider(widget.dateId).notifier).raise());
   }
 
   void _scrollToNewest() {
@@ -282,6 +300,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
   }
 
   Widget _buildBody(ChatViewState chatState) {
+    // Messages stay readable behind the wall; only sending is gated (RFC-008 D-6).
+    final walled = ref.watch(dateVerificationWallProvider(widget.dateId));
+
     if (chatState.chat == null) {
       if (chatState.hasError) return _buildLoadError();
       return const Center(child: CircularProgressIndicator());
@@ -297,14 +318,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
         return Column(
           children: [
             if (chatState.status == ChatStatus.open) _NotificationsOffBanner(partnerName: chatState.chat!.partnerName),
-            Expanded(child: _buildConversation(chatState)),
-            if (chatState.status == ChatStatus.open) _buildComposer(chatState) else _buildClosedFooter(),
+            Expanded(child: _buildConversation(chatState, walled: walled)),
+            if (chatState.status != ChatStatus.open)
+              _buildClosedFooter()
+            else if (walled)
+              DateVerificationWall(dateId: widget.dateId, compact: true)
+            else
+              _buildComposer(chatState),
           ],
         );
     }
   }
 
-  Widget _buildConversation(ChatViewState chatState) {
+  Widget _buildConversation(ChatViewState chatState, {required bool walled}) {
     if (chatState.isLoading && chatState.messages.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -334,8 +360,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
           key: ValueKey(message.clientMessageId ?? message.seq),
           message: message,
           seen: seenSeq != null && message.seq == seenSeq,
-          onRetry: chatState.canSend && message.clientMessageId != null
-              ? () => _notifier.retry(message.clientMessageId!)
+          onRetry: chatState.canSend && !walled && message.clientMessageId != null
+              ? () => _retry(message.clientMessageId!)
               : null,
         );
       },

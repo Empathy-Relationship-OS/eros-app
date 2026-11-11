@@ -48,6 +48,7 @@ class FakeDatesRepository implements DatesRepository {
 DateDetail chatDate({
   DateState state = DateState.ready,
   ChatStatus chat = ChatStatus.open,
+  bool verificationRequired = false,
 }) =>
     DateDetail(
       dateId: 42,
@@ -75,6 +76,7 @@ DateDetail chatDate({
       chat: ChatSummary(status: chat, closesAt: DateTime.utc(2026, 11, 7, 21)),
       createdAt: DateTime.utc(2026, 11, 1),
       updatedAt: DateTime.utc(2026, 11, 6),
+      verificationRequired: verificationRequired,
     );
 
 /// Overrides for a chat screen or date detail test.

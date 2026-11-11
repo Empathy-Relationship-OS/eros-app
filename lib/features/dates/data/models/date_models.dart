@@ -205,6 +205,10 @@ class DateSummary {
   final String? venueAddress;
   final String activityName;
 
+  /// The viewer must be selfie-verified before acting on this date (RFC-008 §5.3). Never
+  /// describes the partner.
+  final bool verificationRequired;
+
   const DateSummary({
     required this.dateId,
     required this.matchId,
@@ -217,6 +221,7 @@ class DateSummary {
     this.venueName,
     this.venueAddress,
     required this.activityName,
+    this.verificationRequired = false,
   });
 
   factory DateSummary.fromJson(Map<String, dynamic> json) => DateSummary(
@@ -231,6 +236,8 @@ class DateSummary {
         venueName: json['venueName'] as String?,
         venueAddress: json['venueAddress'] as String?,
         activityName: json['activityName'] as String,
+        // On every row of `GET /dates` once the backend has VF-B5.
+        verificationRequired: json['verificationRequired'] as bool? ?? false,
       );
 }
 

@@ -36,6 +36,10 @@ enum SendOutcome {
   rateLimited,
   notOpen,
 
+  /// 403 `VERIFICATION_REQUIRED`: the sender must verify first (RFC-008 §5.3). The message
+  /// stays as failed, to retry once they have.
+  verificationRequired,
+
   /// Nothing was sent: empty, too long, or the chat isn't open.
   invalid,
 }
@@ -468,6 +472,11 @@ class ChatNotifier extends StateNotifier<ChatViewState> {
           await _refreshStatus();
           return SendOutcome.notOpen;
       }
+    } on VerificationRequiredFailure {
+      if (!mounted) return SendOutcome.failed;
+      _logger.d('ℹ️  Message $clientMessageId not sent: verification required');
+      _markFailed(clientMessageId);
+      return SendOutcome.verificationRequired;
     } catch (e) {
       if (!mounted) return SendOutcome.failed;
       _logger.w('⚠️  Message $clientMessageId not sent');

@@ -205,6 +205,15 @@ class DatesScreen extends ConsumerWidget {
         return;
       }
 
+      // The wall is on the detail screen: the picker isn't reachable behind it (VF-F4)
+      if (dateDetail.verificationRequired) {
+        Navigator.of(context).pushNamed(
+          '/dates/detail',
+          arguments: date.dateId.toString(),
+        );
+        return;
+      }
+
       // Navigate based on state (use fetched dateDetail.state, not potentially stale date.state)
       switch (dateDetail.state) {
         case DateState.awaitingAvailability:
