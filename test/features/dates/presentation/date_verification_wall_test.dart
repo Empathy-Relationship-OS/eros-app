@@ -544,10 +544,12 @@ void main() {
         );
 
         await tester.tap(find.text(label));
-        await tester.pump();
+        // The route's transition. Never pumpAndSettle: the flow's spinners never settle.
+        for (var i = 0; i < 12; i++) {
+          await tester.pump(const Duration(milliseconds: 50));
+        }
 
-        // TODO(VF-F2): expect the consent screen once `startVerification` is wired in.
-        expect(find.text('Selfie verification is coming soon'), findsOneWidget);
+        expect(find.text(VerificationCopy.consentTitle), findsOneWidget);
         await tester.pumpWidget(const SizedBox.shrink());
       }
     });
