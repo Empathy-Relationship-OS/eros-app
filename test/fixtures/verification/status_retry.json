@@ -1,0 +1,7 @@
+{
+  "state": "RETRY",
+  "reason": "POSE_MISSING",
+  "attemptsLeftToday": 2,
+  "canStart": true,
+  "consentVersion": "1"
+}
