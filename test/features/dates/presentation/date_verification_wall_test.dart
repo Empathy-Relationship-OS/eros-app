@@ -553,6 +553,27 @@ void main() {
         await tester.pumpWidget(const SizedBox.shrink());
       }
     });
+
+    testWidgets('closing the flow reads the status again, so a decision made meanwhile shows',
+        (tester) async {
+      final api = wallApi(date: wallDateJson('AWAITING_AVAILABILITY'));
+      await _pumpDetail(tester, api);
+      await tester.tap(find.text(VerificationCopy.verifyNow));
+      for (var i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      // Staff decide while the flow is open, and the server clears the date.
+      api.responses[statusRequest] = statusJson('VERIFIED');
+      api.responses[dateRequest] =
+          wallDateJson('AWAITING_AVAILABILITY', verificationRequired: false);
+      await tester.tap(find.byTooltip(VerificationCopy.closeLabel));
+      await tester.pumpAndSettle();
+
+      expect(find.text(VerificationCopy.consentTitle), findsNothing);
+      expect(_wall, findsNothing);
+      expect(_action(_steps.first), findsOneWidget);
+    });
   });
 
   group('dates list', () {

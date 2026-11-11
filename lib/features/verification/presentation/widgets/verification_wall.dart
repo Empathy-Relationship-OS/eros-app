@@ -64,9 +64,16 @@ class _VerificationWallState extends ConsumerState<VerificationWall> {
     super.dispose();
   }
 
-  /// Every Verify now and Try again tap comes here. The flow refreshes the status when it
-  /// closes, and the listener above takes it from there.
-  Future<void> _startVerification() => startVerification(context, ref);
+  /// Every Verify now and Try again tap comes here.
+  ///
+  /// The flow refreshes the status when an attempt is sent or refused, not when it closes. A
+  /// decision can land while its "we're checking" message is open, so the wall reads the status
+  /// again once the flow is gone, and the listener above takes it from there.
+  Future<void> _startVerification() async {
+    await startVerification(context, ref);
+    if (!mounted) return;
+    await ref.read(verificationStatusNotifierProvider).refresh();
+  }
 
   @override
   Widget build(BuildContext context) {
