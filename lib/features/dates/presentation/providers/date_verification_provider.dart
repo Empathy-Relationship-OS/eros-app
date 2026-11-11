@@ -44,10 +44,15 @@ class DateVerificationNotifier extends AutoDisposeFamilyNotifier<bool, String> {
 
   /// The status turned verified: refetches the date, and takes the wall down once the server
   /// no longer requires verification on it.
+  ///
+  /// Only a successful refetch can take it down. After a failed one, the detail is still the
+  /// copy from before the 403, whose `verificationRequired` may be a stale false.
   Future<void> afterVerified() async {
     await ref.read(dateDetailProvider(arg).notifier).refresh();
     if (_disposed) return;
-    final detail = ref.read(dateDetailProvider(arg)).dateDetail;
-    if (detail != null && !detail.verificationRequired) state = false;
+    final detailState = ref.read(dateDetailProvider(arg));
+    final detail = detailState.dateDetail;
+    if (detailState.hasError || detailState.isLoading || detail == null) return;
+    if (!detail.verificationRequired) state = false;
   }
 }

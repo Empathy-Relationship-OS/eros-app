@@ -1,3 +1,4 @@
+import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/screens/availability_picker_screen.dart';
 import 'package:eros_app/features/dates/presentation/screens/date_detail_screen.dart';
@@ -390,6 +391,28 @@ void main() {
       expect(_wall, findsOneWidget);
       expect(find.byType(SnackBar), findsNothing);
       expect(find.byType(VenueRankingScreen), findsOneWidget);
+    });
+
+    testWidgets('a failed date refetch after verifying keeps the raised wall', (tester) async {
+      final api = wallApi(date: wallDateJson('AWAITING_VENUE_RANKING', verificationRequired: false))
+        ..responses['POST /dates/7/venue-rankings'] = verificationRequiredError;
+      await pumpWall(tester, api, const VenueRankingScreen(dateId: '7'));
+      await tester.tap(find.text(DatesCopy.venueRankingSendButton));
+      await tester.pumpAndSettle();
+      expect(_wall, findsOneWidget);
+
+      // Verified, but the date can't be read: the cached detail still says false.
+      api.responses[statusRequest] = statusJson('VERIFIED');
+      api.responses[dateRequest] = const NetworkException('offline');
+      final dateReads = count(api, dateRequest);
+      await containerOf(tester, find.byType(VenueRankingScreen))
+          .read(verificationStatusNotifierProvider)
+          .refresh();
+      await tester.pumpAndSettle();
+
+      expect(count(api, dateRequest), dateReads + 1);
+      expect(_wall, findsOneWidget);
+      expect(find.text(DatesCopy.venueRankingSendButton), findsNothing);
     });
 
     testWidgets('from confirming presence', (tester) async {
