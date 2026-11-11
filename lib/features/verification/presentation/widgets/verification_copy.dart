@@ -20,8 +20,10 @@ class VerificationCopy {
   /// Starts the flow again after a rejection.
   static const String tryAgain = 'Try again';
 
-  /// Out of attempts: only staff can unlock them (RFC-008 §5.8). Wording from VF-F3.
-  static const String locked = 'We couldn\'t verify you. Contact support and we\'ll help.';
+  /// Out of attempts: only staff can unlock them (RFC-008 §5.8). The wall and the flow's
+  /// result both show it.
+  static const String locked =
+      'You\'ve used all your verification attempts. Contact support and we\'ll help you.';
 
   /// The current step's deadline on the wall. [by] is already formatted for display.
   static String keepYourDate(String by) => 'Do this by $by to keep your date.';
@@ -98,10 +100,7 @@ class VerificationCopy {
   static const String submitted = 'Thanks. We\'re checking your selfie and will let you know.';
   static const String verified = 'You\'re verified';
   static const String somethingWentWrong = 'Something went wrong. Try again.';
-  static const String tryAgain = 'Try again';
   static const String done = 'Done';
-  static const String locked =
-      'You\'ve used all your verification attempts. Contact support and we\'ll help you.';
 
   /// Out of attempts for now (429). [retryAfter] from the server says when they can try again.
   static String limitReached(Duration? retryAfter) {

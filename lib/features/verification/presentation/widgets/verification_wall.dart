@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/verification/domain/models/verification_models.dart';
 import 'package:eros_app/features/verification/presentation/providers/verification_provider.dart';
+import 'package:eros_app/features/verification/presentation/start_verification.dart';
 import 'package:eros_app/features/verification/presentation/widgets/verification_copy.dart';
 
 /// The wall in place of a date action while the viewer isn't verified (RFC-008 §7, VF-F4).
@@ -32,9 +33,6 @@ class VerificationWall extends ConsumerStatefulWidget {
 
 class _VerificationWallState extends ConsumerState<VerificationWall> {
   late final AppLifecycleListener _lifecycle;
-
-  // TODO(VF-F2): remove with the placeholder in [_startVerification].
-  static const String _flowComingSoon = 'Selfie verification is coming soon';
 
   @override
   void initState() {
@@ -67,12 +65,14 @@ class _VerificationWallState extends ConsumerState<VerificationWall> {
   }
 
   /// Every Verify now and Try again tap comes here.
+  ///
+  /// The flow refreshes the status when an attempt is sent or refused, not when it closes. A
+  /// decision can land while its "we're checking" message is open, so the wall reads the status
+  /// again once the flow is gone, and the listener above takes it from there.
   Future<void> _startVerification() async {
-    // TODO(VF-F2): call `startVerification(context, ref)` from
-    // lib/features/verification/presentation/start_verification.dart once VF-F2 merges.
-    ScaffoldMessenger.maybeOf(context)
-      ?..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text(_flowComingSoon)));
+    await startVerification(context, ref);
+    if (!mounted) return;
+    await ref.read(verificationStatusNotifierProvider).refresh();
   }
 
   @override
@@ -165,10 +165,10 @@ class _VerificationWallState extends ConsumerState<VerificationWall> {
       child: Row(
         children: [
           Expanded(
+            // No line limit: at large text sizes the locked message needs more than two lines,
+            // and its last words tell the user what to do.
             child: Text(
               text,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
             ),
           ),

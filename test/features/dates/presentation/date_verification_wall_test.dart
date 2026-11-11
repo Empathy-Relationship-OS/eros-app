@@ -13,7 +13,10 @@ import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/safety/presentation/widgets/safety_copy.dart';
 import 'package:eros_app/features/verification/presentation/providers/verification_provider.dart';
 import 'package:eros_app/features/verification/presentation/widgets/verification_copy.dart';
+import 'package:eros_app/features/verification/presentation/widgets/verification_wall.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../safety/fake_safety_api.dart';
@@ -544,12 +547,35 @@ void main() {
         );
 
         await tester.tap(find.text(label));
-        await tester.pump();
+        // The route's transition. Never pumpAndSettle: the flow's spinners never settle.
+        for (var i = 0; i < 12; i++) {
+          await tester.pump(const Duration(milliseconds: 50));
+        }
 
-        // TODO(VF-F2): expect the consent screen once `startVerification` is wired in.
-        expect(find.text('Selfie verification is coming soon'), findsOneWidget);
+        expect(find.text(VerificationCopy.consentTitle), findsOneWidget);
         await tester.pumpWidget(const SizedBox.shrink());
       }
+    });
+
+    testWidgets('closing the flow reads the status again, so a decision made meanwhile shows',
+        (tester) async {
+      final api = wallApi(date: wallDateJson('AWAITING_AVAILABILITY'));
+      await _pumpDetail(tester, api);
+      await tester.tap(find.text(VerificationCopy.verifyNow));
+      for (var i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      // Staff decide while the flow is open, and the server clears the date.
+      api.responses[statusRequest] = statusJson('VERIFIED');
+      api.responses[dateRequest] =
+          wallDateJson('AWAITING_AVAILABILITY', verificationRequired: false);
+      await tester.tap(find.byTooltip(VerificationCopy.closeLabel));
+      await tester.pumpAndSettle();
+
+      expect(find.text(VerificationCopy.consentTitle), findsNothing);
+      expect(_wall, findsNothing);
+      expect(_action(_steps.first), findsOneWidget);
     });
   });
 
@@ -588,6 +614,31 @@ void main() {
 
       await pumpCard(tester, summary('booked', verificationRequired: true));
       expect(find.text(VerificationCopy.verifyToContinue), findsNothing);
+    });
+  });
+
+  group('compact wall', () {
+    testWidgets('the locked message is shown in full at large text sizes', (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(ProviderScope(
+        overrides: wallOverrides(wallApi(
+          date: wallDateJson('READY'),
+          status: statusJson('LOCKED'),
+        )),
+        child: MaterialApp(
+          home: MediaQuery.withClampedTextScaling(
+            minScaleFactor: 2,
+            maxScaleFactor: 2,
+            child: const Scaffold(body: VerificationWall(compact: true)),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      final text = tester.renderObject<RenderParagraph>(find.text(VerificationCopy.locked));
+      expect(text.didExceedMaxLines, isFalse);
     });
   });
 }
