@@ -248,7 +248,8 @@ class Language {
 /// Legacy alias for backward compatibility
 typedef AppLanguage = Language;
 
-/// List of all available app languages
+/// The languages a user can say they speak (the profile's spoken languages and preferred
+/// language). The languages the app itself can be shown in are [AppLanguages.all].
 /// Reference: screenshots/login/create-user/84623CD3-B81C-46DF-84FD-5F2C81BC72D9_1_105_c.jpeg
 class Languages {
   Languages._();
@@ -336,5 +337,36 @@ class Languages {
   }
 }
 
-/// Legacy alias for backward compatibility
-typedef AppLanguages = Languages;
+/// The languages the app itself can be shown in: the app settings picker and the sign-in
+/// screens' selector, a local setting. Only English and Spanish for now, since Texas comes
+/// first and those two cover nearly everyone there. Add the rest when the app is actually
+/// translated into them.
+///
+/// This is not the list of languages a user speaks, which is [Languages.all] (RFC-004 D-15).
+class AppLanguages {
+  AppLanguages._();
+
+  static const List<Language> all = [
+    Language(
+      code: 'en',
+      name: 'English',
+      nativeName: 'English',
+      flag: '🇬🇧',
+    ),
+    Language(
+      code: 'es',
+      name: 'Spanish',
+      nativeName: 'Español',
+      flag: '🇪🇸',
+    ),
+  ];
+
+  /// A code the app can't be shown in (for example one saved before the list was cut) gives
+  /// English.
+  static Language getByCode(String code) {
+    return all.firstWhere(
+      (lang) => lang.code == code,
+      orElse: () => all.first,
+    );
+  }
+}
