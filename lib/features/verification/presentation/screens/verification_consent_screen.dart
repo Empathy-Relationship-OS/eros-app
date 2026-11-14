@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/verification/presentation/widgets/verification_copy.dart';
 
@@ -30,9 +31,12 @@ class VerificationConsentScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
+        // The app's AppBar theme is white on orange, icons and status bar included. On this
+        // light background both need to be dark.
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          icon: const Icon(Icons.close, color: AppColors.textPrimary),
           tooltip: VerificationCopy.closeLabel,
           onPressed: onClose,
         ),
