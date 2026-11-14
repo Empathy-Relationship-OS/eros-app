@@ -196,14 +196,17 @@ class _SelfieCameraScreenState extends ConsumerState<SelfieCameraScreen>
               ),
             )
           else
-            SafeArea(child: Align(alignment: Alignment.topLeft, child: _closeButton())),
+            SafeArea(child: _closeButton()),
         ],
       ),
     );
   }
 
+  /// Top left in both places: above the pose card, and over a camera problem, where the Stack
+  /// gives it the whole screen. Centred vertically there, it sat on the message.
   Widget _closeButton() => Align(
-        alignment: Alignment.centerLeft,
+        alignment: Alignment.topLeft,
+        heightFactor: 1,
         child: IconButton(
           icon: const Icon(Icons.close, color: Colors.white),
           tooltip: VerificationCopy.closeLabel,

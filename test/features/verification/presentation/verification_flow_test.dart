@@ -1,4 +1,5 @@
 import 'package:eros_app/core/network/api_client_provider.dart';
+import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/notifications/push_host.dart';
 import 'package:eros_app/features/verification/data/selfie_camera.dart';
 import 'package:eros_app/features/verification/data/selfie_processor.dart';
@@ -271,6 +272,31 @@ void main() {
       expect(find.text(VerificationCopy.noFrontCamera), findsOneWidget);
       await tapText(tester, VerificationCopy.closeLabel);
       await expectFlowClosed(tester);
+    });
+
+    testWidgets('over a camera problem the close button is at the top, clear of the message',
+        (tester) async {
+      cameras.failWith = SelfieCameraIssue.noFrontCamera;
+      await openFlow(tester);
+      await tapText(tester, VerificationCopy.consentAgree);
+
+      final close = tester.getRect(find.byTooltip(VerificationCopy.closeLabel));
+      final message = tester.getRect(find.text(VerificationCopy.noFrontCamera));
+      expect(close.bottom, lessThanOrEqualTo(message.top));
+      expect(close.top, lessThan(100));
+    });
+
+    testWidgets('the consent screen\'s close button is dark on its light background',
+        (tester) async {
+      await openFlow(tester);
+
+      final icon = tester.widget<Icon>(
+        find.descendant(
+          of: find.byTooltip(VerificationCopy.closeLabel),
+          matching: find.byIcon(Icons.close),
+        ),
+      );
+      expect(icon.color, AppColors.textPrimary);
     });
 
     testWidgets('going to the background releases the camera and coming back reopens it',
