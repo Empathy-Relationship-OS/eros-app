@@ -466,10 +466,10 @@ class _LanguageSelectionPopupWithCallback extends ConsumerWidget {
             Flexible(
               child: ListView.builder(
                 shrinkWrap: true,
-                itemCount: Languages.all.length,
+                itemCount: AppLanguages.all.length,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemBuilder: (context, index) {
-                  final language = Languages.all[index];
+                  final language = AppLanguages.all[index];
                   final currentLanguageCode = settingsAsync.when(
                     data: (state) => state.settings.language.code,
                     loading: () => 'en',

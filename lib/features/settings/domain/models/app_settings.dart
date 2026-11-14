@@ -14,7 +14,7 @@ class AppSettings {
   factory AppSettings.defaultSettings() {
     return AppSettings(
       notificationsEnabled: false,
-      language: Languages.all.first, // English
+      language: AppLanguages.all.first, // English
     );
   }
 
@@ -22,7 +22,7 @@ class AppSettings {
   factory AppSettings.fromJson(Map<String, dynamic> json) {
     return AppSettings(
       notificationsEnabled: json['notificationsEnabled'] as bool? ?? false,
-      language: Language.fromCode(json['languageCode'] as String? ?? 'en'),
+      language: AppLanguages.getByCode(json['languageCode'] as String? ?? 'en'),
     );
   }
 
