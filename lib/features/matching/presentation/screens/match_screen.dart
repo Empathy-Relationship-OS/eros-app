@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/match_preferences/presentation/providers/match_preferences_provider.dart';
 import 'package:eros_app/features/match_preferences/presentation/screens/match_preferences_screen.dart';
 import 'package:eros_app/features/match_preferences/presentation/widgets/interested_in_sheet.dart';
@@ -78,7 +77,6 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Muse'),
         automaticallyImplyLeading: false,
@@ -123,11 +121,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
   Widget _buildBody(MatchBatchState state, MatchBatchNotifier notifier) {
     // Loading state
     if (state.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          color: AppColors.primary,
-        ),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     // Behind the Interested in sheet: nothing to show until it's answered

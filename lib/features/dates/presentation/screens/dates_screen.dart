@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/date_preferences/presentation/widgets/date_preferences_prompts.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
@@ -10,6 +9,7 @@ import 'package:eros_app/features/dates/presentation/widgets/dates_empty_state.d
 import 'package:eros_app/features/dates/presentation/widgets/date_card.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 import 'package:eros_app/features/dates/presentation/widgets/error_state_widget.dart';
+import 'package:eros_app/features/dates/presentation/widgets/how_muse_works_sheet.dart';
 import 'package:eros_app/features/dates/presentation/screens/date_history_screen.dart';
 
 /// Dates tab screen - Shows active dates or empty state
@@ -29,7 +29,6 @@ class DatesScreen extends ConsumerWidget {
     final authService = ref.watch(authServiceProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Dates'),
         automaticallyImplyLeading: false,
@@ -143,21 +142,9 @@ class DatesScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(24.0),
             child: Center(
               child: TextButton.icon(
-                onPressed: () {
-                  // Show "How Muse works" bottom sheet
-                  _showHowItWorks(context);
-                },
+                onPressed: () => HowMuseWorksSheet.show(context),
                 icon: const Icon(Icons.info_outline, size: 18),
-                label: Text(
-                  DatesCopy.howMuseWorksButton,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary,
-                ),
+                label: const Text(DatesCopy.howMuseWorksButton),
               ),
             ),
           ),
@@ -246,132 +233,5 @@ class DatesScreen extends ConsumerWidget {
         SnackBar(content: Text('Failed to load date: $e')),
       );
     }
-  }
-
-  void _showHowItWorks(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (context, scrollController) => SingleChildScrollView(
-          controller: scrollController,
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle bar
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Title
-              const Text(
-                'How Muse works',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Explainer paragraphs
-              _buildExplainerParagraph(
-                title: 'Pick the times you\'re both free',
-                body:
-                    'Both of you pick times you\'re free over the next three weeks. We find the earliest one that works for you both. If nothing overlaps you each get one more go.',
-              ),
-
-              _buildExplainerParagraph(
-                title: 'You both commit with a small token deposit',
-                body:
-                    'A small token deposit from each of you keeps the date real. If either of you cancels after both have paid, the person cancelling loses their deposit and the other gets theirs back. Miss the deadline and everything is refunded.',
-              ),
-
-              _buildExplainerParagraph(
-                title: 'Rank three venues, we book the spot',
-                body:
-                    'We\'ve shortlisted venues near you both. Rank them and we\'ll book whichever you agree on most.',
-              ),
-
-              _buildExplainerParagraph(
-                title: 'Confirm you\'re coming the day before',
-                body:
-                    'The day before, we\'ll ask you both to confirm you\'re still coming. Final check before you meet.',
-              ),
-
-              _buildExplainerParagraph(
-                title: 'Meet up and enjoy your date',
-                body:
-                    'You\'re all set. Enjoy your date and get to know each other in person.',
-              ),
-
-              _buildExplainerParagraph(
-                title: 'Cancellations',
-                body:
-                    'Before both deposits are paid, anyone who paid gets a full refund. After both paid, the person cancelling loses their deposit and the other gets theirs back. Cancelling within 24 hours of the date is flagged as a late cancellation.',
-              ),
-
-              const SizedBox(height: 24),
-
-              // Close button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Got it'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExplainerParagraph({
-    required String title,
-    required String body,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            body,
-            style: const TextStyle(
-              fontSize: 15,
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

@@ -87,6 +87,7 @@ class _DateFactRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTappable = onTap != null;
+    final textTheme = Theme.of(context).textTheme;
 
     return InkWell(
       onTap: onTap,
@@ -100,7 +101,7 @@ class _DateFactRow extends StatelessWidget {
             Icon(
               icon,
               size: 20,
-              color: AppColors.primary,
+              color: AppColors.textSecondary,
             ),
 
             const SizedBox(width: 12),
@@ -112,25 +113,18 @@ class _DateFactRow extends StatelessWidget {
                 children: [
                   Text(
                     text,
-                    style: TextStyle(
-                      fontSize: 15,
+                    style: textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w500,
-                      color: isTappable
-                          ? AppColors.primary
-                          : AppColors.textPrimary,
-                      decoration: isTappable
-                          ? TextDecoration.underline
-                          : TextDecoration.none,
+                      color: isTappable ? AppColors.primaryDeep : AppColors.textPrimary,
+                      decoration: isTappable ? TextDecoration.underline : TextDecoration.none,
+                      decorationColor: AppColors.primaryDeep,
                     ),
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 2),
                     Text(
                       subtitle!,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                      ),
+                      style: textTheme.bodySmall,
                     ),
                   ],
                 ],

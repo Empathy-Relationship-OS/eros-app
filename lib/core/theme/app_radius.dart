@@ -19,4 +19,7 @@ class AppRadius {
 
   /// The top corners of a bottom sheet.
   static const double sheet = 28;
+
+  /// Pills: tags, badges, progress bars.
+  static const double pill = 999;
 }
