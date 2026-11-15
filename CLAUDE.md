@@ -311,12 +311,20 @@ Reference `openapi/documentation.yaml` for complete API specification:
 
 ## Design System
 
-### Color Scheme
-Based on `screenshots/logo/eros_discord_icon.jpg`:
-- **Primary**: Warm orange tones
-- **Background**: White
-- **Text**: Black
-- Replace any purple/red tones from reference screenshots with orange
+### Theme ("Golden Hour")
+The look comes from `lib/core/theme/`: `AppColors` (palette), `AppRadius` (corners) and
+`AppTheme.lightTheme` (every component). The typeface is Plus Jakarta Sans, bundled in
+`assets/fonts/`.
+
+- **Background**: warm cream (`AppColors.background`). Cards are flat white on it.
+- **Text**: warm ink (`AppColors.textPrimary`), never pure black.
+- **Coral** (`AppColors.primary`) is for fills. Text on coral is ink (`AppColors.textOnPrimary`),
+  never white. Coral-coloured text, links and icons use `AppColors.primaryDeep`.
+- **One app bar**: the page colour with ink text, from the theme. Don't give a screen its own.
+- Take colours, radii and text styles from the theme (`Theme.of(context).textTheme`,
+  `AppColors`, `AppRadius`). Don't type a hex colour, a radius or a font size into a widget, and
+  don't restyle a button with `styleFrom` to change its colours or shape.
+- Replace any purple/red tones from reference screenshots with the palette above
 
 ### UI/UX Guidelines
 - Reference designs in `screenshots/` directory
