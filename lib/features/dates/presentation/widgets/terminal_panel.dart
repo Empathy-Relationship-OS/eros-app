@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_theme.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/core/time/server_clock_provider.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/safety/data/models/safety_models.dart';
@@ -80,12 +82,10 @@ class TerminalPanel extends ConsumerWidget {
     final body = refundUnderReview ? SafetyCopy.depositOnHold : content.body;
     final canReport = _canReport(ref.watch(serverClockProvider).now());
 
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -93,56 +93,31 @@ class TerminalPanel extends ConsumerWidget {
           // Heading
           Text(
             content.heading,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
+            style: textTheme.headlineMedium,
             textAlign: TextAlign.center,
           ),
 
           if (body.isNotEmpty) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             // Body
             Text(
               body,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
+              style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],
 
           // Back to dates button (for completed and expired)
           if (content.showButton && onBackToDates != null) ...[
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: onBackToDates,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryOrange,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Back to dates',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+            const SizedBox(height: 20),
+            AppButton(label: 'Back to dates', onPressed: onBackToDates),
           ],
 
           if (canReport) ...[
             const SizedBox(height: 8),
             TextButton(
               onPressed: onReport,
-              style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+              style: AppTheme.quietLink,
               child: const Text(SafetyCopy.report),
             ),
           ],

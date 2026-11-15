@@ -327,6 +327,8 @@ The look comes from `lib/core/theme/`: `AppColors` (palette), `AppRadius` (corne
 - Shared widgets in `lib/core/widgets/`: `AppButton` (primary, secondary, outline; one height,
   a loading state) for every button that isn't a text link, and `AppPromptCard` for a
   dismissible nudge at the top of a tab. A plain `Card` is the themed card.
+- A text button that is the way out ("Not now", "Go back", "Cancel this date") takes
+  `style: AppTheme.quietLink`, so it is muted and never competes with the screen's action.
 - Bottom sheets take their shape from the theme; pass `showDragHandle: true` instead of drawing
   a handle.
 - Replace any purple/red tones from reference screenshots with the palette above

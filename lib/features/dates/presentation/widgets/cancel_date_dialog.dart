@@ -127,7 +127,6 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(report.errorMessage ?? SafetyCopy.alreadyEndedOnCancel),
-          behavior: SnackBarBehavior.floating,
         ),
       );
     }
@@ -146,7 +145,6 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(error),
-          behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.error,
         ),
       );
@@ -172,7 +170,6 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Something changed. Updated.'),
-          behavior: SnackBarBehavior.floating,
         ),
       );
     } else if (cancelState.errorMessage != null) {
@@ -181,7 +178,6 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(cancelState.errorMessage!),
-          behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.error,
         ),
       );
@@ -203,8 +199,7 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
               content: Text(
                 '${TokenAmount.formatTokenAmount(refund.amount)} refunded to your wallet.',
               ),
-              behavior: SnackBarBehavior.floating,
-            ),
+                ),
           );
         }
       }
@@ -222,26 +217,12 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
 
     return AlertDialog(
       scrollable: true,
-      title: Text(
-        copy.title,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-        ),
-      ),
+      title: Text(copy.title),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            copy.body,
-            style: const TextStyle(
-              fontSize: 15,
-              color: AppColors.textPrimary,
-              height: 1.5,
-            ),
-          ),
+          Text(copy.body),
           const SizedBox(height: 16),
           _CancelChoice(
             safety: _safety,
@@ -254,16 +235,13 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
               const SizedBox(height: 12),
               Text(
                 report!.errorMessage!,
-                style: const TextStyle(fontSize: 14, color: AppColors.error),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.error),
               ),
             ],
           ] else
             TextField(
               controller: _reasonController,
-              decoration: const InputDecoration(
-                hintText: 'Add a note (optional)',
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(hintText: 'Add a note (optional)'),
               maxLines: 2,
               maxLength: UserTextLimits.cancellationReason,
               enabled: !cancelState.isLoading,
@@ -276,15 +254,7 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
           onPressed: isLoading
               ? null
               : () => Navigator.of(context).pop(),
-          style: TextButton.styleFrom(
-            foregroundColor: AppColors.primary,
-          ),
-          child: const Text(
-            'Keep the date',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          child: const Text('Keep the date'),
         ),
 
         // Cancel date (destructive action)
@@ -335,7 +305,6 @@ class _CancelChoice extends StatelessWidget {
               title: Text(label),
               contentPadding: EdgeInsets.zero,
               dense: true,
-              activeColor: AppColors.primary,
             ),
         ],
       ),

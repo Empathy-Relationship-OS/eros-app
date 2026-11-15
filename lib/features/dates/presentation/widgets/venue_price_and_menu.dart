@@ -39,29 +39,23 @@ class VenuePriceAndMenu extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
               symbol,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
             ),
           ),
         if (url != null)
           TextButton(
             onPressed: () => _openMenu(context, url),
             style: TextButton.styleFrom(
-              foregroundColor: AppColors.primaryOrange,
               minimumSize: const Size(44, 44),
               padding: EdgeInsets.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             child: const Text(
               DatesCopy.venueSeeMenu,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                decoration: TextDecoration.underline,
-              ),
+              style: TextStyle(decoration: TextDecoration.underline),
             ),
           ),
       ],

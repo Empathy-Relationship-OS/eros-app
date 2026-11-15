@@ -94,6 +94,12 @@ class AppTheme {
     );
   }
 
+  /// A text button for the way out of something ("Not now", "Go back", "Cancel this date"):
+  /// muted, so it never competes with the screen's action. Pass it as a [TextButton]'s style.
+  static final ButtonStyle quietLink = TextButton.styleFrom(
+    foregroundColor: AppColors.textSecondary,
+  );
+
   static final RoundedRectangleBorder _buttonShape = RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(AppRadius.button),
   );

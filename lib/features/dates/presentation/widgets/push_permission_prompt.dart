@@ -4,6 +4,8 @@ import 'package:eros_app/core/notifications/messaging_client.dart';
 import 'package:eros_app/core/notifications/push_prompt_store.dart';
 import 'package:eros_app/core/notifications/push_service.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_theme.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
 
 /// Asks for push permission once per user, straight after they confirm presence (RFC-006 §6.4),
@@ -51,39 +53,23 @@ class PushPermissionSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.notifications_active_outlined, size: 36, color: AppColors.accentOrange),
+            const Icon(Icons.notifications_active_outlined, size: 36, color: AppColors.primaryDeep),
             const SizedBox(height: 16),
             Text(
               DatesCopy.pushPromptBody(partnerName),
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
+            AppButton(
+              label: DatesCopy.pushPromptTurnOn,
               onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryOrange,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text(
-                DatesCopy.pushPromptTurnOn,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
             ),
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.textSecondary,
-                minimumSize: const Size.fromHeight(44),
-              ),
-              child: const Text(DatesCopy.pushPromptLater, style: TextStyle(fontSize: 15)),
+              style: AppTheme.quietLink,
+              child: const Text(DatesCopy.pushPromptLater),
             ),
           ],
         ),

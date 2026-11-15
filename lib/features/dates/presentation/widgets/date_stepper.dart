@@ -28,16 +28,16 @@ class DateStepper extends StatelessWidget {
     if (compact) {
       return _buildCompactStepper();
     } else {
-      return _buildFullStepper();
+      return _buildFullStepper(context);
     }
   }
 
   /// Full vertical stepper for detail screen
-  Widget _buildFullStepper() {
+  Widget _buildFullStepper(BuildContext context) {
     return Column(
       children: [
         for (var i = 0; i < timeline.length; i++)
-          _buildStepRow(timeline[i], isLast: i == timeline.length - 1),
+          _buildStepRow(context, timeline[i], isLast: i == timeline.length - 1),
       ],
     );
   }
@@ -53,7 +53,7 @@ class DateStepper extends StatelessWidget {
             Container(
               width: 16,
               height: 1,
-              color: _getStepColor(timeline[i].status).withValues(alpha: 0.3),
+              color: _getRailColor(timeline[i].status),
             ),
         ],
       ],
@@ -61,8 +61,9 @@ class DateStepper extends StatelessWidget {
   }
 
   /// Build a single step row (full variant)
-  Widget _buildStepRow(TimelineStepDto step, {required bool isLast}) {
-    final color = _getStepColor(step.status);
+  Widget _buildStepRow(BuildContext context, TimelineStepDto step, {required bool isLast}) {
+    final textTheme = Theme.of(context).textTheme;
+    final isCurrent = step.status == StepStatus.current;
     final isStrikethrough = step.status == StepStatus.skipped;
 
     // UI-12: Accessibility - semantic label for screen readers
@@ -81,7 +82,7 @@ class DateStepper extends StatelessWidget {
                 Expanded(
                   child: Container(
                     width: 2,
-                    color: color.withValues(alpha: 0.3),
+                    color: _getRailColor(step.status),
                     margin: const EdgeInsets.symmetric(vertical: 4),
                   ),
                 ),
@@ -90,9 +91,10 @@ class DateStepper extends StatelessWidget {
 
           const SizedBox(width: 12),
 
-          // Label and detail
+          // Label and detail. A step with another below it is tall enough for the rail to show.
           Expanded(
-            child: Padding(
+            child: Container(
+              constraints: BoxConstraints(minHeight: isLast ? 0 : 60),
               padding: const EdgeInsets.only(bottom: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,24 +103,17 @@ class DateStepper extends StatelessWidget {
                   Text(
                     step.label,
                     semanticsLabel: semanticLabel,
-                    style: TextStyle(
-                      fontSize: step.status == StepStatus.current ? 16 : 14,
-                      fontWeight: step.status == StepStatus.current
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                      color: isStrikethrough
-                          ? AppColors.textTertiary
-                          : AppColors.textPrimary,
-                      decoration: isStrikethrough
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
+                    style: (isCurrent ? textTheme.titleMedium : textTheme.bodyMedium)?.copyWith(
+                      color: isStrikethrough ? AppColors.textTertiary : AppColors.textPrimary,
+                      decoration:
+                          isStrikethrough ? TextDecoration.lineThrough : TextDecoration.none,
                     ),
                   ),
 
                   // Deposit detail (if applicable)
                   if (step.step == TimelineStep.deposit &&
                       (step.you != null || step.partner != null))
-                    _buildDepositDetail(step),
+                    _buildDepositDetail(context, step),
                 ],
               ),
             ),
@@ -129,7 +124,9 @@ class DateStepper extends StatelessWidget {
   }
 
   /// Build deposit status detail row
-  Widget _buildDepositDetail(TimelineStepDto step) {
+  Widget _buildDepositDetail(BuildContext context, TimelineStepDto step) {
+    final style = Theme.of(context).textTheme.bodySmall;
+
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Column(
@@ -138,18 +135,12 @@ class DateStepper extends StatelessWidget {
           if (step.you != null)
             Text(
               'You: ${_depositStatusText(step.you!)}',
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
+              style: style,
             ),
           if (step.partner != null)
             Text(
               'Partner: ${_depositStatusText(step.partner!)}',
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
+              style: style,
             ),
         ],
       ),
@@ -174,20 +165,26 @@ class DateStepper extends StatelessWidget {
     final isComplete = step.status == StepStatus.complete;
     final isCurrent = step.status == StepStatus.current;
 
+    // Done is filled, the current step is a tint circle with a deep coral ring, the rest are
+    // quiet outlines.
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isComplete ? color : Colors.transparent,
+        color: isComplete
+            ? color
+            : isCurrent
+                ? AppColors.primaryTint
+                : Colors.transparent,
         border: Border.all(
-          color: color,
+          color: isComplete || isCurrent ? color : AppColors.border,
           width: isCurrent ? 2 : 1,
         ),
       ),
       child: Icon(
         isComplete ? Icons.check : icon,
-        size: size * 0.6,
+        size: size * 0.55,
         color: isComplete ? AppColors.white : color,
       ),
     );
@@ -197,15 +194,17 @@ class DateStepper extends StatelessWidget {
   Color _getStepColor(StepStatus status) {
     switch (status) {
       case StepStatus.complete:
-        return AppColors.primary;
       case StepStatus.current:
-        return AppColors.primary;
+        return AppColors.primaryDeep;
       case StepStatus.pending:
-        return AppColors.textTertiary;
       case StepStatus.skipped:
         return AppColors.textTertiary;
     }
   }
+
+  /// The line below a step: coral once the step is done.
+  Color _getRailColor(StepStatus status) =>
+      status == StepStatus.complete ? AppColors.primaryOrangeLight : AppColors.divider;
 
   /// UI-12: Convert status to screen reader-friendly string
   String _statusToSemanticString(StepStatus status) {

@@ -4,6 +4,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:eros_app/core/time/server_clock.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/chat/presentation/widgets/date_chat_entry.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
@@ -51,7 +53,6 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
     final authService = ref.watch(authServiceProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: SafeArea(
         child: _buildBody(context, detailState, authService),
       ),
@@ -190,16 +191,11 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.divider),
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -222,14 +218,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
               },
               child: Container(
                 width: 140,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
-                  ),
-                  color: AppColors.primaryOrangeLight,
-                ),
-                clipBehavior: Clip.antiAlias,
+                color: AppColors.primaryTint,
                 child: dateDetail.partnerThumbnailUrl != null
                     ? CachedNetworkImage(
                         imageUrl: dateDetail.partnerThumbnailUrl!,
@@ -238,11 +227,12 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                         errorWidget: (context, url, error) => _buildInitialAvatar(
+                          context,
                           dateDetail.partnerName,
                           140,
                         ),
                       )
-                    : _buildInitialAvatar(dateDetail.partnerName, 140),
+                    : _buildInitialAvatar(context, dateDetail.partnerName, 140),
               ),
             ),
 
@@ -257,17 +247,14 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
                     // Partner name
                     Text(
                       dateDetail.partnerName,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
+                      style: Theme.of(context).textTheme.displaySmall,
                     ),
                     const SizedBox(height: 12),
 
                     // Date facts inline
                     if (dateDetail.scheduledStart != null) ...[
                       _buildInlineFact(
+                        context,
                         Icons.calendar_today,
                         _formatDateTime(dateDetail.scheduledStart!),
                       ),
@@ -275,6 +262,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
                     ],
                     if (dateDetail.venueName != null) ...[
                       _buildInlineFact(
+                        context,
                         Icons.location_on,
                         dateDetail.venueName!,
                       ),
@@ -289,6 +277,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
                       const SizedBox(height: 8),
                     ],
                     _buildInlineFact(
+                      context,
                       Icons.local_bar,
                       dateDetail.activityName,
                     ),
@@ -338,15 +327,9 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
+      decoration: const BoxDecoration(
+        color: AppColors.cardBackground,
+        border: Border(top: BorderSide(color: AppColors.divider)),
       ),
       // The chat entry sits outside the state switch, so it survives a venue change (RFC-006 §6.1)
       child: Column(
@@ -421,17 +404,14 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
         if (dateDetail.availabilityRound == 2) ...[
           Text(
             'No overlap last time. Round 2 of 2.',
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
+            style: _hintStyle(context),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
         ],
-        ElevatedButton(
+        AppButton(
+          label: 'Pick your times',
           onPressed: () => _navigateToAvailabilityPicker(context, dateDetail),
-          child: const Text('Pick your times'),
         ),
       ],
     );
@@ -485,10 +465,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           const SizedBox(height: 12),
           Text(
             'You\'ve committed. Waiting for ${dateDetail.partnerName}.',
-            style: const TextStyle(
-              fontSize: 15,
-              color: AppColors.textSecondary,
-            ),
+            style: _hintStyle(context),
             textAlign: TextAlign.center,
           ),
         ],
@@ -509,9 +486,9 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           ),
           const SizedBox(height: 12),
         ],
-        ElevatedButton(
+        AppButton(
+          label: 'Commit ${TokenAmount.formatTokenAmount(dateDetail.tokenCost)}',
           onPressed: () => _showDepositSheet(context, dateDetail, currentUid),
-          child: Text('Commit ${TokenAmount.formatTokenAmount(dateDetail.tokenCost)}'),
         ),
       ],
     );
@@ -536,17 +513,15 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
         if (hasRanked) ...[
           Text(
             'Waiting for ${dateDetail.partnerName}\'s picks',
-            style: const TextStyle(
-              fontSize: 15,
-              color: AppColors.textSecondary,
-            ),
+            style: _hintStyle(context),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
         ],
-        ElevatedButton(
+        AppButton(
+          label: hasRanked ? 'View your ranking' : 'Rank venues',
+          kind: hasRanked ? AppButtonKind.secondary : AppButtonKind.primary,
           onPressed: () => _navigateToVenueRanking(context, dateDetail, hasRanked),
-          child: Text(hasRanked ? 'View your ranking' : 'Rank venues'),
         ),
       ],
     );
@@ -558,10 +533,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
     if (youConfirmed) {
       return Text(
         'Waiting for ${dateDetail.partnerName} to confirm',
-        style: const TextStyle(
-          fontSize: 15,
-          color: AppColors.textSecondary,
-        ),
+        style: _hintStyle(context),
         textAlign: TextAlign.center,
       );
     }
@@ -572,24 +544,18 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
       children: [
         Text(
           'Confirm you\'ll be there',
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppColors.textSecondary,
-          ),
+          style: _hintStyle(context),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),
-        ElevatedButton(
+        AppButton(
+          label: 'I\'m coming',
           onPressed: () {
             // TODO: Confirm presence (UI-8)
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Presence confirmation coming soon'),
-                behavior: SnackBarBehavior.floating,
-              ),
+              const SnackBar(content: Text('Presence confirmation coming soon')),
             );
           },
-          child: const Text('I\'m coming'),
         ),
       ],
     );
@@ -598,10 +564,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
   Widget _buildReadyCTA(BuildContext context, DateDetail dateDetail) {
     return Text(
       'You\'re both confirmed. See you there.',
-      style: const TextStyle(
-        fontSize: 15,
-        color: AppColors.textSecondary,
-      ),
+      style: _hintStyle(context),
       textAlign: TextAlign.center,
     );
   }
@@ -647,47 +610,18 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      showDragHandle: true,
       builder: (context) => Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle bar
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Explanation text
-            Text(
-              explanation,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textPrimary,
-                height: 1.5,
-              ),
-            ),
-
+            Text(explanation, style: Theme.of(context).textTheme.bodyLarge),
             const SizedBox(height: 24),
-
-            // Close button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Got it'),
-              ),
+            AppButton(
+              label: 'Got it',
+              onPressed: () => Navigator.of(context).pop(),
             ),
           ],
         ),
@@ -795,7 +729,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
 
   // Helper methods for header
 
-  Widget _buildInlineFact(IconData icon, String text) {
+  Widget _buildInlineFact(BuildContext context, IconData icon, String text) {
     return Row(
       children: [
         Icon(
@@ -807,10 +741,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
         Flexible(
           child: Text(
             text,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
+            style: _hintStyle(context),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -827,21 +758,24 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
     return '${dayFormat.format(local)} - ${timeFormat.format(local)}';
   }
 
-  Widget _buildInitialAvatar(String name, double size) {
+  /// The quiet line above or in place of a step's button.
+  TextStyle? _hintStyle(BuildContext context) =>
+      Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary);
+
+  Widget _buildInitialAvatar(BuildContext context, String name, double size) {
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
 
     return Container(
       width: size,
       height: size,
-      color: AppColors.primaryOrangeLight,
+      color: AppColors.primaryTint,
       child: Center(
         child: Text(
           initial,
-          style: TextStyle(
-            fontSize: size * 0.4,
-            fontWeight: FontWeight.bold,
-            color: AppColors.white,
-          ),
+          style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                fontSize: size * 0.4,
+                color: AppColors.primaryDeep,
+              ),
         ),
       ),
     );

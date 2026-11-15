@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/theme/app_theme.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/date_preferences/presentation/widgets/date_preferences_prompts.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
@@ -82,23 +85,7 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
         ref.watch(dateVerificationWallProvider(widget.dateId));
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          DatesCopy.venueRankingTitle,
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      backgroundColor: AppColors.background,
+      appBar: AppBar(title: const Text(DatesCopy.venueRankingTitle)),
       body: walled ? _buildVerificationWall(context) : venueOptionsAsync.when(
         data: (venueOptions) {
           // Initialize ordered venues - always sync with latest data
@@ -120,6 +107,7 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
 
           final isReadOnly = widget.readOnly || venueOptions.myRankings.isNotEmpty;
           final isSingleVenue = _orderedVenues.length == 1;
+          final textTheme = Theme.of(context).textTheme;
 
           return Column(
             children: [
@@ -135,10 +123,7 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
                         isSingleVenue
                             ? DatesCopy.venueRankingSingleCaption
                             : DatesCopy.venueRankingSubtitle,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                        ),
+                        style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
                       ),
                       if (widget.rankingDeadline != null) ...[
                         const SizedBox(height: 12),
@@ -153,8 +138,8 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.textTertiary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
+                          color: AppColors.surfaceMuted,
+                          borderRadius: BorderRadius.circular(AppRadius.input),
                         ),
                         child: Row(
                           children: [
@@ -167,10 +152,7 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
                             Expanded(
                               child: Text(
                                 DatesCopy.venueRankingReadOnly('Partner'),
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary,
-                                ),
+                                style: textTheme.bodySmall,
                               ),
                             ),
                           ],
@@ -193,73 +175,34 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
               // Footer button
               if (!isReadOnly)
                 Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  decoration: const BoxDecoration(
                     color: AppColors.cardBackground,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, -2),
-                      ),
-                    ],
+                    border: Border(top: BorderSide(color: AppColors.divider)),
                   ),
                   child: SafeArea(
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isSubmitting ? null : _handleSubmit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryOrange,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: AppColors.disabled,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AppButton(
+                          label: isSingleVenue
+                              ? DatesCopy.venueRankingConfirmSingle
+                              : DatesCopy.venueRankingSendButton,
+                          loading: _isSubmitting,
+                          onPressed: _handleSubmit,
                         ),
-                        child: _isSubmitting
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white),
-                                ),
-                              )
-                            : Text(
-                                isSingleVenue
-                                    ? DatesCopy.venueRankingConfirmSingle
-                                    : DatesCopy.venueRankingSendButton,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                      ),
+                        const SizedBox(height: 4),
+                        // Cancel button
+                        TextButton(
+                          onPressed: _isSubmitting ? null : () => _showCancelDialog(context),
+                          style: AppTheme.quietLink,
+                          child: const Text('Cancel this date'),
+                        ),
+                        const SizedBox(height: 4),
+                      ],
                     ),
                   ),
                 ),
-                // Cancel button (only show if not read-only)
-                if (!isReadOnly)
-                  Container(
-                    padding: const EdgeInsets.only(top: 8, bottom: 16),
-                    child: Center(
-                      child: TextButton(
-                        onPressed: _isSubmitting ? null : () => _showCancelDialog(context),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.textSecondary,
-                        ),
-                        child: const Text(
-                          'Cancel this date',
-                          style: TextStyle(
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
             ],
           );
         },
@@ -315,7 +258,7 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
           builder: (context, child) {
             return Material(
               elevation: 8,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               child: child,
             );
           },
@@ -342,6 +285,8 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
     int? index, // Required for ReorderableDragStartListener
     required bool isDraggable,
   }) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Padding(
       key: key,
       padding: const EdgeInsets.only(bottom: 12),
@@ -349,10 +294,8 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: AppColors.cardBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppColors.textTertiary.withValues(alpha: 0.2),
-          ),
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(color: AppColors.divider),
         ),
         child: Row(
           children: [
@@ -361,16 +304,15 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
               width: 32,
               height: 32,
               decoration: const BoxDecoration(
-                color: AppColors.primaryOrange,
+                color: AppColors.primary,
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
               child: Text(
                 rank.toString(),
-                style: const TextStyle(
-                  fontSize: 14,
+                style: textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: AppColors.textOnPrimary,
                 ),
               ),
             ),
@@ -378,7 +320,7 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
 
             // Venue thumbnail image
             ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppRadius.input),
               child: venue.thumbnailUrl != null
                   ? _buildAuthenticatedImage(venue.thumbnailUrl!)
                   : _buildImagePlaceholder(),
@@ -392,11 +334,7 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
                 children: [
                   Text(
                     venue.name,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
+                    style: textTheme.titleMedium,
                   ),
                   VenuePriceAndMenu(
                     priceRange: venue.priceRange,
@@ -405,23 +343,16 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
                   const SizedBox(height: 4),
                   Text(
                     venue.address,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: textTheme.bodySmall,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
                   InkWell(
                     onTap: () => _openMaps(venue.address),
-                    child: const Text(
+                    child: Text(
                       'Open in Maps',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.primaryOrange,
-                      ),
+                      style: textTheme.labelMedium?.copyWith(color: AppColors.primaryDeep),
                     ),
                   ),
                 ],
@@ -469,8 +400,8 @@ class _VenueRankingScreenState extends ConsumerState<VenueRankingScreen> {
       width: 80,
       height: 80,
       decoration: BoxDecoration(
-        color: AppColors.textTertiary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        color: AppColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(AppRadius.input),
       ),
       child: const Icon(
         Icons.restaurant,
@@ -671,7 +602,6 @@ class _VenueAssignedResultScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -687,7 +617,7 @@ class _VenueAssignedResultScreen extends StatelessWidget {
                 ),
                 child: const Icon(
                   Icons.location_on,
-                  color: Colors.white,
+                  color: AppColors.white,
                   size: 40,
                 ),
               ),
@@ -695,44 +625,23 @@ class _VenueAssignedResultScreen extends StatelessWidget {
               Text(
                 DatesCopy.venueAssignedHeading(venueName),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+                style: Theme.of(context).textTheme.displaySmall,
               ),
               const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Pop back 2 screens: VenueAssignedResultScreen + VenueRankingScreen
-                    // This returns us to the date detail screen
-                    int popCount = 0;
-                    Navigator.of(context).popUntil((route) {
-                      if (popCount < 2) {
-                        popCount++;
-                        return false; // Keep popping
-                      }
-                      return true; // Stop popping
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryOrange,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    DatesCopy.venueAssignedButton,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+              AppButton(
+                label: DatesCopy.venueAssignedButton,
+                onPressed: () {
+                  // Pop back 2 screens: VenueAssignedResultScreen + VenueRankingScreen
+                  // This returns us to the date detail screen
+                  int popCount = 0;
+                  Navigator.of(context).popUntil((route) {
+                    if (popCount < 2) {
+                      popCount++;
+                      return false; // Keep popping
+                    }
+                    return true; // Stop popping
+                  });
+                },
               ),
             ],
           ),

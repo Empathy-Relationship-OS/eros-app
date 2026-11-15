@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_list_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/dates_copy.dart';
@@ -37,7 +38,6 @@ class _DateHistoryScreenState extends ConsumerState<DateHistoryScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(DatesCopy.historyTitle),
         bottom: TabBar(
@@ -175,17 +175,15 @@ class _HistoryDateRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return ListTile(
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: _buildAvatar(),
+      leading: _buildAvatar(textTheme),
       title: Text(
         date.partnerName,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-        ),
+        style: textTheme.titleMedium,
       ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,62 +191,47 @@ class _HistoryDateRow extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             date.activityName,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
+            style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
           if (date.scheduledStart != null) ...[
             const SizedBox(height: 2),
             Text(
               DateFormats.formatDateTime(date.scheduledStart!),
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textTertiary,
-              ),
+              style: textTheme.bodySmall,
             ),
           ],
         ],
       ),
-      trailing: _buildStatePill(),
+      trailing: _buildStatePill(textTheme),
     );
   }
 
-  Widget _buildAvatar() {
+  Widget _buildAvatar(TextTheme textTheme) {
     final initial =
         date.partnerName.isNotEmpty ? date.partnerName[0].toUpperCase() : '?';
 
     return CircleAvatar(
       radius: 24,
-      backgroundColor: AppColors.primaryOrangeLight,
+      backgroundColor: AppColors.primaryTint,
       child: Text(
         initial,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: AppColors.white,
-        ),
+        style: textTheme.headlineSmall?.copyWith(color: AppColors.primaryDeep),
       ),
     );
   }
 
-  Widget _buildStatePill() {
+  Widget _buildStatePill(TextTheme textTheme) {
     final (pillText, tone) = _getStatePill();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _getToneColor(tone), width: 1),
-        color: _getToneColor(tone).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        color: AppColors.surfaceMuted,
       ),
       child: Text(
         pillText,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: _getToneColor(tone),
-        ),
+        style: textTheme.labelMedium?.copyWith(color: _getToneColor(tone)),
       ),
     );
   }
@@ -271,7 +254,7 @@ class _HistoryDateRow extends StatelessWidget {
       case 'neutral':
         return AppColors.textPrimary;
       case 'muted':
-        return AppColors.textTertiary;
+        return AppColors.textSecondary;
       default:
         return AppColors.textSecondary;
     }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_theme.dart';
 import 'package:eros_app/features/dates/presentation/providers/date_verification_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_formats.dart';
 import 'package:eros_app/features/verification/presentation/widgets/verification_wall.dart';
@@ -68,8 +68,8 @@ class DateVerificationWallBody extends StatelessWidget {
             Center(
               child: TextButton(
                 onPressed: onCancel,
-                style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
-                child: const Text('Cancel this date', style: TextStyle(fontSize: 15)),
+                style: AppTheme.quietLink,
+                child: const Text('Cancel this date'),
               ),
             ),
           ],

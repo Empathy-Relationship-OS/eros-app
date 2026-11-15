@@ -115,30 +115,20 @@ class _DeadlineCountdownState extends State<DeadlineCountdown> {
     final isUrgent = widget.deadline != null &&
         widget.deadline!.difference(ServerClock.instance.now()).inHours < 24;
 
+    final color = isExpired
+        ? AppColors.error
+        : isUrgent
+            ? AppColors.warning
+            : AppColors.textSecondary;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          Icons.access_time,
-          size: 16,
-          color: isExpired
-              ? AppColors.error
-              : isUrgent
-                  ? AppColors.warning
-                  : AppColors.textSecondary,
-        ),
+        Icon(Icons.access_time, size: 16, color: color),
         const SizedBox(width: 6),
         Text(
           isExpired ? 'Refreshing' : _displayText,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: isExpired
-                ? AppColors.error
-                : isUrgent
-                    ? AppColors.warning
-                    : AppColors.textSecondary,
-          ),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: color),
         ),
       ],
     );
