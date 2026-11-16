@@ -263,30 +263,63 @@ class Transaction {
     };
   }
 
-  /// Whether this is a credit (positive) transaction
-  bool get isCredit => amount > 0;
+  /// A refund of a token purchase: the money went back to the card and the tokens left the
+  /// wallet. The backend stores it like a deposit refund (type REFUND, a positive amount), but
+  /// a deposit refund names its date and puts tokens back, and this one names no date.
+  bool get isPurchaseRefund => type == TransactionType.refund && relatedDateId == null;
+
+  /// Whether this transaction added tokens to the wallet
+  bool get isCredit => amount > 0 && !isPurchaseRefund;
 
   /// Get formatted amount with sign
   String get formattedAmount {
-    final sign = amount > 0 ? '+' : '';
+    final sign = isCredit ? '+' : '';
     return '$sign${amount.abs().toStringAsFixed(0)}';
   }
 
-  /// Get formatted money amount if applicable
+  /// "3 tokens", or "1 token".
+  String get formattedTokens {
+    final count = amount.abs().toStringAsFixed(0);
+    return count == '1' ? '1 token' : '$count tokens';
+  }
+
+  /// The money paid, in the currency it was paid in ("£20.00", "$27.00"), if any was.
   String? get formattedMoneyAmount {
     if (amountPaid == null) return null;
-    return '£${(amountPaid! / 100).toStringAsFixed(2)}';
+    final value = (amountPaid! / 100).toStringAsFixed(2);
+    final currency = paymentCurrency?.toUpperCase();
+    return switch (currency) {
+      null || 'GBP' => '£$value',
+      'USD' => '\$$value',
+      'EUR' => '€$value',
+      _ => '$value $currency',
+    };
   }
 
   /// Get display text for the transaction
   String get displayText => description;
 
-  /// Whether this transaction can be refunded
+  /// The package a purchase bought, worked out from its token count. Null for anything that
+  /// isn't a purchase, or a purchase that matches no package sold today.
+  TokenPackageType? get package {
+    if (type != TransactionType.purchase) return null;
+    for (final package in TokenPackageType.values) {
+      if (package.tokens == amount) return package;
+    }
+    return null;
+  }
+
+  /// Whether a refund can be asked for at all. The backend has the last word: it also checks
+  /// the purchase's age and whether any of its tokens were used.
   bool get canRefund {
     return type == TransactionType.purchase &&
         status != TransactionStatus.refunded &&
         stripePaymentIntentId != null;
   }
+
+  /// Whether the purchase was made no more than [window] before [now]. The backend refuses a
+  /// refund on the same test.
+  bool isWithin(Duration window, DateTime now) => !createdAt.isBefore(now.subtract(window));
 }
 
 /// Transaction history response with pagination
@@ -388,10 +421,30 @@ class PurchaseResponse {
   }
 }
 
+/// What a refund response says happened.
+enum RefundOutcome {
+  /// The refund is with the payment provider and the tokens have left the wallet.
+  accepted,
+
+  /// The backend refused and changed nothing.
+  refused,
+
+  /// The response doesn't settle it either way.
+  unconfirmed,
+}
+
 /// Refund response from backend
 class RefundResponse {
+  /// The refund's own transaction, not the purchase's.
   final int transactionId;
+
+  /// Despite the name, the payment provider's id for the refund. Empty until the provider has
+  /// taken it, and "error" when the backend refused.
   final String clientSecret;
+
+  /// The provider's status for a new refund ("succeeded", "pending"). When the same
+  /// idempotency key is sent again, the stored refund's status instead ("COMPLETED",
+  /// "REFUND_FAILED").
   final String status;
 
   RefundResponse({
@@ -406,6 +459,19 @@ class RefundResponse {
       clientSecret: json['clientSecret'] as String,
       status: json['status'] as String,
     );
+  }
+
+  /// A 201 is not always a yes. A refusal sent again with the same key comes back as a 201
+  /// with status REFUND_FAILED, and a refund the provider never took has no provider id.
+  RefundOutcome get outcome {
+    final normalised = status.toUpperCase();
+    if (normalised == 'REFUND_FAILED') return RefundOutcome.refused;
+
+    const accepted = {'SUCCEEDED', 'PENDING', 'COMPLETED', 'REFUNDED'};
+    final hasProviderId = clientSecret.isNotEmpty && clientSecret != 'error';
+    if (accepted.contains(normalised) && hasProviderId) return RefundOutcome.accepted;
+
+    return RefundOutcome.unconfirmed;
   }
 
   Map<String, dynamic> toJson() {
