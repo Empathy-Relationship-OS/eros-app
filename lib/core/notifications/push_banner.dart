@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/core/notifications/messaging_client.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 
@@ -70,9 +71,9 @@ class _PushBannerState extends State<PushBanner> {
                 color: AppColors.cardBackground,
                 elevation: 6,
                 shadowColor: AppColors.shadow,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppRadius.input),
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(AppRadius.input),
                   onTap: widget.onTap,
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(minHeight: 56),
@@ -80,7 +81,7 @@ class _PushBannerState extends State<PushBanner> {
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       child: Row(
                         children: [
-                          const Icon(Icons.chat_bubble_outline, color: AppColors.primary, size: 22),
+                          const Icon(Icons.chat_bubble_outline, color: AppColors.primaryDeep, size: 22),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -92,18 +93,16 @@ class _PushBannerState extends State<PushBanner> {
                                     title,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textPrimary,
-                                    ),
+                                    style: Theme.of(context).textTheme.titleMedium,
                                   ),
                                 if (body.isNotEmpty)
                                   Text(
                                     body,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          color: AppColors.textSecondary,
+                                        ),
                                   ),
                               ],
                             ),

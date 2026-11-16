@@ -761,7 +761,7 @@ class _Notes extends StatelessWidget {
       key: const Key('scenarioNotes'),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.secondaryOrange.withValues(alpha: 0.35),
+        color: AppColors.primaryTint,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.primaryOrange),
       ),

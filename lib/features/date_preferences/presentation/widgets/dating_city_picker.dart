@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/date_preferences/data/date_preferences_repository.dart';
@@ -73,16 +74,16 @@ class _CityChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       showCheckmark: false,
+      // Coral when chosen, so the label stays ink
       selectedColor: AppColors.primary,
-      backgroundColor: Colors.grey[100],
-      side: BorderSide(color: selected ? AppColors.primary : Colors.grey[300]!, width: 2),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      backgroundColor: AppColors.cardBackground,
+      side: BorderSide(color: selected ? AppColors.primary : AppColors.border, width: 1.5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      labelStyle: TextStyle(
-        color: selected ? Colors.white : Colors.black,
-        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-        fontSize: 16,
-      ),
+      labelStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+          ),
     );
   }
 }
@@ -99,7 +100,7 @@ class _Message extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
         children: [
-          Text(text, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[700])),
+          Text(text, textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
           if (onRetry != null) ...[
             const SizedBox(height: 12),
             ElevatedButton(onPressed: onRetry, child: const Text(_Copy.retry)),

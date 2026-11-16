@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/matching/domain/models/match_models.dart';
@@ -32,7 +34,6 @@ class _Last24HoursScreenState extends ConsumerState<Last24HoursScreen> {
     final state = ref.watch(last24HoursProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Last 24 Hours'),
         centerTitle: true,
@@ -75,7 +76,7 @@ class _Last24HoursScreenState extends ConsumerState<Last24HoursScreen> {
             Icon(
               Icons.history,
               size: 80,
-              color: AppColors.textSecondary.withValues(alpha: 0.6),
+              color: AppColors.textSecondary,
             ),
             const SizedBox(height: 24),
             Text(
@@ -128,19 +129,14 @@ class _Last24HoursScreenState extends ConsumerState<Last24HoursScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            ElevatedButton.icon(
+            AppButton(
+              label: 'Retry',
+              icon: Icons.refresh,
+              kind: AppButtonKind.secondary,
+              expand: false,
               onPressed: () {
                 ref.read(last24HoursProvider.notifier).fetchLast24HourPasses();
               },
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-              ),
             ),
           ],
         ),
@@ -234,18 +230,12 @@ class _Last24HourCardState extends ConsumerState<_Last24HourCard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.divider),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

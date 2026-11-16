@@ -128,7 +128,6 @@ class _AuthLoadingScreenState extends ConsumerState<AuthLoadingScreen> {
         _determineInitialRoute();
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -137,16 +136,12 @@ class _AuthLoadingScreenState extends ConsumerState<AuthLoadingScreen> {
               Icon(
                 Icons.favorite_rounded,
                 size: 80,
-                color: AppColors.primaryOrange,
+                color: AppColors.primaryDeep,
               ),
               const SizedBox(height: 24),
-              const Text(
+              Text(
                 'Muse',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
+                style: Theme.of(context).textTheme.displayMedium,
               ),
               const SizedBox(height: 48),
               // Loading indicator

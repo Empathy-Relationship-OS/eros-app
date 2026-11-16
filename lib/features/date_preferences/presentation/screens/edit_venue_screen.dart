@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/date_preferences/domain/models/date_preference_options.dart';
 import 'package:eros_app/features/date_preferences/domain/models/date_preferences.dart';
 import 'package:eros_app/features/date_preferences/domain/models/section_patch.dart';
@@ -134,12 +133,7 @@ class _PriceChip extends StatelessWidget {
       selected: isSelected,
       onSelected: (_) => onTap(),
       showCheckmark: false,
-      selectedColor: AppColors.primary,
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : Colors.black,
-        fontWeight: FontWeight.bold,
-        fontSize: 16,
-      ),
+      labelStyle: Theme.of(context).textTheme.titleMedium,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     );
   }

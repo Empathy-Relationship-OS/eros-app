@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../widgets/language_selector_button.dart';
 import 'auth_method_selection_screen.dart';
@@ -12,7 +14,6 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -35,7 +36,7 @@ class WelcomeScreen extends StatelessWidget {
                 width: 200,
                 height: 200,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppRadius.card),
                   image: const DecorationImage(
                     image: AssetImage('assets/images/logo.jpg'),
                     fit: BoxFit.cover,
@@ -49,7 +50,7 @@ class WelcomeScreen extends StatelessWidget {
               Text(
                 'Muse',
                 style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                  color: AppColors.primaryOrange,
+                  color: AppColors.primaryDeep,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -69,19 +70,9 @@ class WelcomeScreen extends StatelessWidget {
               const Spacer(flex: 3),
 
               // Start Dating Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AuthMethodSelectionScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text('Start Dating'),
-                ),
+              AppButton(
+                label: 'Start Dating',
+                onPressed: () { Navigator.push( context, MaterialPageRoute( builder: (context) => const AuthMethodSelectionScreen(), ), ); },
               ),
 
               const SizedBox(height: 32),

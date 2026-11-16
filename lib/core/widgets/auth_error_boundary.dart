@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
@@ -81,7 +83,6 @@ class _ErrorFallback extends StatelessWidget {
         errorMessage.toLowerCase().contains('access denied');
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -118,50 +119,17 @@ class _ErrorFallback extends StatelessWidget {
 
               // Action buttons
               if (onRetry != null) ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: onRetry,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'Try Again',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
+                AppButton(label: 'Try Again', onPressed: onRetry),
                 const SizedBox(height: 12),
               ],
 
               // Always show sign-out button
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton(
+                child: AppButton(
+                  label: 'Sign Out',
+                  kind: AppButtonKind.outline,
                   onPressed: onSignOut,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    side: const BorderSide(color: AppColors.error),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'Sign Out',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
                 ),
               ),
 
@@ -171,10 +139,10 @@ class _ErrorFallback extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryOrangeLight.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppColors.primaryTint,
+                    borderRadius: BorderRadius.circular(AppRadius.input),
                     border: Border.all(
-                      color: AppColors.primaryOrangeLight.withValues(alpha: 0.3),
+                      color: AppColors.primaryTint,
                     ),
                   ),
                   child: Row(
@@ -183,7 +151,7 @@ class _ErrorFallback extends StatelessWidget {
                       const Icon(
                         Icons.info_outline,
                         size: 20,
-                        color: AppColors.primaryOrange,
+                        color: AppColors.primaryDeep,
                       ),
                       const SizedBox(width: 12),
                       Expanded(

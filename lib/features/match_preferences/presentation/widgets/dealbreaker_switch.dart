@@ -29,10 +29,9 @@ class DealbreakerSwitch extends StatelessWidget {
       onChanged: onChanged,
       title: const Text(
         DealbreakerCopy.title,
-        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+        style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
       ),
-      subtitle: Text(DealbreakerCopy.help, style: TextStyle(color: Colors.grey[700])),
-      activeTrackColor: AppColors.primary,
+      subtitle: Text(DealbreakerCopy.help, style: TextStyle(color: AppColors.textSecondary)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 24),
     );
   }
@@ -50,7 +49,7 @@ class DealbreakerSubtitle extends StatelessWidget {
     return Text(
       dealbreaker ? DealbreakerCopy.dealbreaker : DealbreakerCopy.preference,
       key: const Key('dealbreaker-subtitle'),
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
     );
   }
 }

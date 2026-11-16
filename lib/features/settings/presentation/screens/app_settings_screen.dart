@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/constants/languages.dart';
@@ -45,15 +46,8 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(
-          'App Settings',
-          style: TextStyle(color: AppColors.textPrimary),
-        ),
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        title: const Text('App Settings'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -193,7 +187,6 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
               ref.read(appSettingsProvider.notifier).openDeviceSettings();
               Navigator.pop(context);
             },
-            style: TextButton.styleFrom(foregroundColor: AppColors.primaryOrange),
             child: const Text('Open Settings'),
           ),
         ],
@@ -230,14 +223,8 @@ class _SettingsSection extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: AppColors.cardBackground,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: AppColors.divider),
           ),
           child: Column(
             children: children,
@@ -311,7 +298,6 @@ class _NotificationToggleTile extends StatelessWidget {
             Switch(
               value: isEnabled,
               onChanged: onChanged,
-              activeTrackColor: AppColors.primaryOrange,
             ),
         ],
       ),
@@ -339,7 +325,7 @@ class _LanguageSelectorTile extends StatelessWidget {
           : () {
               _showLanguageSelector(context);
             },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.input),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(
@@ -377,7 +363,7 @@ class _LanguageSelectorTile extends StatelessWidget {
                       children: [
                         Text(
                           currentLanguage.flag,
-                          style: const TextStyle(fontSize: 16),
+                          style: Theme.of(context).textTheme.bodyLarge,
                         ),
                         const SizedBox(width: 8),
                         Text(
@@ -444,7 +430,7 @@ class _LanguageSelectionPopupWithCallback extends ConsumerWidget {
               height: 4,
               decoration: BoxDecoration(
                 color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(AppRadius.small),
               ),
             ),
 
@@ -480,7 +466,7 @@ class _LanguageSelectionPopupWithCallback extends ConsumerWidget {
                   return ListTile(
                     leading: Text(
                       language.flag,
-                      style: const TextStyle(fontSize: 24),
+                      style: Theme.of(context).textTheme.displaySmall,
                     ),
                     title: Text(
                       language.nativeName,
@@ -499,7 +485,7 @@ class _LanguageSelectionPopupWithCallback extends ConsumerWidget {
                     trailing: isSelected
                         ? const Icon(
                             Icons.check_circle,
-                            color: AppColors.primaryOrange,
+                            color: AppColors.primaryDeep,
                           )
                         : null,
                     onTap: () {
@@ -509,7 +495,7 @@ class _LanguageSelectionPopupWithCallback extends ConsumerWidget {
                       Navigator.pop(context);
                     },
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadius.input),
                     ),
                   );
                 },

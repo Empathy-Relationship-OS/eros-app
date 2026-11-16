@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/match_preferences/domain/models/filter_patch.dart';
 import 'package:eros_app/features/match_preferences/domain/models/filter_values.dart';
 import 'package:eros_app/features/match_preferences/domain/models/match_preferences.dart';
@@ -142,14 +141,11 @@ class FilterChoiceTile extends StatelessWidget {
       onChanged: onTap == null ? null : (_) => onTap!(),
       title: Text(
         label,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: Colors.black,
-        ),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
       ),
       controlAffinity: ListTileControlAffinity.leading,
-      activeColor: AppColors.primary,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
     );
   }

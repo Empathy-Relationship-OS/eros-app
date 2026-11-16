@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'otp_verification_screen.dart';
@@ -104,7 +106,7 @@ class _PhoneNumberScreenState extends State<PhoneNumberScreen> {
                   ),
                   decoration: BoxDecoration(
                     border: Border.all(color: AppColors.border, width: 1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppRadius.input),
                   ),
                   child: InternationalPhoneNumberInput(
                     onInputChanged: (PhoneNumber number) {
@@ -125,10 +127,7 @@ class _PhoneNumberScreenState extends State<PhoneNumberScreen> {
                     ),
                     ignoreBlank: false,
                     autoValidateMode: AutovalidateMode.disabled,
-                    selectorTextStyle: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 16,
-                    ),
+                    selectorTextStyle: Theme.of(context).textTheme.bodyLarge,
                     initialValue: _phoneNumber,
                     textFieldController: _phoneController,
                     formatInput: true,
@@ -159,23 +158,10 @@ class _PhoneNumberScreenState extends State<PhoneNumberScreen> {
                 const Spacer(),
 
                 // Continue Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isValid && !_isLoading ? _sendOTP : null,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.white,
-                              ),
-                            ),
-                          )
-                        : const Text('Continue'),
-                  ),
+                AppButton(
+                  label: 'Continue',
+                  loading: _isLoading,
+                  onPressed: _isValid ? _sendOTP : null,
                 ),
 
                 const SizedBox(height: 16),

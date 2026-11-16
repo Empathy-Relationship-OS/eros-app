@@ -46,9 +46,9 @@ class _PasswordCreationScreenState
       case PasswordStrength.weak:
         return AppColors.error;
       case PasswordStrength.medium:
-        return Colors.orange;
+        return AppColors.warning;
       case PasswordStrength.strong:
-        return Colors.green;
+        return AppColors.success;
     }
   }
 

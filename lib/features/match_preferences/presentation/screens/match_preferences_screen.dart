@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/match_preferences/data/match_preferences_repository.dart';
@@ -67,16 +68,14 @@ class MatchPreferencesScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           tooltip: _Copy.back,
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(_Copy.title, style: TextStyle(color: Colors.black)),
+        title: const Text(_Copy.title),
       ),
       body: body,
     );
@@ -96,7 +95,7 @@ class _Hub extends ConsumerWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       children: [
-        Text(_Copy.intro, style: TextStyle(fontSize: 15, color: Colors.grey[700])),
+        Text(_Copy.intro, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary)),
         if (!bannerDismissed) ...[
           const SizedBox(height: 16),
           _DealbreakersBanner(
@@ -105,8 +104,11 @@ class _Hub extends ConsumerWidget {
         ],
         const SizedBox(height: 16),
         Material(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          color: AppColors.cardBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            side: const BorderSide(color: AppColors.divider),
+          ),
           clipBehavior: Clip.antiAlias,
           child: Column(
             children: [
@@ -144,19 +146,19 @@ class _DealbreakersBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(left: 16),
       decoration: BoxDecoration(
-        color: AppColors.secondaryOrange.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.primaryTint,
+        borderRadius: BorderRadius.circular(AppRadius.input),
       ),
       child: Row(
         children: [
-          const Icon(Icons.tune, color: AppColors.accentOrange),
+          const Icon(Icons.tune, color: AppColors.primaryDeep),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Text(
                 _Copy.banner,
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
           ),
@@ -210,35 +212,31 @@ class _FilterRow extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         summary,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
                       ),
                     ],
                   ),
                 ),
                 if (dealbreaker) ...[
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     _Copy.dealbreaker,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.accentOrange,
-                    ),
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: AppColors.accentOrange,
+                        ),
                   ),
                 ],
                 const SizedBox(width: 8),
-                Icon(Icons.chevron_right, color: Colors.grey[400]),
+                Icon(Icons.chevron_right, color: AppColors.textTertiary),
               ],
             ),
           ),

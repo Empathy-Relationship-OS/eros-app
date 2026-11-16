@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 
 /// A full-screen message in the verification flow: an outcome, a refusal or a camera problem.
@@ -30,14 +31,14 @@ class VerificationMessageView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = dark ? Colors.white : AppColors.textPrimary;
+    final textColor = dark ? AppColors.white : AppColors.textPrimary;
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Spacer(),
-          ExcludeSemantics(child: Icon(icon, size: 56, color: AppColors.primary)),
+          ExcludeSemantics(child: Icon(icon, size: 56, color: AppColors.primaryDeep)),
           const SizedBox(height: 24),
           if (title != null) ...[
             Semantics(
@@ -45,7 +46,7 @@ class VerificationMessageView extends StatelessWidget {
               child: Text(
                 title!,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: textColor),
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(color: textColor),
               ),
             ),
             const SizedBox(height: 16),
@@ -53,10 +54,10 @@ class VerificationMessageView extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, height: 1.5, color: textColor),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: textColor, height: 1.5),
           ),
           const Spacer(),
-          ElevatedButton(onPressed: onAction, child: Text(actionLabel)),
+          AppButton(label: actionLabel, onPressed: onAction),
           if (secondaryLabel != null) ...[
             const SizedBox(height: 8),
             TextButton(

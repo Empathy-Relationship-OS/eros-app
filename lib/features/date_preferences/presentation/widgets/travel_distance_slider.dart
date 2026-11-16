@@ -60,11 +60,7 @@ class TravelDistanceSlider extends StatelessWidget {
         Text(
           _label(index),
           key: const Key('travel-distance-value'),
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.primary,
-          ),
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.primaryDeep),
         ),
         if (stops.isNotEmpty) ...[
           Slider(
@@ -73,7 +69,6 @@ class TravelDistanceSlider extends StatelessWidget {
             divisions: stops.length,
             label: _label(index),
             semanticFormatterCallback: (value) => _label(value.round()),
-            activeColor: AppColors.primary,
             onChanged: (value) {
               final i = value.round();
               if (i != index) onChanged(i < stops.length ? stops[i].meters : null);
@@ -85,10 +80,10 @@ class TravelDistanceSlider extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 ExcludeSemantics(
-                  child: Text(stops.first.label, style: TextStyle(color: Colors.grey[600])),
+                  child: Text(stops.first.label, style: TextStyle(color: AppColors.textSecondary)),
                 ),
                 ExcludeSemantics(
-                  child: Text(_Copy.anywhere, style: TextStyle(color: Colors.grey[600])),
+                  child: Text(_Copy.anywhere, style: TextStyle(color: AppColors.textSecondary)),
                 ),
               ],
             ),
@@ -96,7 +91,7 @@ class TravelDistanceSlider extends StatelessWidget {
         ],
         if (note != null) ...[
           const SizedBox(height: 12),
-          Text(note!, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+          Text(note!, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),
         ],
       ],
     );
