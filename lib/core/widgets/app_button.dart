@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_colors.dart';
 
 /// How much weight a button carries on its screen.
 enum AppButtonKind {
@@ -10,6 +11,9 @@ enum AppButtonKind {
 
   /// The way out, or the lesser of two: an ink outline.
   outline,
+
+  /// Something that can't be undone, on the step that confirms it: red with white text.
+  destructive,
 }
 
 /// The app's button. Its colours, shape and text come from [AppTheme]; this adds the things a
@@ -50,6 +54,11 @@ class AppButton extends StatelessWidget {
 
   static const double minHeight = 52;
 
+  static final ButtonStyle _destructiveColors = ElevatedButton.styleFrom(
+    backgroundColor: AppColors.error,
+    foregroundColor: AppColors.white,
+  );
+
   @override
   Widget build(BuildContext context) {
     final style = ButtonStyle(
@@ -68,6 +77,12 @@ class AppButton extends StatelessWidget {
         return FilledButton.tonal(onPressed: action, style: style, child: child);
       case AppButtonKind.outline:
         return OutlinedButton(onPressed: action, style: style, child: child);
+      case AppButtonKind.destructive:
+        return ElevatedButton(
+          onPressed: action,
+          style: style.merge(_destructiveColors),
+          child: child,
+        );
     }
   }
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/features/wallet/domain/models/wallet_models.dart';
 import 'package:eros_app/features/wallet/presentation/providers/purchase_provider.dart';
 import 'package:eros_app/features/wallet/presentation/screens/payment_screen.dart';
@@ -12,27 +14,19 @@ class PurchaseTokensScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final purchaseState = ref.watch(purchaseProvider);
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: () {
             ref.read(purchaseProvider.notifier).reset();
             Navigator.of(context).pop();
           },
         ),
-        title: const Text(
-          'Add tokens',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text('Add tokens'),
       ),
       body: SafeArea(
         child: Column(
@@ -45,29 +39,19 @@ class PurchaseTokensScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Header
-                    const Text(
-                      'Select a package',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
+                    Text('Select a package', style: textTheme.displaySmall),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'Choose the number of tokens you\'d like to add to your wallet',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: AppColors.textSecondary,
-                      ),
+                      style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
 
                     // Package cards
                     ...TokenPackageType.values.map((package) {
                       final isSelected = purchaseState.selectedPackage == package;
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
+                        padding: const EdgeInsets.only(bottom: 12.0),
                         child: _PackageCard(
                           package: package,
                           isSelected: isSelected,
@@ -78,7 +62,7 @@ class PurchaseTokensScreen extends ConsumerWidget {
                       );
                     }),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 12),
 
                     // Terms and conditions
                     Row(
@@ -91,7 +75,6 @@ class PurchaseTokensScreen extends ConsumerWidget {
                                 .read(purchaseProvider.notifier)
                                 .setAcceptedTerms(value ?? false);
                           },
-                          activeColor: AppColors.primary,
                         ),
                         Expanded(
                           child: GestureDetector(
@@ -100,14 +83,11 @@ class PurchaseTokensScreen extends ConsumerWidget {
                                   .read(purchaseProvider.notifier)
                                   .setAcceptedTerms(!purchaseState.acceptedTerms);
                             },
-                            child: const Padding(
-                              padding: EdgeInsets.only(top: 12.0),
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 12.0),
                               child: Text(
                                 'I accept the terms and conditions. All token purchases are non-refundable.',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: AppColors.textSecondary,
-                                ),
+                                style: textTheme.bodyMedium,
                               ),
                             ),
                           ),
@@ -115,37 +95,24 @@ class PurchaseTokensScreen extends ConsumerWidget {
                       ],
                     ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 20),
 
                     // Info box
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                        ),
+                        color: AppColors.primaryTint,
+                        borderRadius: BorderRadius.circular(AppRadius.input),
                       ),
-                      child: const Column(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'About tokens',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          SizedBox(height: 8),
+                          Text('About tokens', style: textTheme.titleMedium),
+                          const SizedBox(height: 6),
                           Text(
                             'Each token represents a commitment to a date. When you match with someone and agree to meet, you\'ll both use one token.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textSecondary,
-                            ),
+                            style: textTheme.bodyMedium,
                           ),
                         ],
                       ),
@@ -157,44 +124,19 @@ class PurchaseTokensScreen extends ConsumerWidget {
 
             // Bottom CTA
             Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              decoration: const BoxDecoration(
                 color: AppColors.cardBackground,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
+                border: Border(top: BorderSide(color: AppColors.divider)),
               ),
               child: SafeArea(
                 top: false,
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: purchaseState.canProceed
-                        ? () => _handleContinue(context, ref)
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      disabledBackgroundColor: AppColors.textSecondary.withValues(alpha: 0.3),
-                    ),
-                    child: Text(
-                      purchaseState.selectedPackage != null
-                          ? 'Continue to payment (${purchaseState.selectedPackage!.formattedPrice})'
-                          : 'Continue to payment',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                child: AppButton(
+                  label: purchaseState.selectedPackage != null
+                      ? 'Continue to payment (${purchaseState.selectedPackage!.formattedPrice})'
+                      : 'Continue to payment',
+                  onPressed:
+                      purchaseState.canProceed ? () => _handleContinue(context, ref) : null,
                 ),
               ),
             ),
@@ -250,83 +192,53 @@ class _PackageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isBestValue = package == TokenPackageType.mega;
+    final textTheme = Theme.of(context).textTheme;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.1)
-              : AppColors.cardBackground,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primary
-                : Colors.transparent,
-            width: 2,
+    return Semantics(
+      selected: isSelected,
+      child: Material(
+        color: isSelected ? AppColors.primaryTint : AppColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          side: BorderSide(
+            color: isSelected ? AppColors.primaryDeep : AppColors.divider,
+            width: 1.5,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
         ),
-        child: Stack(
-          children: [
-            // Best value badge
-            if (isBestValue)
-              Positioned(
-                top: -8,
-                right: -8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    'BEST VALUE',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ),
-
-            Column(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Package name and token count
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          package.displayName,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text(package.displayName, style: textTheme.headlineMedium),
+                              if (isBestValue) const _BestValueBadge(),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${package.tokens} ${package.tokens == 1 ? 'token' : 'tokens'}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: AppColors.textSecondary,
+                          const SizedBox(height: 4),
+                          Text(
+                            '${package.tokens} ${package.tokens == 1 ? 'token' : 'tokens'}',
+                            style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 12),
 
                     // Price
                     Column(
@@ -334,18 +246,13 @@ class _PackageCard extends StatelessWidget {
                       children: [
                         Text(
                           package.formattedPrice,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                          style: textTheme.displaySmall?.copyWith(
+                            fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                         ),
                         Text(
                           '${package.formattedPricePerToken}/token',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
+                          style: textTheme.bodySmall,
                         ),
                       ],
                     ),
@@ -356,24 +263,24 @@ class _PackageCard extends StatelessWidget {
                 if (package != TokenPackageType.starter) ...[
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
+                      // Solid, so it stays a clean green on the selected card's tint
+                      color: Color.alphaBlend(
+                        AppColors.success.withValues(alpha: 0.12),
+                        AppColors.cardBackground,
+                      ),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
                     ),
                     child: Text(
                       _getSavingsText(package),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: textTheme.labelMedium?.copyWith(color: AppColors.success),
                     ),
                   ),
                 ],
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -383,5 +290,29 @@ class _PackageCard extends StatelessWidget {
     final starterPricePerToken = TokenPackageType.starter.pricePerToken;
     final savings = ((starterPricePerToken - package.pricePerToken) / starterPricePerToken * 100).round();
     return 'Save $savings%';
+  }
+}
+
+/// "BEST VALUE", beside the package's name. It's a coral fill, so its text is ink.
+class _BestValueBadge extends StatelessWidget {
+  const _BestValueBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Text(
+        'BEST VALUE',
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.textOnPrimary,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+            ),
+      ),
+    );
   }
 }

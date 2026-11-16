@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_theme.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/features/safety/data/models/safety_models.dart';
 import 'package:eros_app/features/safety/presentation/providers/report_provider.dart';
 import 'package:eros_app/features/safety/presentation/widgets/report_form.dart';
@@ -53,41 +55,27 @@ class _ReportSheetState extends ConsumerState<ReportSheet> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(reportProvider(widget.dateId));
+    final textTheme = Theme.of(context).textTheme;
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
               Text(
                 _confirming ? SafetyCopy.confirmTitle : SafetyCopy.reportAndBlock,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+                style: textTheme.headlineMedium,
               ),
               const SizedBox(height: 8),
               Text(
                 _confirming
                     ? SafetyCopy.confirmBody(widget.partnerName, dateFinished: widget.dateFinished)
                     : SafetyCopy.sheetIntro(widget.partnerName, dateFinished: widget.dateFinished),
-                style: const TextStyle(fontSize: 15, color: AppColors.textPrimary, height: 1.5),
+                style: textTheme.bodyLarge,
               ),
               const SizedBox(height: 16),
               // Kept in the tree while confirming, so nothing typed is lost on "Go back".
@@ -99,34 +87,25 @@ class _ReportSheetState extends ConsumerState<ReportSheet> {
                 const SizedBox(height: 12),
                 Text(
                   state.errorMessage!,
-                  style: const TextStyle(fontSize: 14, color: AppColors.error),
+                  style: textTheme.bodyMedium?.copyWith(color: AppColors.error),
                 ),
               ],
               const SizedBox(height: 16),
               if (_confirming) ...[
-                ElevatedButton(
-                  onPressed: state.isSubmitting ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.error,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: state.isSubmitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text(SafetyCopy.confirmButton),
+                AppButton(
+                  label: SafetyCopy.confirmButton,
+                  kind: AppButtonKind.destructive,
+                  loading: state.isSubmitting,
+                  onPressed: _submit,
                 ),
+                const SizedBox(height: 4),
                 TextButton(
                   onPressed: state.isSubmitting ? null : () => setState(() => _confirming = false),
+                  style: AppTheme.quietLink,
                   child: const Text(SafetyCopy.goBack),
                 ),
               ] else
-                ElevatedButton(
-                  onPressed: _review,
-                  child: const Text(SafetyCopy.reviewButton),
-                ),
+                AppButton(label: SafetyCopy.reviewButton, onPressed: _review),
             ],
           ),
         ),

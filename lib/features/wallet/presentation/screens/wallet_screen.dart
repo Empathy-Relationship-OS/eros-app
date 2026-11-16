@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/core/time/server_clock.dart';
 import 'package:eros_app/features/wallet/presentation/providers/wallet_provider.dart';
 import 'package:eros_app/features/wallet/presentation/screens/wallet_info_screen.dart';
@@ -50,27 +52,15 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   Widget build(BuildContext context) {
     final balanceState = ref.watch(walletBalanceProvider);
     final historyState = ref.watch(transactionHistoryProvider);
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'Date wallet',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text('Date wallet'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.info_outline, color: AppColors.textPrimary),
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'How the wallet works',
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -101,17 +91,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             ),
 
             // History Header
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(16, 24, 16, 16),
-                child: Text(
-                  'History',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                child: Text('History', style: textTheme.headlineMedium),
               ),
             ),
 
@@ -132,26 +115,29 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                       Text(
                         historyState.errorMessage ?? 'Failed to load history',
                         textAlign: TextAlign.center,
+                        style: textTheme.bodyLarge,
                       ),
                       const SizedBox(height: 16),
-                      ElevatedButton(
+                      AppButton(
+                        label: 'Retry',
+                        kind: AppButtonKind.secondary,
+                        expand: false,
                         onPressed: () {
                           ref
                               .read(transactionHistoryProvider.notifier)
                               .refresh();
                         },
-                        child: const Text('Retry'),
                       ),
                     ],
                   ),
                 ),
               )
             else if (!historyState.hasTransactions)
-              const SliverFillRemaining(
+              SliverFillRemaining(
                 child: Center(
                   child: Text(
                     'No transactions yet',
-                    style: TextStyle(color: AppColors.textSecondary),
+                    style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
                   ),
                 ),
               )
@@ -186,11 +172,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                             child: Text(
                               _formatDate(transaction.createdAt),
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: textTheme.labelLarge
+                                  ?.copyWith(color: AppColors.textSecondary),
                             ),
                           ),
                         _TransactionTile(transaction: transaction),
@@ -250,62 +233,34 @@ class _BalanceCard extends StatelessWidget {
     final tokenCount = balance?.balance.toInt() ?? 0;
     final tokenText = tokenCount == 1 ? '1 token' : '$tokenCount tokens';
 
+    // The wallet's one loud block: the balance on a tint, with the way to add more
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      padding: const EdgeInsets.fromLTRB(20, 32, 20, 20),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppColors.primaryTint,
+        borderRadius: BorderRadius.circular(AppRadius.card),
       ),
       child: Column(
         children: [
           Text(
             tokenText,
-            style: const TextStyle(
-              fontSize: 48,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+            style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                  fontSize: 44,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
           ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const PurchaseTokensScreen(),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.add_circle_outline, size: 20),
-              label: const Text(
-                'Add more tokens',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+          const SizedBox(height: 24),
+          AppButton(
+            label: 'Add more tokens',
+            icon: Icons.add_circle_outline,
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const PurchaseTokensScreen(),
                 ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
+              );
+            },
           ),
         ],
       ),
@@ -321,23 +276,19 @@ class _TransactionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
+    final textTheme = Theme.of(context).textTheme;
+    final amountColor = transaction.isCredit ? AppColors.success : AppColors.error;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.input),
+          side: const BorderSide(color: AppColors.divider),
+        ),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
           onTap: () {
             // TODO: Handle tap (e.g., show transaction details or navigate to related date)
           },
@@ -350,7 +301,9 @@ class _TransactionTile extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: _getIconColor().withValues(alpha: 0.1),
+                    color: transaction.isCredit
+                        ? AppColors.success.withValues(alpha: 0.1)
+                        : AppColors.primaryTint,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -365,31 +318,29 @@ class _TransactionTile extends StatelessWidget {
                 Expanded(
                   child: Text(
                     transaction.displayText,
-                    style: const TextStyle(
+                    style: textTheme.bodyLarge?.copyWith(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
+                      height: 1.3,
                     ),
                   ),
                 ),
+                const SizedBox(width: 12),
 
                 // Amount
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: transaction.isCredit
-                        ? AppColors.success.withValues(alpha: 0.1)
-                        : AppColors.error.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: amountColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                   child: Text(
                     transaction.formattedAmount,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color:
-                          transaction.isCredit ? AppColors.success : AppColors.error,
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: amountColor,
+                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
                 ),
@@ -418,7 +369,7 @@ class _TransactionTile extends StatelessWidget {
     if (transaction.isCredit) {
       return AppColors.success;
     } else {
-      return AppColors.primary;
+      return AppColors.primaryDeep;
     }
   }
 }

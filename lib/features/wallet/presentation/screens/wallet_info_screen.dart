@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 
 /// Wallet Info Screen - Explains how tokens work
 class WalletInfoScreen extends StatelessWidget {
@@ -8,23 +10,7 @@ class WalletInfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'Date tokens, explained',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      appBar: AppBar(title: const Text('Date tokens, explained')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -56,7 +42,7 @@ class WalletInfoScreen extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
 
             // Packages Section
             _InfoSection(
@@ -74,7 +60,7 @@ class WalletInfoScreen extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
 
             // Sharing is caring Section
             _InfoSection(
@@ -93,7 +79,7 @@ class WalletInfoScreen extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
 
             // Cancel policy Section
             _InfoSection(
@@ -117,7 +103,7 @@ class WalletInfoScreen extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 48),
+            const SizedBox(height: 16),
 
             // Learn more button
             Center(
@@ -125,22 +111,21 @@ class WalletInfoScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.textPrimary,
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppColors.primaryTint,
+                  borderRadius: BorderRadius.circular(AppRadius.card),
                 ),
                 child: Column(
                   children: [
-                    const Text(
+                    Text(
                       'Want to know more about date tokens and packages?',
-                      style: TextStyle(
-                        color: AppColors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
-                    ElevatedButton(
+                    AppButton(
+                      label: 'Learn More',
+                      kind: AppButtonKind.outline,
+                      expand: false,
                       onPressed: () {
                         // TODO: Link to help center or documentation
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -150,19 +135,6 @@ class WalletInfoScreen extends StatelessWidget {
                           ),
                         );
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.white,
-                        foregroundColor: AppColors.textPrimary,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 32, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Learn More',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
                     ),
                   ],
                 ),
@@ -194,31 +166,18 @@ class _InfoSection extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+          Text(title, style: Theme.of(context).textTheme.headlineMedium),
+          for (final item in items)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: item,
             ),
-          ),
-          const SizedBox(height: 16),
-          ...items.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: item,
-              )),
         ],
       ),
     );
@@ -243,13 +202,13 @@ class _InfoItem extends StatelessWidget {
         Container(
           width: 40,
           height: 40,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
+          decoration: const BoxDecoration(
+            color: AppColors.primaryTint,
             shape: BoxShape.circle,
           ),
           child: Icon(
             icon,
-            color: AppColors.primary,
+            color: AppColors.primaryDeep,
             size: 20,
           ),
         ),
@@ -259,11 +218,7 @@ class _InfoItem extends StatelessWidget {
             padding: const EdgeInsets.only(top: 8),
             child: Text(
               text,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textPrimary,
-                height: 1.5,
-              ),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 15),
             ),
           ),
         ),
