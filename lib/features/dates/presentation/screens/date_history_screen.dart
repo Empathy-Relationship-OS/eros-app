@@ -40,13 +40,8 @@ class _DateHistoryScreenState extends ConsumerState<DateHistoryScreen>
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(DatesCopy.historyTitle),
-        backgroundColor: AppColors.primary,
-        elevation: 0,
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppColors.white,
-          labelColor: AppColors.white,
-          unselectedLabelColor: AppColors.white.withValues(alpha: 0.7),
           tabs: const [
             Tab(text: DatesCopy.historyTabPast),
             Tab(text: DatesCopy.historyTabCancelled),

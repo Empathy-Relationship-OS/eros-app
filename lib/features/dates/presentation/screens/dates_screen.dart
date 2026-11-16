@@ -33,8 +33,6 @@ class DatesScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Dates'),
         automaticallyImplyLeading: false,
-        backgroundColor: AppColors.primary,
-        elevation: 0,
         actions: [
           // History icon (clock arrow)
           IconButton(
