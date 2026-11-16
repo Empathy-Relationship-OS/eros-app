@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/core/network/api_endpoints.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
+import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/time/server_clock.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/data/repositories/dates_repository.dart';
@@ -46,6 +49,9 @@ class _FakeDatesRepository implements DatesRepository {
   ApiException? submitError;
   DateDetail? dateAfterSubmitError;
 
+  /// When set, a submit waits for this before it answers.
+  Completer<void>? holdSubmit;
+
   int availabilityReads = 0;
   int listReads = 0;
   final List<SubmitAvailabilityRequest> submissions = [];
@@ -63,6 +69,7 @@ class _FakeDatesRepository implements DatesRepository {
     SubmitAvailabilityRequest request,
   ) async {
     submissions.add(request);
+    await holdSubmit?.future;
     final error = submitError;
     if (error != null) {
       date = dateAfterSubmitError ?? date;
@@ -277,7 +284,7 @@ void main() {
 
       final otherDateRow = _rowDecoration(tester, otherDate);
       expect(otherDateRow.border, isNotNull);
-      expect(otherDateRow.color, const Color(0xFFF5F5F5));
+      expect(otherDateRow.color, AppColors.surfaceMuted);
     });
 
     testWidgets('an unknown code looks like ANOTHER_DATE', (tester) async {
@@ -423,6 +430,27 @@ void main() {
       await _pumpPicker(tester, _FakeDatesRepository([view]));
 
       expect(find.text('Coffee, about 90 minutes'), findsOneWidget);
+    });
+  });
+
+  group('sending', () {
+    testWidgets('a second tap while the first is in flight sends nothing more', (tester) async {
+      final repository = _FakeDatesRepository([_view()])..holdSubmit = Completer<void>();
+      await _pumpPicker(tester, repository);
+      await _mark(tester, [_slot(day, 17), _slot(day, 17, 30), _slot(day, 18)]);
+
+      await tester.tap(find.text(DatesCopy.availabilitySendButton));
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      await tester.tap(find.byType(ElevatedButton), warnIfMissed: false);
+      await tester.pump();
+
+      repository.holdSubmit!.complete();
+      await tester.pumpAndSettle();
+
+      expect(repository.submissions, hasLength(1));
+      expect(find.byType(AvailabilityPickerScreen), findsNothing);
+      expect(find.text('Open picker'), findsOneWidget);
     });
   });
 
