@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/theme/app_theme.dart';
 import 'package:eros_app/core/time/server_clock.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/availability_provider.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_list_provider.dart';
@@ -50,6 +53,7 @@ class _AvailabilityPickerScreenState
   late DateTime _windowEnd;
   bool _showEarlierSlots = false;
   bool _isLoadingCancelDialog = false;
+  bool _isSubmitting = false;
 
   // Local state: Map<slotStart UTC, SlotAvailability?>
   // null = unmarked, AVAILABLE = Free, UNAVAILABLE = Busy
@@ -76,38 +80,17 @@ class _AvailabilityPickerScreenState
     final availabilityAsync = ref.watch(availabilityProvider(widget.dateId));
     // Opened while the wall is up (a deep link, a stale screen): the wall, not the grid.
     final walled = ref.watch(dateVerificationWallProvider(widget.dateId));
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.textPrimary),
+          icon: const Icon(Icons.close),
+          tooltip: 'Close',
           onPressed: () => _handleClose(context),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              DatesCopy.availabilityTitle,
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            Text(
-              DatesCopy.availabilitySubtitle(widget.round),
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 13,
-                fontWeight: FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
+        title: const Text(DatesCopy.availabilityTitle),
       ),
-      backgroundColor: AppColors.background,
       body: walled ? _buildVerificationWall(context) : availabilityAsync.when(
         data: (availability) {
           // Load mySlots into _marks on first build (excluding blocked slots)
@@ -121,85 +104,41 @@ class _AvailabilityPickerScreenState
 
           return Column(
             children: [
-              // The kind of date and its length
+              // The kind of date and its length, then what to do
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                child: Text(
-                  DatesCopy.availabilityDateSummary(
-                    availability.activityName,
-                    availability.durationMinutes,
-                  ),
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      DatesCopy.availabilityDateSummary(
+                        availability.activityName,
+                        availability.durationMinutes,
+                      ),
+                      style: textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      DatesCopy.availabilitySubtitle(widget.round),
+                      style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+                    ),
+                  ],
                 ),
               ),
 
-              // Partner legend
+              // Partner legend: the order of the two marks on each row
               if (availability.partnerSlots.isNotEmpty)
                 Container(
-                  padding: const EdgeInsets.all(16),
-                  color: const Color(0xFFF5F5F5),
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  color: AppColors.surfaceMuted,
                   child: Row(
                     children: [
-                      // Your availability
-                      Row(
-                        children: [
-                          Container(
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(
-                              color: AppColors.success,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 12,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            'You',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+                      _buildLegendItem(context, 'You'),
                       const SizedBox(width: 20),
-                      // Partner availability
-                      Row(
-                        children: [
-                          Container(
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(
-                              color: AppColors.success,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 12,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            'Partner', // Would come from dateDetail.partnerName
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+                      // Would come from dateDetail.partnerName
+                      _buildLegendItem(context, 'Partner'),
                     ],
                   ),
                 ),
@@ -237,21 +176,35 @@ class _AvailabilityPickerScreenState
     );
   }
 
+  /// One entry of the legend: a "free" mark and whose it is.
+  Widget _buildLegendItem(BuildContext context, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 20,
+          height: 20,
+          decoration: const BoxDecoration(
+            color: AppColors.success,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.check, color: AppColors.white, size: 12),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: Theme.of(context).textTheme.labelLarge),
+      ],
+    );
+  }
+
   Widget _buildDayStrip() {
     final days = _generateDayChips();
+    final textTheme = Theme.of(context).textTheme;
 
     return Container(
       height: 80,
       padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.divider)),
       ),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
@@ -263,61 +216,55 @@ class _AvailabilityPickerScreenState
           final isSelected = _isSameDay(day, _selectedDay);
           final hasMark = _dayHasMarks(day);
 
-          return GestureDetector(
-            onTap: () => setState(() => _selectedDay = day),
-            child: Container(
-              width: 56,
-              height: 48,
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primaryOrange : Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.primaryOrange
-                      : AppColors.textTertiary.withValues(alpha: 0.2),
-                  width: 1.5,
-                ),
+          // The selected day is a coral fill, so its text is ink, never white
+          return Semantics(
+            selected: isSelected,
+            child: Material(
+              color: isSelected ? AppColors.primary : AppColors.cardBackground,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.input),
+                side: BorderSide(color: isSelected ? AppColors.primary : AppColors.border),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    DateFormat('E').format(day).substring(0, 3),
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? Colors.white
-                          : AppColors.textSecondary,
-                      height: 1.0,
-                    ),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    day.day.toString(),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: isSelected ? Colors.white : AppColors.textPrimary,
-                      height: 1.0,
-                    ),
-                  ),
-                  if (hasMark)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 1),
-                      child: Container(
-                        width: 4,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? Colors.white
-                              : AppColors.primaryOrange,
-                          shape: BoxShape.circle,
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => setState(() => _selectedDay = day),
+                child: SizedBox(
+                  width: 56,
+                  height: 48,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        DateFormat('E').format(day).substring(0, 3),
+                        style: textTheme.labelSmall?.copyWith(
+                          color: isSelected ? AppColors.textOnPrimary : AppColors.textSecondary,
+                          height: 1.0,
                         ),
                       ),
-                    ),
-                ],
+                      const SizedBox(height: 2),
+                      Text(
+                        day.day.toString(),
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          height: 1.0,
+                        ),
+                      ),
+                      if (hasMark)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Container(
+                            width: 4,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: isSelected ? AppColors.ink : AppColors.primaryDeep,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
           );
@@ -335,10 +282,10 @@ class _AvailabilityPickerScreenState
           child: Text(
             DatesCopy.availabilityDayClosed(availability.activityName),
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 15,
-              color: AppColors.textSecondary,
-            ),
+            style: Theme.of(context)
+                .textTheme
+                .bodyLarge
+                ?.copyWith(color: AppColors.textSecondary),
           ),
         ),
       );
@@ -372,33 +319,32 @@ class _AvailabilityPickerScreenState
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          decoration: BoxDecoration(
-            color: AppColors.cardBackground,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
+      child: Material(
+        color: AppColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(AppRadius.input),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  label,
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelLarge
+                      ?.copyWith(color: AppColors.textSecondary),
                 ),
-              ),
-              const SizedBox(width: 4),
-              Icon(
-                isExpanded ? Icons.expand_more : Icons.expand_less,
-                color: AppColors.textSecondary,
-                size: 20,
-              ),
-            ],
+                const SizedBox(width: 4),
+                Icon(
+                  isExpanded ? Icons.expand_more : Icons.expand_less,
+                  color: AppColors.textSecondary,
+                  size: 20,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -431,29 +377,26 @@ class _AvailabilityPickerScreenState
           onLongPress: isBlocked
               ? () => _showBlockedReason(blockedSlot)
               : () => _fillRestOfDay(slotStart, myMark, availability),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.input),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
             decoration: BoxDecoration(
               color: isClosed
                   ? Colors.transparent
                   : _getSlotBackgroundColor(myMark, isBlocked: isBlocked),
-              borderRadius: BorderRadius.circular(8),
-              border: isBlocked && !isClosed ? Border.all(
-                color: AppColors.textTertiary.withValues(alpha: 0.3),
-                width: 1,
-              ) : null,
+              borderRadius: BorderRadius.circular(AppRadius.input),
+              border: isBlocked && !isClosed ? Border.all(color: AppColors.border) : null,
             ),
             child: Row(
               children: [
                 // Time label
                 Text(
                   timeLabel,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: isClosed ? FontWeight.w400 : FontWeight.w500,
-                    color: _getSlotTextColor(myMark, isBlocked: isBlocked),
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: isClosed ? FontWeight.w400 : FontWeight.w600,
+                        color: _getSlotTextColor(myMark, isBlocked: isBlocked),
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
                 ),
 
                 const Spacer(),
@@ -464,11 +407,11 @@ class _AvailabilityPickerScreenState
                 else
                   _buildAvailabilityIndicator(myMark, isPartner: false, isBlocked: isBlocked),
 
-                const SizedBox(width: 16),
-
                 // Partner availability indicator (if exists)
-                if (availability.partnerSlots.isNotEmpty)
+                if (availability.partnerSlots.isNotEmpty) ...[
+                  const SizedBox(width: 16),
                   _buildAvailabilityIndicator(partnerMark, isPartner: true, isBlocked: false),
+                ],
               ],
             ),
           ),
@@ -481,88 +424,41 @@ class _AvailabilityPickerScreenState
     final freeCount = _marks.values.where((v) => v == SlotAvailability.available).length;
     final totalMarks = _marks.values.where((v) => v != null).length;
     final canSubmit = freeCount >= 3;
+    final textTheme = Theme.of(context).textTheme;
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      decoration: const BoxDecoration(
         color: AppColors.cardBackground,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        border: Border(top: BorderSide(color: AppColors.divider)),
       ),
       child: SafeArea(
+        top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      DatesCopy.availabilityCounter(freeCount, 3),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: canSubmit
-                            ? AppColors.success
-                            : AppColors.textSecondary,
-                      ),
-                    ),
-                    if (totalMarks > 150)
-                      Text(
-                        DatesCopy.availabilityMarkedCount(totalMarks),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: canSubmit ? _handleSubmit : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryOrange,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: AppColors.disabled,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  DatesCopy.availabilitySendButton,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+            Text(
+              DatesCopy.availabilityCounter(freeCount, 3),
+              style: textTheme.labelLarge?.copyWith(
+                color: canSubmit ? AppColors.success : AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 8),
+            if (totalMarks > 150)
+              Text(DatesCopy.availabilityMarkedCount(totalMarks), style: textTheme.bodySmall),
+            const SizedBox(height: 12),
+            AppButton(
+              label: DatesCopy.availabilitySendButton,
+              loading: _isSubmitting,
+              onPressed: canSubmit ? _handleSubmit : null,
+            ),
+            const SizedBox(height: 4),
             // Cancel button
             Center(
               child: TextButton(
                 onPressed: () => _showCancelDialog(context),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary,
-                ),
-                child: const Text(
-                  'Cancel this date',
-                  style: TextStyle(
-                    fontSize: 15,
-                  ),
-                ),
+                style: AppTheme.quietLink,
+                child: const Text('Cancel this date'),
               ),
             ),
           ],
@@ -616,15 +512,20 @@ class _AvailabilityPickerScreenState
 
   Color _getSlotBackgroundColor(SlotAvailability? mark, {bool isBlocked = false}) {
     if (isBlocked) {
-      return const Color(0xFFF5F5F5); // Light grey for blocked slots
+      return AppColors.surfaceMuted;
     } else if (mark == SlotAvailability.available) {
-      return const Color(0xFFE8F5E9); // Light green background
+      return _tintOnCard(AppColors.success, 0.12);
     } else if (mark == SlotAvailability.unavailable) {
-      return const Color(0xFFFFEBEE); // Light red background
+      return _tintOnCard(AppColors.error, 0.1);
     } else {
-      return Colors.white;
+      return AppColors.cardBackground;
     }
   }
+
+  /// A state colour washed over the card colour. A see-through tint would pick up the cream
+  /// page behind the row and turn grey.
+  Color _tintOnCard(Color color, double alpha) =>
+      Color.alphaBlend(color.withValues(alpha: alpha), AppColors.cardBackground);
 
   Color _getSlotTextColor(SlotAvailability? mark, {bool isBlocked = false}) {
     if (isBlocked) {
@@ -634,68 +535,38 @@ class _AvailabilityPickerScreenState
   }
 
   Widget _buildAvailabilityIndicator(SlotAvailability? mark, {required bool isPartner, bool isBlocked = false}) {
-    // For blocked slots on user side, show X icon in grey circle
+    // A blocked slot on the viewer's side: a muted cross
     if (isBlocked && !isPartner) {
-      return Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: AppColors.textTertiary.withValues(alpha: 0.4),
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(
-          Icons.close,
-          color: Colors.white,
-          size: 18,
-        ),
-      );
+      return _buildMark(AppColors.border, Icons.close);
     }
-
     if (mark == SlotAvailability.available) {
-      return Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: isPartner ? AppColors.success : AppColors.success,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(
-          Icons.check,
-          color: Colors.white,
-          size: 18,
-        ),
-      );
-    } else if (mark == SlotAvailability.unavailable) {
-      return Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: isPartner ? AppColors.error : AppColors.error,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(
-          Icons.close,
-          color: Colors.white,
-          size: 18,
-        ),
-      );
-    } else {
-      // Unmarked - show empty circle for user, nothing for partner
-      if (isPartner) {
-        return const SizedBox(width: 32, height: 32);
-      }
-      return Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: AppColors.textTertiary.withValues(alpha: 0.3),
-            width: 2,
-          ),
-          shape: BoxShape.circle,
-        ),
-      );
+      return _buildMark(AppColors.success, Icons.check);
     }
+    if (mark == SlotAvailability.unavailable) {
+      return _buildMark(AppColors.error, Icons.close);
+    }
+    // Unmarked - show empty circle for user, nothing for partner
+    if (isPartner) {
+      return const SizedBox(width: 32, height: 32);
+    }
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.border, width: 2),
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+
+  /// A filled circle with a white icon: the mark at the end of a slot row.
+  Widget _buildMark(Color color, IconData icon) {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      child: Icon(icon, color: AppColors.white, size: 18),
+    );
   }
 
   List<DateTime> _generateDayChips() {
@@ -859,7 +730,19 @@ class _AvailabilityPickerScreenState
     }
   }
 
+  /// Sends the marks once: a second tap while the first is in flight does nothing, so the
+  /// screen can't be popped twice.
   Future<void> _handleSubmit() async {
+    if (_isSubmitting) return;
+    setState(() => _isSubmitting = true);
+    try {
+      await _submit();
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Future<void> _submit() async {
     final availabilityAsync = ref.read(availabilityProvider(widget.dateId));
     final availability = availabilityAsync.value;
     if (availability == null) return;
