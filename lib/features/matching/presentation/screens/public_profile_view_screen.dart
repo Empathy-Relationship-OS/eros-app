@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/features/profile/domain/models/public_profile.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_display_components.dart';
@@ -123,7 +124,7 @@ class _PublicProfileViewScreenState
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => _MutualMatchDialog(
+      builder: (context) => MutualMatchDialog(
         partnerName: profile.name,
         dateId: mutualMatch.dateId,
         onContinue: () {
@@ -144,69 +145,35 @@ class _PublicProfileViewScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       extendBodyBehindAppBar: true,
+      // No bar over the photo: just the back button on its own dark disc, which reads over a
+      // photo and over the page alike.
       appBar: AppBar(
-        backgroundColor: Colors.black.withValues(alpha: 0.3),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+        forceMaterialTransparency: true,
+        leading: Padding(
+          padding: const EdgeInsets.all(8),
+          child: IconButton.filled(
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.ink.withValues(alpha: 0.55),
+              foregroundColor: AppColors.white,
+            ),
+            icon: const Icon(Icons.arrow_back),
+            tooltip: 'Back',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
         ),
       ),
       body: FutureBuilder<PublicProfileDTO>(
         future: _profileFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-              ),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: AppColors.error,
-                      size: 64,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Unable to load profile',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      snapshot.error.toString(),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                      ),
-                      child: const Text('Go Back'),
-                    ),
-                  ],
-                ),
-              ),
+            return ProfileLoadError(
+              message: 'Unable to load profile',
+              detail: snapshot.error.toString(),
             );
           }
 
@@ -241,14 +208,17 @@ class _PublicProfileViewScreenState
                   right: 0,
                   bottom: 0,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    // The fade happens above the buttons, so they sit on the page colour and
+                    // the profile doesn't show through between them
+                    padding: const EdgeInsets.fromLTRB(16, 32, 16, 12),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
+                        stops: const [0, 0.3, 1],
                         colors: [
                           AppColors.background.withValues(alpha: 0.0),
-                          AppColors.background.withValues(alpha: 0.95),
+                          AppColors.background,
                           AppColors.background,
                         ],
                       ),
@@ -288,15 +258,18 @@ class _PreviewBanner extends StatelessWidget {
         margin: const EdgeInsets.all(16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.75),
-          borderRadius: BorderRadius.circular(20),
+          color: AppColors.ink.withValues(alpha: 0.88),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.visibility_outlined, color: Colors.white, size: 18),
-            SizedBox(width: 8),
-            Text('This is how others see you', style: TextStyle(color: Colors.white, fontSize: 14)),
+            const Icon(Icons.visibility_outlined, color: AppColors.white, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              'This is how others see you',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.white),
+            ),
           ],
         ),
       ),
@@ -336,56 +309,14 @@ class _ProfileContent extends StatelessWidget {
           ThumbnailPhoto(
             photoPath: thumbnailPath,
             isLocal: false,
-          ),
+          )
+        else
+          // Nothing to sit under the back button, so the content starts below it. The top
+          // padding already counts the app bar, as the body runs behind it.
+          SizedBox(height: MediaQuery.paddingOf(context).top),
 
-        Container(
-          margin: const EdgeInsets.all(16.0),
-          padding: const EdgeInsets.all(24.0),
-          decoration: BoxDecoration(
-            color: AppColors.cardBackground,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Name and Age
-              NameAndAgeDisplay(
-                name: profile.name,
-                age: profile.age,
-                fontSize: 32,
-              ),
-              const SizedBox(height: 16),
-
-              // Bio (if available)
-              if (profile.profile.bio != null &&
-                  profile.profile.bio!.isNotEmpty) ...[
-                Text(
-                  profile.profile.bio!,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textPrimary,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
-
-              // 2. Horizontal scrollable info row
-              HorizontalInfoScroll(profile: profile),
-              const SizedBox(height: 24),
-
-              // 3. Detailed info section
-              DetailedInfoSection(profile: profile),
-            ],
-          ),
-        ),
+        // 2. Name, bio, basics and details
+        ProfileHeaderCard(profile: profile),
 
         // 4. Ordered interspersed content
         OrderedInterspersedContent(
@@ -402,110 +333,6 @@ class _ProfileContent extends StatelessWidget {
         // Add padding at bottom for floating buttons
         const SizedBox(height: 120),
       ],
-    );
-  }
-}
-
-/// Mutual match dialog
-class _MutualMatchDialog extends StatelessWidget {
-  final String partnerName;
-  final int? dateId;
-  final VoidCallback onContinue;
-
-  const _MutualMatchDialog({
-    required this.partnerName,
-    this.dateId,
-    required this.onContinue,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Success icon
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.favorite,
-                color: AppColors.primary,
-                size: 40,
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Title
-            const Text(
-              'It\'s a Match!',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-
-            // Message
-            Text(
-              'You and $partnerName liked each other!',
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            // Date planning message (UI-11)
-            if (dateId != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Your date with $partnerName is ready to plan',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-            const SizedBox(height: 32),
-
-            // Continue button
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: onContinue,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                ),
-                child: Text(
-                  dateId != null ? 'Plan the date' : 'Continue',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

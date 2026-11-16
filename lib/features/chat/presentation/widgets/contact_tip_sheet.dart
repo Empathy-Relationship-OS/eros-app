@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/features/chat/presentation/widgets/chat_copy.dart';
 
 /// The one-time safety tip, shown the first time the app shows a message the backend
@@ -12,22 +13,22 @@ class ContactTipSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+        padding: const EdgeInsets.fromLTRB(24, 4, 24, 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.shield_outlined, size: 32, color: AppColors.primary),
+            const Icon(Icons.shield_outlined, size: 32, color: AppColors.primaryDeep),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               ChatCopy.contactTip,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: AppColors.textPrimary, height: 1.4),
+              style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
+            AppButton(
+              label: ChatCopy.contactTipDismiss,
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(ChatCopy.contactTipDismiss),
             ),
           ],
         ),

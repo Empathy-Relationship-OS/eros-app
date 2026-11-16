@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/profile/domain/models/public_profile.dart';
 import 'package:eros_app/features/profile/domain/models/photo_models.dart';
@@ -41,32 +42,12 @@ class _ProfilePreviewScreenState extends ConsumerState<ProfilePreviewScreen> {
     final localPhotoState = ref.watch(photoUploadProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'Preview your profile',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+      appBar: AppBar(title: const Text('Preview your profile')),
       body: FutureBuilder<PublicProfileDTO>(
         future: _profileFuture,
         builder: (context, profileSnapshot) {
           if (profileSnapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-              ),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (profileSnapshot.hasError) {
@@ -74,47 +55,9 @@ class _ProfilePreviewScreenState extends ConsumerState<ProfilePreviewScreen> {
                 ? 'Please sign in to preview your profile'
                 : 'Unable to load profile preview';
 
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: AppColors.error,
-                      size: 64,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      errorMessage,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      profileSnapshot.error.toString(),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                      ),
-                      child: const Text('Go Back'),
-                    ),
-                  ],
-                ),
-              ),
+            return ProfileLoadError(
+              message: errorMessage,
+              detail: profileSnapshot.error.toString(),
             );
           }
 
@@ -211,71 +154,8 @@ class _ProfilePreviewContent extends StatelessWidget {
             isLocal: useLocal,
           ),
 
-        Container(
-          margin: const EdgeInsets.all(16.0),
-          padding: const EdgeInsets.all(24.0),
-          decoration: BoxDecoration(
-            color: AppColors.cardBackground,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Name and Age
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    profile.name,
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${profile.age}',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Bio (if available)
-              if (profile.profile.bio != null && profile.profile.bio!.isNotEmpty) ...[
-                Text(
-                  profile.profile.bio!,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textPrimary,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
-
-              // 2. Horizontal scrollable info row (basic attributes)
-              HorizontalInfoScroll(profile: profile),
-              const SizedBox(height: 24),
-
-              // 3. Work/Education/Location/Language rows
-              DetailedInfoSection(profile: profile),
-            ],
-          ),
-        ),
+        // 2. Name, bio, basics and details
+        ProfileHeaderCard(profile: profile),
 
         // 4. Ordered content: Hobbies -> QA1 -> Image -> QA2 -> Image -> Personality -> Image -> QA3 -> Image -> QAs
         OrderedInterspersedContent(
@@ -308,15 +188,10 @@ class _ConsentBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24.0),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        border: Border(
-          top: BorderSide(
-            color: AppColors.textSecondary.withValues(alpha: 0.2),
-            width: 1,
-          ),
-        ),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      decoration: const BoxDecoration(
+        color: AppColors.cardBackground,
+        border: Border(top: BorderSide(color: AppColors.divider)),
       ),
       child: SafeArea(
         top: false,
@@ -330,24 +205,16 @@ class _ConsentBottomBar extends StatelessWidget {
                 Checkbox(
                   value: consentChecked,
                   onChanged: (value) => onConsentChanged(value ?? false),
-                  activeColor: AppColors.primary,
                 ),
                 Expanded(
                   child: GestureDetector(
                     onTap: () => onConsentChanged(!consentChecked),
                     child: Padding(
                       padding: const EdgeInsets.only(top: 12.0),
-                      child: RichText(
-                        text: TextSpan(
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textPrimary,
-                            height: 1.5,
-                          ),
+                      child: Text.rich(
+                        const TextSpan(
                           children: [
-                            const TextSpan(
-                              text: 'I agree that my profile, including ',
-                            ),
+                            TextSpan(text: 'I agree that my profile, including '),
                             TextSpan(
                               text: 'sensitive details',
                               style: TextStyle(
@@ -355,11 +222,12 @@ class _ConsentBottomBar extends StatelessWidget {
                                 decoration: TextDecoration.underline,
                               ),
                             ),
-                            const TextSpan(
+                            TextSpan(
                               text: ', will be published on the app and used for matching.',
                             ),
                           ],
                         ),
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ),
                   ),
@@ -367,37 +235,13 @@ class _ConsentBottomBar extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // Continue button
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: consentChecked ? onContinue : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  disabledBackgroundColor: AppColors.textSecondary.withValues(alpha: 0.3),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Text(
-                      'Continue',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Icon(Icons.arrow_forward, color: Colors.white),
-                  ],
-                ),
-              ),
+            AppButton(
+              label: 'Continue',
+              trailingIcon: Icons.arrow_forward,
+              onPressed: consentChecked ? onContinue : null,
             ),
           ],
         ),

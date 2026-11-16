@@ -1,10 +1,59 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
+import 'package:eros_app/features/matching/presentation/widgets/match_card_components.dart';
 import 'package:eros_app/features/profile/domain/models/public_profile.dart';
 
 /// Reusable components for displaying public profiles
 /// Extracted from profile_preview_screen.dart for use across the app
+
+/// A photo on a profile, from a local file or the network, with the same placeholder while it
+/// loads and when it can't be shown.
+class _ProfileImage extends StatelessWidget {
+  final String path;
+  final bool isLocal;
+  final double placeholderIconSize;
+
+  const _ProfileImage({
+    required this.path,
+    required this.isLocal,
+    required this.placeholderIconSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Widget unavailable(BuildContext context, Object error, StackTrace? stackTrace) {
+      return ColoredBox(
+        color: AppColors.surfaceMuted,
+        child: Center(
+          child: Icon(
+            Icons.image_not_supported,
+            size: placeholderIconSize,
+            color: AppColors.textTertiary,
+          ),
+        ),
+      );
+    }
+
+    if (isLocal) {
+      return Image.file(File(path), fit: BoxFit.cover, errorBuilder: unavailable);
+    }
+    return Image.network(
+      path,
+      fit: BoxFit.cover,
+      errorBuilder: unavailable,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return const ColoredBox(
+          color: AppColors.surfaceMuted,
+          child: Center(child: CircularProgressIndicator()),
+        );
+      },
+    );
+  }
+}
 
 /// Thumbnail photo widget (large at top)
 class ThumbnailPhoto extends StatelessWidget {
@@ -22,50 +71,107 @@ class ThumbnailPhoto extends StatelessWidget {
     return SizedBox(
       height: 500,
       width: double.infinity,
-      child: isLocal
-          ? Image.file(
-              File(photoPath),
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: AppColors.cardBackground,
-                  child: const Center(
-                    child: Icon(
-                      Icons.image_not_supported,
-                      size: 64,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                );
-              },
-            )
-          : Image.network(
-              photoPath,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: AppColors.cardBackground,
-                  child: const Center(
-                    child: Icon(
-                      Icons.image_not_supported,
-                      size: 64,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                );
-              },
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  color: AppColors.cardBackground,
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary,
-                    ),
-                  ),
-                );
-              },
+      child: _ProfileImage(path: photoPath, isLocal: isLocal, placeholderIconSize: 64),
+    );
+  }
+}
+
+/// A section of a profile: a flat white card with a hairline, like every other card in the app.
+class ProfileCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  const ProfileCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(20),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// The card under the first photo: name and age, the bio, the row of basics and the details.
+class ProfileHeaderCard extends StatelessWidget {
+  final PublicProfileDTO profile;
+
+  const ProfileHeaderCard({super.key, required this.profile});
+
+  @override
+  Widget build(BuildContext context) {
+    final bio = profile.profile.bio;
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: ProfileCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            NameAndAgeDisplay(name: profile.name, age: profile.age, fontSize: 30),
+            const SizedBox(height: 12),
+            if (bio != null && bio.isNotEmpty) ...[
+              Text(bio, style: Theme.of(context).textTheme.bodyLarge),
+              const SizedBox(height: 20),
+            ],
+            HorizontalInfoScroll(profile: profile),
+            const SizedBox(height: 12),
+            DetailedInfoSection(profile: profile),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown in place of a profile that couldn't be loaded, with the way back.
+class ProfileLoadError extends StatelessWidget {
+  final String message;
+  final String? detail;
+
+  const ProfileLoadError({super.key, required this.message, this.detail});
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+            const SizedBox(height: 16),
+            Text(message, style: textTheme.headlineSmall, textAlign: TextAlign.center),
+            if (detail != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                detail!,
+                style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+            ],
+            const SizedBox(height: 24),
+            AppButton(
+              label: 'Go Back',
+              kind: AppButtonKind.outline,
+              expand: false,
+              onPressed: () => Navigator.of(context).pop(),
             ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -139,35 +245,23 @@ class HorizontalInfoScroll extends StatelessWidget {
       height: 48,
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: AppColors.cardBackground,
         border: Border(
-          top: BorderSide(
-            color: AppColors.divider,
-            width: 1,
-          ),
-          bottom: BorderSide(
-            color: AppColors.divider,
-            width: 1,
-          ),
+          top: BorderSide(color: AppColors.divider),
+          bottom: BorderSide(color: AppColors.divider),
         ),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             for (int i = 0; i < chips.length; i++) ...{
               if (i > 0)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(
-                    '|',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppColors.textSecondary.withValues(alpha: 0.3),
-                    ),
-                  ),
+                Container(
+                  width: 1,
+                  height: 16,
+                  margin: const EdgeInsets.symmetric(horizontal: 14),
+                  color: AppColors.border,
                 ),
               InfoChip(
                 icon: chips[i].icon,
@@ -212,11 +306,10 @@ class InfoChip extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w500,
-          ),
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(fontWeight: FontWeight.w500, height: 1.2),
         ),
       ],
     );
@@ -302,42 +395,22 @@ class QACard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    final textTheme = Theme.of(context).textTheme;
+
+    return ProfileCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Question as header
           Text(
             qa.question,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textSecondary,
-            ),
+            style: textTheme.labelLarge?.copyWith(color: AppColors.textSecondary),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           // Answer in larger, distinctive font
           Text(
             qa.answer,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-              height: 1.4,
-            ),
+            style: textTheme.headlineMedium?.copyWith(height: 1.35),
           ),
         ],
       ),
@@ -393,7 +466,7 @@ class OrderedInterspersedContent extends StatelessWidget {
           photoPath: photo.path,
           isLocal: photo.isLocal,
         ));
-        orderedWidgets.add(const SizedBox(height: 24));
+        orderedWidgets.add(const SizedBox(height: 16));
         photoIndex++;
       }
     }
@@ -405,47 +478,23 @@ class OrderedInterspersedContent extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: QACard(qa: qas[qaIndex]),
         ));
-        orderedWidgets.add(const SizedBox(height: 24));
+        orderedWidgets.add(const SizedBox(height: 16));
         qaIndex++;
       }
     }
 
-    // 1. Hobbies/Interests section
-    if (hobbies.isNotEmpty) {
+    // A titled card of chips, with an optional line under them
+    void addChips(String title, List<String>? labels, {String? description}) {
+      if (labels == null || labels.isEmpty) return;
       orderedWidgets.add(Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.cardBackground,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SectionHeader('Interests'),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: hobbies.map((hobby) {
-                  return ProfileChip(label: hobby);
-                }).toList(),
-              ),
-            ],
-          ),
-        ),
+        child: _ChipSection(title: title, labels: labels, description: description),
       ));
-      orderedWidgets.add(const SizedBox(height: 24));
+      orderedWidgets.add(const SizedBox(height: 16));
     }
+
+    // 1. Hobbies/Interests section
+    addChips('Interests', hobbies);
 
     // 2. QA1 (First Q&A)
     addQA();
@@ -460,137 +509,13 @@ class OrderedInterspersedContent extends StatelessWidget {
     addPhoto();
 
     // 6. Personality/Traits section
-    if (traits.isNotEmpty) {
-      orderedWidgets.add(Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.cardBackground,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SectionHeader('Personality'),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: traits.map((trait) {
-                  return ProfileChip(label: trait);
-                }).toList(),
-              ),
-            ],
-          ),
-        ),
-      ));
-      orderedWidgets.add(const SizedBox(height: 24));
-    }
+    addChips('Personality', traits);
 
     // Brain attributes (if any)
-    if (brainAttribute != null && brainAttribute!.isNotEmpty) {
-      orderedWidgets.add(Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.cardBackground,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SectionHeader('Thinking Style'),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: brainAttribute!.map((attr) {
-                  return ProfileChip(label: attr);
-                }).toList(),
-              ),
-              if (brainDescription != null && brainDescription!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  brainDescription!,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ));
-      orderedWidgets.add(const SizedBox(height: 24));
-    }
+    addChips('Thinking Style', brainAttribute, description: brainDescription);
 
     // Body attributes (if any)
-    if (bodyAttribute != null && bodyAttribute!.isNotEmpty) {
-      orderedWidgets.add(Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.cardBackground,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SectionHeader('Physical Activity'),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: bodyAttribute!.map((attr) {
-                  return ProfileChip(label: attr);
-                }).toList(),
-              ),
-              if (bodyDescription != null && bodyDescription!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  bodyDescription!,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ));
-      orderedWidgets.add(const SizedBox(height: 24));
-    }
+    addChips('Physical Activity', bodyAttribute, description: bodyDescription);
 
     // 7. Image (Photo 4)
     addPhoto();
@@ -620,6 +545,43 @@ class OrderedInterspersedContent extends StatelessWidget {
   }
 }
 
+/// A titled card of chips ("Interests", "Personality"), with an optional line under them.
+class _ChipSection extends StatelessWidget {
+  final String title;
+  final List<String> labels;
+  final String? description;
+
+  const _ChipSection({required this.title, required this.labels, this.description});
+
+  @override
+  Widget build(BuildContext context) {
+    return ProfileCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionHeader(title),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [for (final label in labels) ProfileChip(label: label)],
+          ),
+          if (description != null && description!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              description!,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppColors.textSecondary),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 /// Stacked photo widget (for photos in vertical list)
 class StackedPhoto extends StatelessWidget {
   final String photoPath;
@@ -635,61 +597,13 @@ class StackedPhoto extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              height: 400,
-              width: double.infinity,
-              child: isLocal
-                  ? Image.file(
-                      File(photoPath),
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: AppColors.cardBackground,
-                          child: const Center(
-                            child: Icon(
-                              Icons.image_not_supported,
-                              size: 48,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        );
-                      },
-                    )
-                  : Image.network(
-                      photoPath,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: AppColors.cardBackground,
-                          child: const Center(
-                            child: Icon(
-                              Icons.image_not_supported,
-                              size: 48,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        );
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          color: AppColors.cardBackground,
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ),
-        ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        child: SizedBox(
+          height: 400,
+          width: double.infinity,
+          child: _ProfileImage(path: photoPath, isLocal: isLocal, placeholderIconSize: 48),
+        ),
       ),
     );
   }
@@ -702,14 +616,7 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
-      ),
-    );
+    return Text(title, style: Theme.of(context).textTheme.headlineSmall);
   }
 }
 
@@ -721,21 +628,17 @@ class ProfileChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.3),
-        ),
+        color: AppColors.primaryTint,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: 12,
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w500,
-        ),
+        style: Theme.of(context)
+            .textTheme
+            .bodyMedium
+            ?.copyWith(fontSize: 13, fontWeight: FontWeight.w500, height: 1.3),
       ),
     );
   }
@@ -764,13 +667,7 @@ class InfoRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppColors.textPrimary,
-              ),
-            ),
+            child: Text(label, style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.3)),
           ),
         ],
       ),

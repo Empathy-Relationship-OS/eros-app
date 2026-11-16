@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/chat/data/models/chat_models.dart';
 import 'package:eros_app/features/chat/presentation/widgets/chat_copy.dart';
 
@@ -36,10 +35,6 @@ class QuickReplyChips extends StatelessWidget {
               key: ValueKey('quick-reply-${reply.key}'),
               label: Text(reply.text),
               onPressed: () => onSelected(reply),
-              backgroundColor: AppColors.background,
-              side: const BorderSide(color: AppColors.primary),
-              labelStyle: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             );
           },
         ),
