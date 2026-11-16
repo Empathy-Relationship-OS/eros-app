@@ -5,6 +5,7 @@ import 'package:eros_app/features/wallet/domain/models/wallet_models.dart';
 import 'package:eros_app/features/wallet/presentation/providers/purchase_provider.dart';
 import 'package:eros_app/features/wallet/presentation/screens/purchase_tokens_screen.dart';
 import 'package:eros_app/features/wallet/presentation/screens/payment_screen.dart';
+import 'package:eros_app/features/wallet/presentation/widgets/wallet_copy.dart';
 import 'package:eros_app/features/wallet/data/repositories/wallet_repository.dart';
 import 'package:eros_app/features/wallet/services/stripe_service.dart';
 import 'package:eros_app/features/wallet/services/idempotency_manager.dart';
@@ -215,6 +216,31 @@ void main() {
         expect(tester.widget<ElevatedButton>(continueButton).onPressed, isNull);
       },
     );
+  });
+
+  group('PurchaseTokensScreen - refund wording', () {
+    testWidgets('the terms line states the 14-day refund rule, not "non-refundable"',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            purchaseProvider.overrideWith(
+              (ref) => _MockPurchaseNotifier(initialState: const PurchaseState()),
+            ),
+          ],
+          child: const MaterialApp(home: PurchaseTokensScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(WalletCopy.acceptTerms), findsOneWidget);
+      expect(find.textContaining('within 14 days'), findsOneWidget);
+      expect(find.textContaining('non-refundable'), findsNothing);
+    });
   });
 }
 

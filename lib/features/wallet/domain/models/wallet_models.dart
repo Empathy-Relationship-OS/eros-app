@@ -62,6 +62,16 @@ enum TokenPackageType {
   /// Formatted price per token
   String get formattedPricePerToken => '£${pricePerToken.toStringAsFixed(2)}';
 
+  /// What this package saves against buying its tokens one at a time, as a whole percent.
+  int get savingPercent {
+    final single = TokenPackageType.starter.pricePerToken;
+    return ((single - pricePerToken) / single * 100).round();
+  }
+
+  /// The biggest saving any package gives, as a whole percent.
+  static int get bestSavingPercent =>
+      values.map((package) => package.savingPercent).reduce((a, b) => a > b ? a : b);
+
   /// JSON value for API
   String get apiValue => name.toUpperCase();
 
