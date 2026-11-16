@@ -103,7 +103,7 @@ class ErosApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       // Always set: notification taps (RFC-006 §6.4) and the dev menu navigate through it.
       navigatorKey: appNavigatorKey,
-      navigatorObservers: [appRouteObserver],
+      navigatorObservers: [appRouteObserver, appPageRouteObserver],
       // PushHost syncs the push token and shows the foreground push banner.
       // Developer tools (RFC-003): DevtoolsConfig.enabled is a compile-time
       // const, so in beta and production builds the dev overlay and menu are
