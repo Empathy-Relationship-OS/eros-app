@@ -37,7 +37,6 @@ class ProfileScreen extends ConsumerWidget {
     // Show loading state
     if (isLoading && profile == null) {
       return const Scaffold(
-        backgroundColor: AppColors.background,
         body: Center(
           child: CircularProgressIndicator(),
         ),
@@ -51,7 +50,6 @@ class ProfileScreen extends ConsumerWidget {
         : null;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: AnnotatedRegion<SystemUiOverlayStyle>(
         value: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
@@ -159,30 +157,12 @@ class ProfileScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   const Spacer(),
-                  // Sign Out Button
+                  // Sign out: a quiet link, not the loudest thing on the screen
                   Padding(
                     padding: const EdgeInsets.all(16),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => _handleSignOut(context, ref),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: AppColors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text(
-                          'Sign Out',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
+                    child: TextButton(
+                      onPressed: () => _handleSignOut(context, ref),
+                      child: const Text('Sign Out'),
                     ),
                   ),
                 ],
@@ -196,10 +176,7 @@ class ProfileScreen extends ConsumerWidget {
 
   void _showComingSoon(BuildContext context, String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature coming soon'),
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text('$feature coming soon')),
     );
   }
 
@@ -279,8 +256,8 @@ class _ProfileHeader extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withValues(alpha: 0.3),
-                    Colors.black.withValues(alpha: 0.1),
+                    AppColors.ink.withValues(alpha: 0.3),
+                    AppColors.ink.withValues(alpha: 0.1),
                   ],
                 ),
               ),
@@ -304,8 +281,8 @@ class _ProfileHeader extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withValues(alpha: 0.5),
-                    Colors.black.withValues(alpha: 0.0),
+                    AppColors.ink.withValues(alpha: 0.5),
+                    AppColors.ink.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -316,12 +293,11 @@ class _ProfileHeader extends StatelessWidget {
                   Expanded(
                     child: Text(
                       displayName,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
                             color: AppColors.white,
-                            fontWeight: FontWeight.bold,
                             shadows: [
                               Shadow(
-                                color: Colors.black.withValues(alpha: 0.3),
+                                color: AppColors.ink.withValues(alpha: 0.3),
                                 offset: const Offset(0, 2),
                                 blurRadius: 4,
                               ),
@@ -338,10 +314,7 @@ class _ProfileHeader extends StatelessWidget {
                         icon: const Icon(Icons.help_outline, color: AppColors.white),
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Help coming soon'),
-                              behavior: SnackBarBehavior.floating,
-                            ),
+                            const SnackBar(content: Text('Help coming soon')),
                           );
                         },
                       ),
@@ -350,10 +323,7 @@ class _ProfileHeader extends StatelessWidget {
                             color: AppColors.white),
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Notifications coming soon'),
-                              behavior: SnackBarBehavior.floating,
-                            ),
+                            const SnackBar(content: Text('Notifications coming soon')),
                           );
                         },
                       ),
@@ -369,9 +339,9 @@ class _ProfileHeader extends StatelessWidget {
   }
 
   Widget _buildPlaceholderPhoto() {
-    return Container(
+    return const ColoredBox(
       color: AppColors.primaryOrangeLight,
-      child: const Center(
+      child: Center(
         child: Icon(
           Icons.person,
           size: 60,
@@ -390,18 +360,10 @@ class _SettingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    // The theme's card. It clips, so each row's ripple stops at the rounded corners.
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: children,
       ),
@@ -425,7 +387,6 @@ class _SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(

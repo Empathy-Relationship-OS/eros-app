@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/features/matching/domain/models/match_models.dart';
 import 'package:eros_app/features/matching/presentation/providers/match_provider.dart';
 import 'package:eros_app/features/matching/presentation/widgets/match_card_components.dart';
@@ -70,6 +72,12 @@ class _MatchCarouselV2State extends State<MatchCarouselV2> {
       itemExtent: MediaQuery.of(context).size.width - 32,
       shrinkExtent: MediaQuery.of(context).size.width - 32,
       elevation: 0,
+      // The carousel clips each card to this shape, so the card's look is set here.
+      backgroundColor: AppColors.cardBackground,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        side: const BorderSide(color: AppColors.divider),
+      ),
       enableSplash: false, // Disable built-in InkWell to allow child gesture detection
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       children: List.generate(
@@ -167,52 +175,34 @@ class _CarouselCardV2State extends ConsumerState<_CarouselCardV2> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Large profile photo - tappable to open full profile
+        Expanded(
+          flex: 3,
+          child: GestureDetector(
+            onTap: _navigateToPublicProfile,
+            child: ProfileImageSection(profile: widget.profile),
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Large profile photo - tappable to open full profile
-            Expanded(
-              flex: 3,
-              child: GestureDetector(
-                onTap: _navigateToPublicProfile,
-                child: ProfileImageSection(profile: widget.profile),
-              ),
-            ),
-
-            // Profile info section - also tappable
-            GestureDetector(
-              onTap: _navigateToPublicProfile,
-              child: ProfileInfoSection(profile: widget.profile),
-            ),
-
-            // Action buttons inside the card
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: MatchActionButtons(
-                isProcessing: _isProcessingAction,
-                onPass: () => _handleAction(false),
-                onLike: () => _handleAction(true),
-              ),
-            ),
-          ],
         ),
-      ),
+
+        // Profile info section - also tappable
+        GestureDetector(
+          onTap: _navigateToPublicProfile,
+          child: ProfileInfoSection(profile: widget.profile),
+        ),
+
+        // Action buttons inside the card
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: MatchActionButtons(
+            isProcessing: _isProcessingAction,
+            onPass: () => _handleAction(false),
+            onLike: () => _handleAction(true),
+          ),
+        ),
+      ],
     );
   }
 }
-

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/features/matching/domain/models/match_models.dart';
 
 /// Reusable name and age display with bullet separator
@@ -15,20 +17,13 @@ class NameAndAgeDisplay extends StatelessWidget {
     required this.name,
     required this.age,
     this.fontSize = 28,
-    this.fontWeight = FontWeight.bold,
+    this.fontWeight = FontWeight.w800,
   });
 
   @override
   Widget build(BuildContext context) {
-    return RichText(
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      text: TextSpan(
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: fontWeight,
-          color: AppColors.textPrimary,
-        ),
+    return Text.rich(
+      TextSpan(
         children: [
           TextSpan(text: name),
           const TextSpan(
@@ -41,6 +36,12 @@ class NameAndAgeDisplay extends StatelessWidget {
           TextSpan(text: '$age'),
         ],
       ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.displayMedium?.copyWith(
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+          ),
     );
   }
 }
@@ -60,66 +61,62 @@ class ProfileImageSection extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         // Profile photo or initial
-        _buildProfileImage(),
+        _buildProfileImage(context),
 
-        // Gradient overlay at bottom for better text readability
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            height: 120,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: 0.7),
-                ],
+        // Shade at the bottom of a photo, so the card's edge reads against a pale picture
+        if (profile.thumbnailUrl != null)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 120,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    AppColors.ink.withValues(alpha: 0.7),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
       ],
     );
   }
 
-  Widget _buildProfileImage() {
+  Widget _buildProfileImage(BuildContext context) {
     if (profile.thumbnailUrl != null) {
       return Image.network(
         profile.thumbnailUrl!,
         fit: BoxFit.cover,
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
-          return Container(
-            color: AppColors.cardBackground,
-            child: const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-              ),
-            ),
+          return const ColoredBox(
+            color: AppColors.surfaceMuted,
+            child: Center(child: CircularProgressIndicator()),
           );
         },
         errorBuilder: (context, error, stackTrace) {
-          return _buildInitialFallback();
+          return _buildInitialFallback(context);
         },
       );
     }
-    return _buildInitialFallback();
+    return _buildInitialFallback(context);
   }
 
-  Widget _buildInitialFallback() {
-    return Container(
-      color: AppColors.cardBackground,
+  Widget _buildInitialFallback(BuildContext context) {
+    return ColoredBox(
+      color: AppColors.primaryTint,
       child: Center(
         child: Text(
           profile.name[0].toUpperCase(),
-          style: const TextStyle(
-            fontSize: 80,
-            fontWeight: FontWeight.bold,
-            color: AppColors.primary,
-          ),
+          style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                fontSize: 80,
+                color: AppColors.primaryDeep,
+              ),
         ),
       ),
     );
@@ -140,29 +137,15 @@ class ProfileInfoSection extends StatelessWidget {
     final badges = profile.badges?.take(5).toList() ?? [];
 
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
-      color: Colors.white,
+      color: AppColors.cardBackground,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Name and age with online indicator dot
-          Row(
-            children: [
-              Expanded(
-                child: NameAndAgeDisplay(
-                  name: profile.name,
-                  age: profile.age,
-                ),
-              ),
-              Container(
-                width: 12,
-                height: 12,
-                decoration: const BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ],
+          NameAndAgeDisplay(
+            name: profile.name,
+            age: profile.age,
           ),
 
           const SizedBox(height: 12),
@@ -209,33 +192,28 @@ class MatchBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 8,
+        horizontal: 12,
+        vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        color: AppColors.primaryTint,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
+          const Icon(
             Icons.check_circle,
             size: 16,
-            color: AppColors.primary,
+            color: AppColors.primaryDeep,
           ),
           const SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  height: 1.3,
+                ),
           ),
         ],
       ),
@@ -260,81 +238,20 @@ class MatchActionButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        // "Not for me" button
         Expanded(
-          child: SizedBox(
-            height: 56,
-            child: ElevatedButton(
-              onPressed: isProcessing ? null : onPass,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE0E0E0), // Darker grey background
-                foregroundColor: AppColors.textPrimary,
-                disabledBackgroundColor:
-                    AppColors.textSecondary.withValues(alpha: 0.3),
-                side: const BorderSide(
-                  color: Color(0xFFE0E0E0), // Same color as background
-                  width: 1,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                elevation: 0,
-              ),
-              child: isProcessing
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.textSecondary,
-                      ),
-                    )
-                  : const Text(
-                      'Not for me',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
+          child: AppButton(
+            label: 'Not for me',
+            kind: AppButtonKind.secondary,
+            loading: isProcessing,
+            onPressed: onPass,
           ),
         ),
-
-        const SizedBox(width: 16),
-
-        // "Go for a date" button
+        const SizedBox(width: 12),
         Expanded(
-          child: SizedBox(
-            height: 56,
-            child: ElevatedButton(
-              onPressed: isProcessing ? null : onLike,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor:
-                    AppColors.textSecondary.withValues(alpha: 0.3),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                elevation: 2,
-              ),
-              child: isProcessing
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text(
-                      'Go for a date',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
+          child: AppButton(
+            label: 'Go for a date',
+            loading: isProcessing,
+            onPressed: onLike,
           ),
         ),
       ],
@@ -364,10 +281,8 @@ class PageIndicator extends StatelessWidget {
           width: index == currentIndex ? 24 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: index == currentIndex
-                ? AppColors.primary
-                : AppColors.textSecondary.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(4),
+            color: index == currentIndex ? AppColors.primary : AppColors.border,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
           ),
         ),
       ),
@@ -389,38 +304,10 @@ class SingleActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: isProcessing ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          disabledBackgroundColor:
-              AppColors.textSecondary.withValues(alpha: 0.3),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          elevation: 2,
-        ),
-        child: isProcessing
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              )
-            : const Text(
-                'Go for a date',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-      ),
+    return AppButton(
+      label: 'Go for a date',
+      loading: isProcessing,
+      onPressed: onPressed,
     );
   }
 }
@@ -442,36 +329,36 @@ class MutualMatchDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return AlertDialog(
-      backgroundColor: AppColors.cardBackground,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.favorite,
-            color: AppColors.primary,
-            size: 80,
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            "It's a Match!",
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+          Container(
+            width: 96,
+            height: 96,
+            decoration: const BoxDecoration(
+              color: AppColors.primaryTint,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.favorite,
+              color: AppColors.primary,
+              size: 48,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
+          Text(
+            "It's a Match!",
+            textAlign: TextAlign.center,
+            style: textTheme.displayMedium,
+          ),
+          const SizedBox(height: 12),
           Text(
             "You and $partnerName liked each other!",
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 16,
-              color: AppColors.textSecondary,
-            ),
+            style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
           ),
           // Date planning message (UI-11)
           if (dateId != null) ...[
@@ -479,33 +366,13 @@ class MutualMatchDialog extends StatelessWidget {
             Text(
               "Your date with $partnerName is ready to plan",
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textPrimary,
-              ),
+              style: textTheme.bodyMedium,
             ),
           ],
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onContinue,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                ),
-              ),
-              child: Text(
-                dateId != null ? 'Plan the date' : 'Continue',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ),
+          const SizedBox(height: 28),
+          AppButton(
+            label: dateId != null ? 'Plan the date' : 'Continue',
+            onPressed: onContinue,
           ),
         ],
       ),

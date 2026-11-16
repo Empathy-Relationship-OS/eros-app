@@ -21,7 +21,6 @@ class VerificationProfileRow extends ConsumerWidget {
 
     return InkWell(
       onTap: () => openVerificationStatus(context),
-      borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(

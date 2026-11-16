@@ -1,5 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+
+/// The icon at the top of each state below: deep coral on a tint circle.
+class _StateIcon extends StatelessWidget {
+  final IconData icon;
+
+  const _StateIcon(this.icon);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 96,
+      height: 96,
+      decoration: const BoxDecoration(
+        color: AppColors.primaryTint,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, size: 44, color: AppColors.primaryDeep),
+    );
+  }
+}
 
 /// Widget displayed when daily match limit is exceeded
 class LimitExceededView extends StatelessWidget {
@@ -18,20 +39,13 @@ class LimitExceededView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Clock icon
-            Icon(
-              Icons.access_time,
-              size: 100,
-              color: AppColors.primary.withValues(alpha: 0.8),
-            ),
-            const SizedBox(height: 32),
+            const _StateIcon(Icons.access_time),
+            const SizedBox(height: 24),
 
             // Title
             Text(
               'All Daily Potential Matches Viewed',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(context).textTheme.headlineMedium,
               textAlign: TextAlign.center,
             ),
 
@@ -70,43 +84,38 @@ class _CountdownCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.3),
-          width: 2,
-        ),
+        color: AppColors.primaryTint,
+        borderRadius: BorderRadius.circular(AppRadius.card),
       ),
       child: Column(
         children: [
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              const Icon(
                 Icons.schedule,
-                color: AppColors.primary,
+                color: AppColors.textSecondary,
                 size: 20,
               ),
               const SizedBox(width: 8),
               Text(
                 "Come back in:",
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
+                style: textTheme.titleMedium?.copyWith(color: AppColors.textSecondary),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             _formatDuration(timeUntilReset),
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
+            style: textTheme.displaySmall?.copyWith(
+              // Digits of one width, so the text doesn't shift as it counts down.
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
         ],
       ),
@@ -127,31 +136,25 @@ class NoMatchesView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.people_outline,
-              size: 80,
-              color: AppColors.textSecondary,
-            ),
+            const _StateIcon(Icons.people_outline),
             const SizedBox(height: 24),
             Text(
               'No Matches Available',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: textTheme.headlineMedium,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               errorMessage ?? 'Check back later for new matches',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+              style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -159,13 +162,6 @@ class NoMatchesView extends StatelessWidget {
               onPressed: onRefresh,
               icon: const Icon(Icons.refresh),
               label: const Text('Refresh'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-              ),
             ),
           ],
         ),
@@ -185,31 +181,25 @@ class EmptyStateView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.favorite_outline,
-              size: 80,
-              color: AppColors.primary,
-            ),
+            const _StateIcon(Icons.favorite_outline),
             const SizedBox(height: 24),
             Text(
               'Ready to Match?',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: textTheme.headlineMedium,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               'Tap below to see your daily matches',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+              style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -217,13 +207,6 @@ class EmptyStateView extends StatelessWidget {
               onPressed: onViewMatches,
               icon: const Icon(Icons.visibility),
               label: const Text('View Matches'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-              ),
             ),
           ],
         ),
@@ -252,17 +235,11 @@ class DealbreakersEmptyView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.tune,
-              size: 80,
-              color: AppColors.textSecondary,
-            ),
+            const _StateIcon(Icons.tune),
             const SizedBox(height: 24),
             Text(
               'You\'ve seen everyone who fits your dealbreakers for now',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(context).textTheme.headlineMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -270,13 +247,6 @@ class DealbreakersEmptyView extends StatelessWidget {
               onPressed: onOpenMatchPreferences,
               icon: const Icon(Icons.tune),
               label: const Text('Match preferences'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-              ),
             ),
             const SizedBox(height: 8),
             TextButton.icon(

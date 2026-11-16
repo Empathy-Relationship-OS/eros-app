@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 
 /// Status pill for date state display
 ///
-/// Per UI-1: Full-width rounded outline with trailing info icon
-/// Tones: action (orange), waiting (grey), success (green), neutral, muted
+/// Per UI-1: Full-width rounded block with trailing info icon
+/// Tones: action (tint, the viewer's move), waiting, success (green), neutral, muted (outline)
 /// Can be made clickable to navigate directly to action screens
 class DateStatusPill extends StatelessWidget {
   final String text;
@@ -31,7 +33,7 @@ class DateStatusPill extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         border: Border.all(color: colors.borderColor, width: 1.5),
         color: colors.backgroundColor,
       ),
@@ -43,11 +45,7 @@ class DateStatusPill extends StatelessWidget {
               semanticsLabel: isClickable
                   ? 'Tap to $text'
                   : 'Date status: $text',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: colors.textColor,
-              ),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(color: colors.textColor),
             ),
           ),
           // Show chevron for clickable pills, info icon for explanation
@@ -82,59 +80,32 @@ class DateStatusPill extends StatelessWidget {
   void _showExplanation(BuildContext context) {
     if (explanationText == null) return;
 
+    final textTheme = Theme.of(context).textTheme;
+
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      showDragHandle: true,
       builder: (context) => Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle bar
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
             // Title
-            Text(
-              text,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
+            Text(text, style: textTheme.headlineSmall),
             const SizedBox(height: 12),
 
             // Explanation
             Text(
               explanationText!,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
+              style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),
 
             // Close button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Got it'),
-              ),
+            AppButton(
+              label: 'Got it',
+              onPressed: () => Navigator.of(context).pop(),
             ),
           ],
         ),
@@ -144,18 +115,19 @@ class DateStatusPill extends StatelessWidget {
 
   _PillColors _getToneColors(String tone) {
     switch (tone) {
+      // Your move: the tint block, with ink text.
       case 'action':
-        return _PillColors(
-          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-          borderColor: AppColors.primary,
-          textColor: AppColors.primary,
-          iconColor: AppColors.primary,
+        return const _PillColors(
+          backgroundColor: AppColors.primaryTint,
+          borderColor: AppColors.primaryTint,
+          textColor: AppColors.textPrimary,
+          iconColor: AppColors.primaryDeep,
         );
 
       case 'waiting':
-        return _PillColors(
-          backgroundColor: AppColors.textTertiary.withValues(alpha: 0.1),
-          borderColor: AppColors.textSecondary,
+        return const _PillColors(
+          backgroundColor: AppColors.surfaceMuted,
+          borderColor: AppColors.surfaceMuted,
           textColor: AppColors.textSecondary,
           iconColor: AppColors.textSecondary,
         );
@@ -163,32 +135,24 @@ class DateStatusPill extends StatelessWidget {
       case 'success':
         return _PillColors(
           backgroundColor: AppColors.success.withValues(alpha: 0.1),
-          borderColor: AppColors.success,
+          borderColor: Colors.transparent,
           textColor: AppColors.success,
           iconColor: AppColors.success,
         );
 
-      case 'neutral':
-        return _PillColors(
-          backgroundColor: AppColors.background,
-          borderColor: AppColors.border,
-          textColor: AppColors.textPrimary,
+      case 'muted':
+        return const _PillColors(
+          backgroundColor: Colors.transparent,
+          borderColor: AppColors.divider,
+          textColor: AppColors.textSecondary,
           iconColor: AppColors.textSecondary,
         );
 
-      case 'muted':
-        return _PillColors(
-          backgroundColor: AppColors.background,
-          borderColor: AppColors.divider,
-          textColor: AppColors.textTertiary,
-          iconColor: AppColors.textTertiary,
-        );
-
+      case 'neutral':
       default:
-        // Default to neutral
-        return _PillColors(
-          backgroundColor: AppColors.background,
-          borderColor: AppColors.border,
+        return const _PillColors(
+          backgroundColor: AppColors.surfaceMuted,
+          borderColor: AppColors.surfaceMuted,
           textColor: AppColors.textPrimary,
           iconColor: AppColors.textSecondary,
         );

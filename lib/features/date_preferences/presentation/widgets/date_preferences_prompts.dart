@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
+import 'package:eros_app/core/widgets/app_prompt_card.dart';
 import 'package:eros_app/features/date_preferences/domain/models/date_preferences.dart';
 import 'package:eros_app/features/date_preferences/presentation/providers/date_preferences_prompt_providers.dart';
 import 'package:eros_app/features/date_preferences/presentation/providers/date_preferences_provider.dart';
@@ -79,9 +81,6 @@ class _DatePreferencesFirstRunSheetState extends ConsumerState<DatePreferencesFi
     if (!mounted) return;
     final setNow = await showModalBottomSheet<bool>(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (_) => const _FirstRunSheet(),
     );
     if (setNow == true && mounted) await openDatePreferences(context);
@@ -102,6 +101,8 @@ class _FirstRunSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
@@ -109,45 +110,29 @@ class _FirstRunSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.auto_awesome_outlined, size: 36, color: AppColors.accentOrange),
+            const Icon(Icons.auto_awesome_outlined, size: 36, color: AppColors.primaryDeep),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               DatePreferencesPromptCopy.sheetTitle,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
+              style: textTheme.headlineMedium,
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               DatePreferencesPromptCopy.sheetBody,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+              style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
+            AppButton(
+              label: DatePreferencesPromptCopy.sheetSetNow,
               onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryOrange,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text(
-                DatePreferencesPromptCopy.sheetSetNow,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
             ),
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.textSecondary,
-                minimumSize: const Size.fromHeight(44),
-              ),
-              child: const Text(DatePreferencesPromptCopy.sheetLater, style: TextStyle(fontSize: 15)),
+              style: TextButton.styleFrom(minimumSize: const Size.fromHeight(44)),
+              child: const Text(DatePreferencesPromptCopy.sheetLater),
             ),
           ],
         ),
@@ -168,33 +153,12 @@ class DatePreferencesPromptCard extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Material(
-        color: AppColors.secondaryOrange.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: () => openDatePreferences(context),
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.only(left: 16),
-            child: Row(
-              children: [
-                const Icon(Icons.auto_awesome_outlined, color: AppColors.accentOrange),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    DatePreferencesPromptCopy.cardTitle,
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: AppColors.textSecondary),
-                  tooltip: DatePreferencesPromptCopy.cardDismiss,
-                  onPressed: () => ref.read(datePreferencesCardDismissedProvider.notifier).dismiss(),
-                ),
-              ],
-            ),
-          ),
-        ),
+      child: AppPromptCard(
+        icon: Icons.auto_awesome_outlined,
+        title: DatePreferencesPromptCopy.cardTitle,
+        onTap: () => openDatePreferences(context),
+        onDismiss: () => ref.read(datePreferencesCardDismissedProvider.notifier).dismiss(),
+        dismissTooltip: DatePreferencesPromptCopy.cardDismiss,
       ),
     );
   }

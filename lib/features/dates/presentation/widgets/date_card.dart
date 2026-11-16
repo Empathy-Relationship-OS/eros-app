@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_status_pill.dart';
 import 'package:eros_app/features/dates/presentation/widgets/date_facts.dart';
@@ -29,21 +30,16 @@ class DateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      shadowColor: AppColors.shadow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Partner header with optional chat bubble
-              _buildPartnerHeader(),
+              _buildPartnerHeader(context),
 
               const SizedBox(height: 12),
 
@@ -67,7 +63,9 @@ class DateCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPartnerHeader() {
+  Widget _buildPartnerHeader(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Row(
       children: [
         // Partner photo
@@ -75,8 +73,8 @@ class DateCard extends StatelessWidget {
           width: 60,
           height: 60,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: AppColors.primaryOrangeLight,
+            borderRadius: BorderRadius.circular(AppRadius.button),
+            color: AppColors.primaryTint,
           ),
           clipBehavior: Clip.antiAlias,
           child: date.partnerThumbnailUrl != null
@@ -87,9 +85,9 @@ class DateCard extends StatelessWidget {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                   errorWidget: (context, url, error) =>
-                      _buildInitialAvatar(date.partnerName),
+                      _buildInitialAvatar(context, date.partnerName),
                 )
-              : _buildInitialAvatar(date.partnerName),
+              : _buildInitialAvatar(context, date.partnerName),
         ),
 
         const SizedBox(width: 12),
@@ -99,22 +97,9 @@ class DateCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                date.partnerName,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
+              Text(date.partnerName, style: textTheme.headlineSmall),
               const SizedBox(height: 2),
-              Text(
-                _getStateBadgeText(),
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                ),
-              ),
+              Text(_getStateBadgeText(), style: textTheme.bodySmall),
             ],
           ),
         ),
@@ -126,19 +111,17 @@ class DateCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInitialAvatar(String name) {
+  Widget _buildInitialAvatar(BuildContext context, String name) {
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
 
-    return Container(
-      color: AppColors.primaryOrangeLight,
+    return ColoredBox(
+      color: AppColors.primaryTint,
       child: Center(
         child: Text(
           initial,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: AppColors.white,
-          ),
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                color: AppColors.primaryDeep,
+              ),
         ),
       ),
     );
@@ -154,7 +137,7 @@ class DateCard extends StatelessWidget {
     if (isActionable && onActionTap != null) {
       return InkWell(
         onTap: onActionTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         child: DateStatusPill(
           text: pillText,
           tone: tone,

@@ -324,6 +324,11 @@ The look comes from `lib/core/theme/`: `AppColors` (palette), `AppRadius` (corne
 - Take colours, radii and text styles from the theme (`Theme.of(context).textTheme`,
   `AppColors`, `AppRadius`). Don't type a hex colour, a radius or a font size into a widget, and
   don't restyle a button with `styleFrom` to change its colours or shape.
+- Shared widgets in `lib/core/widgets/`: `AppButton` (primary, secondary, outline; one height,
+  a loading state) for every button that isn't a text link, and `AppPromptCard` for a
+  dismissible nudge at the top of a tab. A plain `Card` is the themed card.
+- Bottom sheets take their shape from the theme; pass `showDragHandle: true` instead of drawing
+  a handle.
 - Replace any purple/red tones from reference screenshots with the palette above
 
 ### UI/UX Guidelines
