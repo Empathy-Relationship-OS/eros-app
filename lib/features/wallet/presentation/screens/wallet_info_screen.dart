@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/features/wallet/presentation/widgets/wallet_copy.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/core/widgets/app_button.dart';
@@ -22,8 +23,7 @@ class WalletInfoScreen extends StatelessWidget {
               items: [
                 _InfoItem(
                   icon: Icons.local_drink_outlined,
-                  text:
-                      'In Muse, you use date tokens to pay for your dates. A single token costs £7.00.',
+                  text: WalletCopy.singleTokenPrice,
                 ),
                 _InfoItem(
                   icon: Icons.local_bar_outlined,
@@ -31,8 +31,7 @@ class WalletInfoScreen extends StatelessWidget {
                 ),
                 _InfoItem(
                   icon: Icons.refresh,
-                  text:
-                      'Bought tokens are refundable for 14 days, unless you cancel the date yourself.',
+                  text: WalletCopy.refundRule,
                 ),
                 _InfoItem(
                   icon: Icons.receipt_outlined,
@@ -50,12 +49,11 @@ class WalletInfoScreen extends StatelessWidget {
               items: [
                 _InfoItem(
                   icon: Icons.sell_outlined,
-                  text: 'You can save up to 32% by buying tokens in a pack.',
+                  text: WalletCopy.packSaving,
                 ),
                 _InfoItem(
                   icon: Icons.autorenew,
-                  text:
-                      'A package is refundable for 14 days, as long as it\'s complete.',
+                  text: WalletCopy.packageRefundRule,
                 ),
               ],
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/features/wallet/presentation/widgets/wallet_copy.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/theme/app_radius.dart';
@@ -86,7 +87,7 @@ class PurchaseTokensScreen extends ConsumerWidget {
                             child: Padding(
                               padding: const EdgeInsets.only(top: 12.0),
                               child: Text(
-                                'I accept the terms and conditions. All token purchases are non-refundable.',
+                                WalletCopy.acceptTerms,
                                 style: textTheme.bodyMedium,
                               ),
                             ),
@@ -286,11 +287,7 @@ class _PackageCard extends StatelessWidget {
     );
   }
 
-  String _getSavingsText(TokenPackageType package) {
-    final starterPricePerToken = TokenPackageType.starter.pricePerToken;
-    final savings = ((starterPricePerToken - package.pricePerToken) / starterPricePerToken * 100).round();
-    return 'Save $savings%';
-  }
+  String _getSavingsText(TokenPackageType package) => 'Save ${package.savingPercent}%';
 }
 
 /// "BEST VALUE", beside the package's name. It's a coral fill, so its text is ink.
