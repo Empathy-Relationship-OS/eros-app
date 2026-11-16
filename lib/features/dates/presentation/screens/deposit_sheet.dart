@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/theme/app_theme.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/date_verification_provider.dart';
@@ -72,10 +75,13 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
         ? widget.dateDetail.partnerDeposit(widget.currentUid)
         : ParticipantDepositStatus.notApplicable;
 
+    final textTheme = Theme.of(context).textTheme;
+    final shortOfTokens = !hasSufficientBalance && !_needsTopUp;
+
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.cardBackground,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
       ),
       child: SafeArea(
         child: Padding(
@@ -85,40 +91,26 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              const Text(
-                DatesCopy.depositHeading,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
+              Text(DatesCopy.depositHeading, style: textTheme.headlineMedium),
               const SizedBox(height: 8),
 
               // Agreed time range
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryOrange.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: AppColors.primaryTint,
+                  borderRadius: BorderRadius.circular(AppRadius.input),
                 ),
                 child: Row(
                   children: [
                     const Icon(
                       Icons.calendar_today,
                       size: 16,
-                      color: AppColors.primaryOrange,
+                      color: AppColors.primaryDeep,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        widget.agreedTimeRange,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
+                      child: Text(widget.agreedTimeRange, style: textTheme.titleSmall),
                     ),
                   ],
                 ),
@@ -131,20 +123,13 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
                   children: [
                     TokenAmount(
                       tokenCost: widget.dateDetail.tokenCost,
-                      style: const TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
+                      style: textTheme.displayLarge?.copyWith(fontSize: 36),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       DatesCopy.depositRefundCaption,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                      ),
+                      style: textTheme.bodySmall,
                     ),
                   ],
                 ),
@@ -155,30 +140,21 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: hasSufficientBalance || _needsTopUp
-                      ? AppColors.background
-                      : AppColors.error.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: hasSufficientBalance || _needsTopUp
-                        ? Colors.transparent
-                        : AppColors.error.withValues(alpha: 0.3),
-                  ),
+                  color: shortOfTokens
+                      ? AppColors.error.withValues(alpha: 0.1)
+                      : AppColors.surfaceMuted,
+                  borderRadius: BorderRadius.circular(AppRadius.input),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       DatesCopy.depositBalanceLabel(balance),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: hasSufficientBalance || _needsTopUp
-                            ? AppColors.textPrimary
-                            : AppColors.error,
+                      style: textTheme.titleSmall?.copyWith(
+                        color: shortOfTokens ? AppColors.error : AppColors.textPrimary,
                       ),
                     ),
-                    if (!hasSufficientBalance && !_needsTopUp)
+                    if (shortOfTokens)
                       const Icon(
                         Icons.warning_rounded,
                         size: 20,
@@ -201,10 +177,7 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
                           widget.dateDetail.partnerName,
                           partnerDeposit == ParticipantDepositStatus.paid,
                         ),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                        ),
+                        style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
                       ),
                       if (partnerDeposit == ParticipantDepositStatus.paid)
                         const Icon(
@@ -229,70 +202,24 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
                   ),
                 ),
               const SizedBox(height: 4),
-              const Text(
-                DatesCopy.depositDeadlineCaption,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
-              ),
+              Text(DatesCopy.depositDeadlineCaption, style: textTheme.bodySmall),
               const SizedBox(height: 24),
 
               // Primary button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting
-                      ? null
-                      : (hasSufficientBalance && !_needsTopUp
-                          ? _handleCommit
-                          : _handleTopUp),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: hasSufficientBalance && !_needsTopUp
-                        ? AppColors.primaryOrange
-                        : AppColors.textPrimary,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: AppColors.disabled,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Text(
-                          hasSufficientBalance && !_needsTopUp
-                              ? 'Commit ${widget.dateDetail.tokenCost}'
-                              : DatesCopy.depositTopUpButton,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                ),
+              AppButton(
+                label: hasSufficientBalance && !_needsTopUp
+                    ? 'Commit ${widget.dateDetail.tokenCost}'
+                    : DatesCopy.depositTopUpButton,
+                loading: _isSubmitting,
+                onPressed: hasSufficientBalance && !_needsTopUp ? _handleCommit : _handleTopUp,
               ),
               const SizedBox(height: 8),
               // Cancel button
               Center(
                 child: TextButton(
                   onPressed: _isSubmitting ? null : () => _showCancelDialog(context),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
-                  ),
-                  child: const Text(
-                    'Cancel this date',
-                    style: TextStyle(
-                      fontSize: 15,
-                    ),
-                  ),
+                  style: AppTheme.quietLink,
+                  child: const Text('Cancel this date'),
                 ),
               ),
             ],
@@ -307,7 +234,7 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.cardBackground,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
       ),
       child: SafeArea(
         child: DateVerificationWallBody(
@@ -442,7 +369,7 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               color: AppColors.cardBackground,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadius.dialog),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -456,7 +383,7 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
                   ),
                   child: const Icon(
                     Icons.check,
-                    color: Colors.white,
+                    color: AppColors.white,
                     size: 36,
                   ),
                 ),
@@ -464,11 +391,7 @@ class _DepositSheetState extends ConsumerState<DepositSheet> {
                 Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
               ],
             ),

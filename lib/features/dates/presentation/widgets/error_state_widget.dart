@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_theme.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 
 /// Reusable error state widget for dates feature screens
@@ -35,6 +37,7 @@ class ErrorStateWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final errorInfo = _getErrorInfo(error);
+    final textTheme = Theme.of(context).textTheme;
 
     return Center(
       child: Padding(
@@ -61,11 +64,7 @@ class ErrorStateWidget extends StatelessWidget {
             // Error heading
             Text(
               customHeading ?? errorInfo.heading,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
+              style: textTheme.headlineMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
@@ -73,54 +72,21 @@ class ErrorStateWidget extends StatelessWidget {
             // Error description
             Text(
               customMessage ?? errorInfo.message,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-                height: 1.4,
-              ),
+              style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
 
             // Primary action - Retry
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onRetry,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryOrange,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Try Again',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
+            AppButton(label: 'Try Again', onPressed: onRetry),
 
             // Secondary action - Go back
             if (onGoBack != null) ...[
               const SizedBox(height: 12),
               TextButton(
                 onPressed: onGoBack,
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                child: const Text(
-                  'Go Back',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                style: AppTheme.quietLink,
+                child: const Text('Go Back'),
               ),
             ],
           ],

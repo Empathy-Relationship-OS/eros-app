@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/features/dates/presentation/providers/dates_repository_provider.dart';
 import 'package:eros_app/features/dates/presentation/widgets/venue_price_and_menu.dart';
@@ -92,15 +94,21 @@ class _VenueDetailSheetState extends ConsumerState<VenueDetailSheet> {
     }
   }
 
+  TextTheme get _textTheme => Theme.of(context).textTheme;
+
+  /// An address or web link: deep coral and underlined.
+  TextStyle? get _linkStyle => _textTheme.bodyMedium?.copyWith(
+        color: AppColors.primaryDeep,
+        decoration: TextDecoration.underline,
+        decorationColor: AppColors.primaryDeep,
+      );
+
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.background,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
       ),
       child: DraggableScrollableSheet(
         initialChildSize: 0.85,
@@ -142,10 +150,7 @@ class _VenueDetailSheetState extends ConsumerState<VenueDetailSheet> {
             Text(
               _error ?? 'Something went wrong',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-              ),
+              style: _textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),
             TextButton(
@@ -172,8 +177,8 @@ class _VenueDetailSheetState extends ConsumerState<VenueDetailSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.textTertiary.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(2),
+              color: AppColors.border,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
           ),
         ),
@@ -193,11 +198,7 @@ class _VenueDetailSheetState extends ConsumerState<VenueDetailSheet> {
               // Venue name
               Text(
                 venue.name,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+                style: _textTheme.displaySmall,
               ),
 
               // Price band and menu link
@@ -211,7 +212,7 @@ class _VenueDetailSheetState extends ConsumerState<VenueDetailSheet> {
               // Address (tappable)
               InkWell(
                 onTap: () => _openMaps(venue.address),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.input),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                   child: Row(
@@ -219,17 +220,13 @@ class _VenueDetailSheetState extends ConsumerState<VenueDetailSheet> {
                       const Icon(
                         Icons.location_on_outlined,
                         size: 20,
-                        color: AppColors.primaryOrange,
+                        color: AppColors.primaryDeep,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           venue.address,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: AppColors.primaryOrange,
-                            decoration: TextDecoration.underline,
-                          ),
+                          style: _linkStyle,
                         ),
                       ),
                       const Icon(
@@ -245,22 +242,11 @@ class _VenueDetailSheetState extends ConsumerState<VenueDetailSheet> {
               const SizedBox(height: 24),
 
               // Description
-              const Text(
-                'About',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
+              Text('About', style: _textTheme.headlineSmall),
               const SizedBox(height: 8),
               Text(
                 venue.description,
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.5,
-                  color: AppColors.textSecondary,
-                ),
+                style: _textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
               ),
 
               const SizedBox(height: 24),
@@ -285,21 +271,10 @@ class _VenueDetailSheetState extends ConsumerState<VenueDetailSheet> {
               const SizedBox(height: 32),
 
               // Open in Maps button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _openMaps(venue.address),
-                  icon: const Icon(Icons.directions),
-                  label: const Text('Get Directions'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryOrange,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
+              AppButton(
+                label: 'Get Directions',
+                icon: Icons.directions,
+                onPressed: () => _openMaps(venue.address),
               ),
 
               // Bottom safe area padding
@@ -313,10 +288,7 @@ class _VenueDetailSheetState extends ConsumerState<VenueDetailSheet> {
 
   Widget _buildVenueImage(String imageUrl) {
     return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(20),
-        topRight: Radius.circular(20),
-      ),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
       child: _cachedAuthToken != null
           ? CachedNetworkImage(
               imageUrl: imageUrl,
@@ -337,12 +309,9 @@ class _VenueDetailSheetState extends ConsumerState<VenueDetailSheet> {
     return Container(
       height: 250,
       width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.textTertiary.withValues(alpha: 0.1),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
+      decoration: const BoxDecoration(
+        color: AppColors.surfaceMuted,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
       ),
       child: const Center(
         child: Icon(
@@ -369,19 +338,12 @@ class _VenueDetailSheetState extends ConsumerState<VenueDetailSheet> {
         const SizedBox(width: 12),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 15,
-            color: AppColors.textSecondary,
-          ),
+          style: _textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(width: 8),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+          style: _textTheme.titleSmall,
         ),
       ],
     );
@@ -394,7 +356,7 @@ class _VenueDetailSheetState extends ConsumerState<VenueDetailSheet> {
   }) {
     return InkWell(
       onTap: () => _openUrl(url),
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppRadius.input),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         child: Row(
@@ -402,17 +364,13 @@ class _VenueDetailSheetState extends ConsumerState<VenueDetailSheet> {
             Icon(
               icon,
               size: 20,
-              color: AppColors.primaryOrange,
+              color: AppColors.primaryDeep,
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: AppColors.primaryOrange,
-                  decoration: TextDecoration.underline,
-                ),
+                style: _linkStyle,
               ),
             ),
             const Icon(
