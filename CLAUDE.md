@@ -331,6 +331,11 @@ The look comes from `lib/core/theme/`: `AppColors` (palette), `AppRadius` (corne
   `style: AppTheme.quietLink`, so it is muted and never competes with the screen's action.
 - Bottom sheets take their shape from the theme; pass `showDragHandle: true` instead of drawing
   a handle.
+- A profile as others see it is built from `profile_display_components.dart`:
+  `ProfileHeaderCard`, `ProfileCard` for any further section, and `ProfileLoadError`. The
+  public profile and the onboarding preview both use them, so a change shows in both.
+- In chat, my bubble is coral with ink text and the partner's is white with a hairline. A
+  filled icon button on coral (send) takes an ink icon, like any coral fill.
 - Replace any purple/red tones from reference screenshots with the palette above
 
 ### UI/UX Guidelines

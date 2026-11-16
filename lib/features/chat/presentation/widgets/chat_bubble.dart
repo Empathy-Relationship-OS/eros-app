@@ -4,7 +4,7 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/chat/data/models/chat_models.dart';
 import 'package:eros_app/features/chat/presentation/widgets/chat_copy.dart';
 
-/// One message: mine on the right in orange, the partner's on the left in white.
+/// One message: mine on the right on coral, the partner's on the left on white.
 ///
 /// Under my messages it shows "Sending" while on the way, and "Not sent, tap to retry"
 /// when it failed. [onRetry] is null when the chat can't send any more, and then the
@@ -26,6 +26,7 @@ class ChatBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final fromMe = message.fromMe;
     final failed = message.sendState == ChatSendState.failed;
+    final textTheme = Theme.of(context).textTheme;
 
     final bubble = Container(
       constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.75),
@@ -33,23 +34,20 @@ class ChatBubble extends StatelessWidget {
       decoration: BoxDecoration(
         color: fromMe ? AppColors.primary : AppColors.cardBackground,
         borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(16),
-          topRight: const Radius.circular(16),
-          bottomLeft: Radius.circular(fromMe ? 16 : 4),
-          bottomRight: Radius.circular(fromMe ? 4 : 16),
+          topLeft: const Radius.circular(18),
+          topRight: const Radius.circular(18),
+          bottomLeft: Radius.circular(fromMe ? 18 : 4),
+          bottomRight: Radius.circular(fromMe ? 4 : 18),
         ),
-        border: failed ? Border.all(color: AppColors.error) : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        // A failed message is outlined in red. The partner's white bubble gets a hairline, so
+        // it reads against the cream page without a shadow.
+        border: failed
+            ? Border.all(color: AppColors.error)
+            : (fromMe ? null : Border.all(color: AppColors.divider)),
       ),
       child: Text(
         message.text,
-        style: TextStyle(
+        style: textTheme.bodyLarge?.copyWith(
           fontSize: 15,
           height: 1.35,
           color: fromMe ? AppColors.textOnPrimary : AppColors.textPrimary,
@@ -67,14 +65,11 @@ class ChatBubble extends StatelessWidget {
             child: bubble,
           ),
           const SizedBox(height: 4),
-          _buildCaption(),
+          _buildCaption(textTheme),
           if (seen)
-            const Padding(
-              padding: EdgeInsets.only(top: 2),
-              child: Text(
-                ChatCopy.seen,
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-              ),
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(ChatCopy.seen, style: textTheme.bodySmall),
             ),
         ],
       ),
@@ -90,13 +85,11 @@ class ChatBubble extends StatelessWidget {
     return content;
   }
 
-  Widget _buildCaption() {
+  Widget _buildCaption(TextTheme textTheme) {
+    final quiet = textTheme.bodySmall?.copyWith(color: AppColors.textTertiary, height: 1.3);
     switch (message.sendState) {
       case ChatSendState.sending:
-        return const Text(
-          ChatCopy.sending,
-          style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
-        );
+        return Text(ChatCopy.sending, style: quiet);
       case ChatSendState.failed:
         return Row(
           mainAxisSize: MainAxisSize.min,
@@ -105,14 +98,14 @@ class ChatBubble extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               onRetry != null ? ChatCopy.notSentRetry : ChatCopy.notSent,
-              style: const TextStyle(fontSize: 12, color: AppColors.error),
+              style: quiet?.copyWith(color: AppColors.error),
             ),
           ],
         );
       case ChatSendState.sent:
         return Text(
           DateFormat('HH:mm').format(message.createdAt.toLocal()),
-          style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
+          style: quiet,
         );
     }
   }

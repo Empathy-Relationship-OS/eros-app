@@ -8,6 +8,7 @@ import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/core/constants/user_text_limits.dart';
 import 'package:eros_app/core/notifications/active_chat_provider.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/core/time/server_clock_provider.dart';
 import 'package:eros_app/core/utils/user_text.dart';
 import 'package:eros_app/features/chat/data/models/chat_models.dart';
@@ -55,6 +56,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
 
   /// Starts loading older messages this close to the top.
   static const double _loadOlderThreshold = 200;
+
+  /// The message box is a borderless pill in every state.
+  static final OutlineInputBorder _composerBorder = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(24),
+    borderSide: BorderSide.none,
+  );
 
   @override
   void initState() {
@@ -190,7 +197,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
       if (!mounted) return;
       showModalBottomSheet<void>(
         context: context,
-        backgroundColor: AppColors.white,
+        showDragHandle: true,
         builder: (context) => const ContactTipSheet(),
       );
     });
@@ -221,7 +228,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
     });
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: _buildAppBar(chatState),
       body: SafeArea(
         top: false,
@@ -233,12 +239,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
   PreferredSizeWidget _buildAppBar(ChatViewState chatState) {
     final chat = chatState.chat;
     final subtitle = _headerSubtitle(chat);
+    final textTheme = Theme.of(context).textTheme;
 
     return AppBar(
-      backgroundColor: AppColors.white,
-      foregroundColor: AppColors.textPrimary,
-      elevation: 0.5,
+      // The partner sits beside the back button, so this title isn't centred like the others
+      centerTitle: false,
       titleSpacing: 0,
+      shape: const Border(bottom: BorderSide(color: AppColors.divider)),
       title: chat == null
           ? null
           : Row(
@@ -252,14 +259,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
                     children: [
                       Text(
                         chat.partnerName,
-                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                        style: textTheme.titleMedium,
                         overflow: TextOverflow.ellipsis,
                       ),
                       if (subtitle != null)
-                        Text(
-                          subtitle,
-                          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                        ),
+                        Text(subtitle, style: textTheme.bodySmall?.copyWith(height: 1.3)),
                     ],
                   ),
                 ),
@@ -389,7 +393,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
     final quickReplies = chatState.canSend ? chatState.chat!.quickReplies : const <QuickReply>[];
 
     return Container(
-      color: AppColors.white,
+      decoration: const BoxDecoration(
+        color: AppColors.cardBackground,
+        border: Border(top: BorderSide(color: AppColors.divider)),
+      ),
       padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -405,7 +412,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
               padding: const EdgeInsets.only(bottom: 8, right: 8),
               child: Text(
                 notice,
-                style: const TextStyle(fontSize: 13, color: AppColors.error),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.error),
               ),
             ),
           Row(
@@ -429,21 +436,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
                   decoration: InputDecoration(
                     hintText: ChatCopy.inputHint,
                     filled: true,
-                    fillColor: AppColors.background,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide.none,
-                    ),
+                    fillColor: AppColors.surfaceMuted,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    border: _composerBorder,
+                    enabledBorder: _composerBorder,
+                    focusedBorder: _composerBorder,
                   ),
                 ),
               ),
-              const SizedBox(width: 4),
-              IconButton(
+              const SizedBox(width: 8),
+              // A coral disc with an ink arrow: a coral arrow on white is too faint to read
+              IconButton.filled(
                 onPressed: canSend ? _send : null,
                 tooltip: ChatCopy.send,
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                icon: Icon(Icons.send, color: canSend ? AppColors.primary : AppColors.disabledText),
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.textOnPrimary,
+                  disabledBackgroundColor: AppColors.disabled,
+                  disabledForegroundColor: AppColors.disabledText,
+                ),
+                icon: const Icon(Icons.arrow_upward_rounded),
               ),
             ],
           ),
@@ -462,12 +475,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
 
     return Container(
       width: double.infinity,
-      color: AppColors.white,
+      decoration: const BoxDecoration(
+        color: AppColors.cardBackground,
+        border: Border(top: BorderSide(color: AppColors.divider)),
+      ),
       padding: const EdgeInsets.all(16),
       child: Text(
         text,
         textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
       ),
     );
   }
@@ -479,7 +495,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 15, color: AppColors.textSecondary, height: 1.4),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
         ),
       ),
     );
@@ -490,9 +506,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(ChatCopy.loadFailed, style: TextStyle(fontSize: 15, color: AppColors.textSecondary)),
-          const SizedBox(height: 12),
-          ElevatedButton(onPressed: () => _notifier.load(), child: const Text(ChatCopy.tryAgain)),
+          Text(
+            ChatCopy.loadFailed,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 16),
+          AppButton(
+            label: ChatCopy.tryAgain,
+            kind: AppButtonKind.secondary,
+            expand: false,
+            onPressed: () => _notifier.load(),
+          ),
         ],
       ),
     );
@@ -510,9 +534,15 @@ class _PartnerAvatar extends StatelessWidget {
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
     return CircleAvatar(
       radius: 18,
-      backgroundColor: AppColors.primaryOrangeLight,
+      backgroundColor: AppColors.primaryTint,
       foregroundImage: url == null ? null : CachedNetworkImageProvider(url!),
-      child: Text(initial, style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold)),
+      child: Text(
+        initial,
+        style: Theme.of(context)
+            .textTheme
+            .titleMedium
+            ?.copyWith(color: AppColors.primaryDeep, fontWeight: FontWeight.w700),
+      ),
     );
   }
 }
@@ -522,12 +552,12 @@ class _IntroLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 48, vertical: 12),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
       child: Text(
         ChatCopy.intro,
         textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+        style: Theme.of(context).textTheme.bodySmall,
       ),
     );
   }
@@ -558,7 +588,7 @@ class _NotificationsOffBanner extends ConsumerWidget {
 
     return Container(
       width: double.infinity,
-      color: AppColors.secondaryOrange.withValues(alpha: 0.35),
+      color: AppColors.surfaceMuted,
       padding: const EdgeInsets.only(left: 16, right: 4),
       child: Row(
         children: [
@@ -567,7 +597,7 @@ class _NotificationsOffBanner extends ConsumerWidget {
           Expanded(
             child: Text(
               ChatCopy.notificationsOff(partnerName),
-              style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textPrimary),
             ),
           ),
           TextButton(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/features/chat/data/models/chat_models.dart';
 import 'package:eros_app/features/chat/presentation/providers/chat_provider.dart';
 import 'package:eros_app/features/chat/presentation/screens/chat_screen.dart';
@@ -61,12 +62,15 @@ class DateChatEntry extends ConsumerWidget {
         if (dateDetail.state != DateState.awaitingPresenceConfirmation) {
           return const SizedBox.shrink();
         }
-        return const Padding(
-          padding: EdgeInsets.only(bottom: 12),
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
           child: Text(
             ChatCopy.opensAfterConfirming,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: AppColors.textSecondary),
           ),
         );
       case ChatStatus.archived:
@@ -99,8 +103,12 @@ class _MessageButton extends ConsumerWidget {
     final dateId = dateDetail.dateId.toString();
     final unread = ref.watch(chatStatusProvider(dateId)).valueOrNull?.unreadCount ?? 0;
 
+    // An [AppButton] in all but the unread dot, which it has no slot for
     return ElevatedButton(
       onPressed: () => DateChatEntry.openChat(context, ref, dateDetail),
+      style: const ButtonStyle(
+        minimumSize: WidgetStatePropertyAll(Size.fromHeight(AppButton.minHeight)),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -120,11 +128,7 @@ class _MessageButton extends ConsumerWidget {
                 key: const ValueKey('chat-unread-dot'),
                 width: 10,
                 height: 10,
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primaryOrangeDark, width: 2),
-                ),
+                decoration: const BoxDecoration(color: AppColors.ink, shape: BoxShape.circle),
               ),
             ),
           ],
