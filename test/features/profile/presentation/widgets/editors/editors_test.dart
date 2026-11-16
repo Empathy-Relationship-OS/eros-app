@@ -35,7 +35,7 @@ void main() {
       );
 
       expect(_radioOf(tester, EducationLevel.university.displayName).icon, Icons.radio_button_checked);
-      expect(_radioOf(tester, EducationLevel.university.displayName).color, AppColors.primary);
+      expect(_radioOf(tester, EducationLevel.university.displayName).color, AppColors.primaryDeep);
       expect(_radioOf(tester, EducationLevel.college.displayName).icon, Icons.radio_button_unchecked);
 
       await tester.tap(find.text(EducationLevel.college.displayName));

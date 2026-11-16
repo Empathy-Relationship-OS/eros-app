@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/constants/languages.dart';
@@ -71,12 +72,9 @@ class _LanguagesScreenState extends ConsumerState<LanguagesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -96,16 +94,13 @@ class _LanguagesScreenState extends ConsumerState<LanguagesScreen> {
               // Title
               Text(
                 'What languages do you speak?',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
+                style: Theme.of(context).textTheme.displaySmall,
               ),
               const SizedBox(height: 8),
               Text(
                 'Select all that apply',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppColors.textSecondary,
                     ),
               ),
               const SizedBox(height: 32),
@@ -122,36 +117,17 @@ class _LanguagesScreenState extends ConsumerState<LanguagesScreen> {
               if (_selectedLanguages.isNotEmpty) ...[
                 Text(
                   '${_selectedLanguages.length} ${_selectedLanguages.length == 1 ? 'language' : 'languages'} selected',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: AppColors.primaryDeep,
+                      ),
                 ),
                 const SizedBox(height: 16),
               ],
 
               // Continue button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _selectedLanguages.isNotEmpty ? _continue : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    disabledBackgroundColor: Colors.grey[300],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
-                  child: const Text(
-                    'Continue',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+              AppButton(
+                label: 'Continue',
+                onPressed: _selectedLanguages.isNotEmpty ? _continue : null,
               ),
             ],
           ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/presentation/providers/qa_provider.dart';
@@ -19,12 +21,9 @@ class QAMainScreen extends ConsumerWidget {
     final canContinue = qaDrafts.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -52,13 +51,13 @@ class QAMainScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
+                        color: AppColors.surfaceMuted,
+                        borderRadius: BorderRadius.circular(AppRadius.input),
                       ),
                       child: const Icon(
                         Icons.question_answer_outlined,
                         size: 32,
-                        color: Colors.black,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -68,7 +67,7 @@ class QAMainScreen extends ConsumerWidget {
                       'Let\'s break the ice by answering a question',
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                            color: AppColors.textPrimary,
                             height: 1.2,
                           ),
                     ),
@@ -100,10 +99,9 @@ class QAMainScreen extends ConsumerWidget {
                         padding: const EdgeInsets.only(top: 16),
                         child: Text(
                           'Answer at least 1 question to continue (max 3)',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
                         ),
                       ),
                   ],
@@ -114,48 +112,14 @@ class QAMainScreen extends ConsumerWidget {
             // Bottom navigation
             Container(
               padding: const EdgeInsets.all(24.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
+              decoration: const BoxDecoration(
+                color: AppColors.cardBackground,
+                border: Border(top: BorderSide(color: AppColors.divider)),
               ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: canContinue ? () => _continue(context, ref) : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    disabledBackgroundColor: Colors.grey[300],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        canContinue
-                            ? 'Continue'
-                            : 'Add at least 1 question to continue',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      if (canContinue) ...[
-                        const SizedBox(width: 8),
-                        const Icon(Icons.arrow_forward, color: Colors.white),
-                      ],
-                    ],
-                  ),
-                ),
+              child: AppButton(
+                label: canContinue ? 'Continue' : 'Add at least 1 question to continue',
+                trailingIcon: canContinue ? Icons.arrow_forward : null,
+                onPressed: canContinue ? () => _continue(context, ref) : null,
               ),
             ),
           ],
@@ -167,27 +131,25 @@ class QAMainScreen extends ConsumerWidget {
   Widget _buildAddFirstQuestionButton(BuildContext context) {
     return InkWell(
       onTap: () => _navigateToQuestionSelector(context),
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppRadius.card),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[300]!, width: 1),
+          color: AppColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(color: AppColors.border, width: 1),
         ),
         child: Row(
           children: [
             Expanded(
               child: Text(
                 'Pick a question to answer',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w500,
-                ),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
               ),
             ),
-            Icon(Icons.add, color: Colors.grey[700], size: 24),
+            Icon(Icons.add, color: AppColors.textSecondary, size: 24),
           ],
         ),
       ),
@@ -197,27 +159,25 @@ class QAMainScreen extends ConsumerWidget {
   Widget _buildAddAnotherQuestionButton(BuildContext context) {
     return InkWell(
       onTap: () => _navigateToQuestionSelector(context),
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppRadius.card),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[300]!, width: 1),
+          color: AppColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(color: AppColors.border, width: 1),
         ),
         child: Row(
           children: [
             Expanded(
               child: Text(
                 'Add another question',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w500,
-                ),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
               ),
             ),
-            Icon(Icons.add, color: Colors.grey[700], size: 24),
+            Icon(Icons.add, color: AppColors.textSecondary, size: 24),
           ],
         ),
       ),
@@ -233,16 +193,9 @@ class QAMainScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[300]!, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,20 +209,15 @@ class QAMainScreen extends ConsumerWidget {
                   children: [
                     Text(
                       qa.question.question,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       qa.answer,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                        height: 1.4,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                            height: 1.4,
+                          ),
                     ),
                   ],
                 ),
@@ -321,7 +269,7 @@ class QAMainScreen extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Q&As saved successfully!'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           duration: Duration(seconds: 2),
         ),
       );
@@ -339,7 +287,7 @@ class QAMainScreen extends ConsumerWidget {
         SnackBar(
           content: Text('Failed to save Q&As: ${e.toString()}'),
           duration: const Duration(seconds: 3),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     }

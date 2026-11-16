@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/constants/user_text_limits.dart';
@@ -63,12 +65,9 @@ class _AnswerInputScreenState extends ConsumerState<AnswerInputScreen> {
     final showError = _errorMessage != null && _answerController.text.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -84,11 +83,7 @@ class _AnswerInputScreenState extends ConsumerState<AnswerInputScreen> {
                     // Question text
                     Text(
                       widget.question.question,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                            height: 1.3,
-                          ),
+                      style: Theme.of(context).textTheme.displaySmall,
                     ),
                     const SizedBox(height: 24),
 
@@ -100,39 +95,13 @@ class _AnswerInputScreenState extends ConsumerState<AnswerInputScreen> {
                       autofocus: true,
                       decoration: InputDecoration(
                         hintText: 'Type your answer here...',
-                        hintStyle: TextStyle(color: Colors.grey[400]),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(
-                            color: showError ? Colors.red : AppColors.primary,
-                            width: 2,
-                          ),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: Colors.red, width: 2),
-                        ),
-                        focusedErrorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: Colors.red, width: 2),
-                        ),
+                        // The theme draws the box. A too-short answer turns its focused edge red.
+                        focusedBorder: showError
+                            ? Theme.of(context).inputDecorationTheme.focusedErrorBorder
+                            : null,
                         counterText: '',
-                        contentPadding: const EdgeInsets.all(16),
                       ),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.black,
-                      ),
+                      style: Theme.of(context).textTheme.bodyLarge,
                     ),
 
                     // Character count and error message
@@ -145,22 +114,20 @@ class _AnswerInputScreenState extends ConsumerState<AnswerInputScreen> {
                             Expanded(
                               child: Text(
                                 _errorMessage!,
-                                style: const TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 14,
-                                ),
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: AppColors.error,
+                                    ),
                               ),
                             )
                           else
                             const SizedBox.shrink(),
                           Text(
                             '$characterCount/$maxLength',
-                            style: TextStyle(
-                              color: characterCount > maxLength
-                                  ? Colors.red
-                                  : Colors.grey[600],
-                              fontSize: 14,
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: characterCount > maxLength
+                                      ? AppColors.error
+                                      : AppColors.textSecondary,
+                                ),
                           ),
                         ],
                       ),
@@ -172,20 +139,17 @@ class _AnswerInputScreenState extends ConsumerState<AnswerInputScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(8),
+                        color: AppColors.surfaceMuted,
+                        borderRadius: BorderRadius.circular(AppRadius.input),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                          const Icon(Icons.info_outline, color: AppColors.textSecondary, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Your answer should be at least $minLength characters',
-                              style: TextStyle(
-                                color: Colors.blue[700],
-                                fontSize: 13,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall,
                             ),
                           ),
                         ],
@@ -199,37 +163,14 @@ class _AnswerInputScreenState extends ConsumerState<AnswerInputScreen> {
             // Save button
             Container(
               padding: const EdgeInsets.all(24.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
+              decoration: const BoxDecoration(
+                color: AppColors.cardBackground,
+                border: Border(top: BorderSide(color: AppColors.divider)),
               ),
               child: SizedBox(
                 width: double.infinity,
                 height: 56,
-                child: ElevatedButton(
-                  onPressed: _canSave ? _saveAnswer : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    disabledBackgroundColor: Colors.grey[300],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
-                  child: const Text(
-                    'Save answer',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+                child: AppButton(label: 'Save answer', onPressed: _canSave ? _saveAnswer : null),
               ),
             ),
           ],
@@ -265,7 +206,7 @@ class _AnswerInputScreenState extends ConsumerState<AnswerInputScreen> {
         const SnackBar(
           content: Text('Answer saved!'),
           duration: Duration(seconds: 2),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
         ),
       );
     } catch (e) {
@@ -273,7 +214,7 @@ class _AnswerInputScreenState extends ConsumerState<AnswerInputScreen> {
         SnackBar(
           content: Text(e.toString()),
           duration: const Duration(seconds: 2),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     }

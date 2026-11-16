@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:eros_app/core/constants/media_constants.dart';
@@ -62,25 +63,26 @@ class EditPhotosScreen extends ConsumerWidget {
                   Text(
                     '${state.photos.length}/${MediaConstants.maxPhotos} photos '
                     '(at least ${MediaConstants.minPhotos})',
-                    style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                   ),
                   if (state.photos.length > 1)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         'Long press and drag to reorder. The first photo is your main photo.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary.withValues(alpha: 0.7),
-                          fontStyle: FontStyle.italic,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontStyle: FontStyle.italic,
+                            ),
                       ),
                     ),
                   if (state.error != null && !state.isSaving)
                     Padding(
                       key: const Key('photo-edit-error'),
                       padding: const EdgeInsets.only(top: 12),
-                      child: Text(state.error!, style: TextStyle(color: Colors.red[700])),
+                      child: Text(state.error!, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.error)),
                     ),
                   const SizedBox(height: 24),
                   ReorderableGridView.builder(
@@ -122,26 +124,32 @@ class EditPhotosScreen extends ConsumerWidget {
                       padding: const EdgeInsets.only(top: 16),
                       child: Text(
                         'Add at least ${MediaConstants.minPhotos} photos to save.',
-                        style: const TextStyle(color: AppColors.textSecondary),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
                       ),
                     ),
                   // Save waits for every new photo, so say why it is off rather than leave a
                   // reorder looking as if it did nothing.
                   if (state.photos.any((p) => p is StagedPhoto && p.status is StageFailed))
-                    const Padding(
+                    Padding(
                       key: Key('upload-failed-hint'),
                       padding: EdgeInsets.only(top: 16),
                       child: Text(
                         'A photo didn\'t upload, so you can\'t save yet. Tap retry on it, or tap the photo to remove it.',
-                        style: TextStyle(color: AppColors.textSecondary),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
                       ),
                     )
                   else if (state.photos.any((p) => p is StagedPhoto && p.status is StageUploading))
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(top: 16),
                       child: Text(
                         'You can save once your new photos have uploaded.',
-                        style: TextStyle(color: AppColors.textSecondary),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
                       ),
                     ),
                 ],
@@ -225,7 +233,7 @@ class _EditPhotoSlot extends StatelessWidget {
       isPrimary: index == 0,
       primaryLabel: 'Main photo',
       // The editor's background is white, like the cards' default, so use the choice cards' grey.
-      backgroundColor: Colors.grey[100],
+      backgroundColor: AppColors.surfaceMuted,
       onTap: onTap,
       image: switch (photo) {
         null => null,
@@ -253,15 +261,15 @@ class _EditPhotoSlot extends StatelessWidget {
               key: const Key('verified-tag'),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.65),
-                borderRadius: BorderRadius.circular(12),
+                color: AppColors.ink.withValues(alpha: 0.65),
+                borderRadius: BorderRadius.circular(AppRadius.input),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.verified, color: Colors.white, size: 12),
+                  Icon(Icons.verified, color: AppColors.white, size: 12),
                   SizedBox(width: 4),
-                  Text('Verified', style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600)),
+                  Text('Verified', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.white)),
                 ],
               ),
             ),
@@ -277,13 +285,13 @@ class _EditPhotoSlot extends StatelessWidget {
               child: Container(
                 key: const Key('upload-progress'),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  borderRadius: BorderRadius.circular(16),
+                  color: AppColors.ink.withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(AppRadius.card),
                 ),
                 child: Center(
                   child: CircularProgressIndicator(
                     value: progress > 0 ? progress : null,
-                    color: Colors.white,
+                    color: AppColors.white,
                   ),
                 ),
               ),
@@ -295,20 +303,21 @@ class _EditPhotoSlot extends StatelessWidget {
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(16),
+                  color: AppColors.ink.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(AppRadius.card),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
                       key: const Key('upload-retry'),
-                      icon: const Icon(Icons.refresh, color: Colors.white, size: 36, semanticLabel: 'Retry upload'),
+                      icon: const Icon(Icons.refresh, color: AppColors.white, size: 36, semanticLabel: 'Retry upload'),
                       onPressed: onRetry,
                     ),
-                    const Text(
+                    Text(
                       'Upload failed',
-                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                      // No build context in this helper, so the overlay label is styled directly
+                      style: const TextStyle(color: AppColors.white, fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),

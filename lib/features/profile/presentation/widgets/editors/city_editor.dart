@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 
 /// A home city and its coordinates, as `users.city` and `coordinatesLatitude`/`Longitude` store
@@ -131,23 +133,13 @@ class _CityEditorState extends State<CityEditor> {
           Center(
             child: Column(
               children: [
-                Icon(
-                  Icons.location_on,
-                  size: 64,
-                  color: AppColors.primary,
-                ),
+                const Icon(Icons.location_on, size: 64, color: AppColors.primaryDeep),
                 const SizedBox(height: 16),
-                ElevatedButton.icon(
+                AppButton(
+                  label: 'Use my location',
+                  icon: Icons.my_location,
+                  expand: false,
                   onPressed: _requestGpsLocation,
-                  icon: const Icon(Icons.my_location),
-                  label: const Text('Use my location'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                  ),
                 ),
                 const SizedBox(height: 16),
                 TextButton(
@@ -169,16 +161,6 @@ class _CityEditorState extends State<CityEditor> {
               labelText: 'City',
               hintText: 'Start typing...',
               prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: AppColors.primary,
-                  width: 2,
-                ),
-              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -187,9 +169,11 @@ class _CityEditorState extends State<CityEditor> {
           if (_filteredCities.isNotEmpty) ...[
             Container(
               constraints: const BoxConstraints(maxHeight: 200),
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
-                borderRadius: BorderRadius.circular(12),
+                color: AppColors.cardBackground,
+                border: Border.all(color: AppColors.border),
+                borderRadius: BorderRadius.circular(AppRadius.input),
               ),
               child: ListView.builder(
                 shrinkWrap: true,

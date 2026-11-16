@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/constants/languages.dart';
 import 'package:eros_app/core/constants/user_text_limits.dart';
@@ -37,16 +39,13 @@ class EditProfileScreen extends ConsumerWidget {
     final profile = ref.watch(myProfileProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Edit profile', style: TextStyle(color: Colors.black)),
+        title: const Text('Edit profile'),
         actions: [
           // Opens a fresh read of the public profile, so it shows what was just saved.
           if (profile.valueOrNull case final p?)
@@ -54,7 +53,7 @@ class EditProfileScreen extends ConsumerWidget {
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => PublicProfileViewScreen.preview(userId: p.userId)),
               ),
-              child: const Text('Preview', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+              child: const Text('Preview'),
             ),
         ],
       ),
@@ -510,9 +509,14 @@ class _LoadError extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(message, textAlign: TextAlign.center),
+            Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
             const SizedBox(height: 16),
-            ElevatedButton(onPressed: onRetry, child: const Text('Try again')),
+            AppButton(
+              label: 'Try again',
+              kind: AppButtonKind.secondary,
+              expand: false,
+              onPressed: onRetry,
+            ),
           ],
         ),
       ),
@@ -531,23 +535,24 @@ class _CompletenessBar extends StatelessWidget {
       margin: const EdgeInsets.only(top: 8, bottom: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Profile $percent% complete',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 12),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(AppRadius.small),
             child: LinearProgressIndicator(
               value: percent / 100,
               minHeight: 8,
-              backgroundColor: Colors.grey[200],
+              backgroundColor: AppColors.divider,
               color: AppColors.primary,
             ),
           ),
@@ -576,9 +581,12 @@ class _Section extends StatelessWidget {
           ),
         ),
         Container(
+          // Clipped, so a row's ripple stays inside the rounded corners
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: AppColors.divider),
           ),
           child: Column(
             children: [
@@ -627,7 +635,7 @@ class _EditRow extends StatelessWidget {
 
     return InkWell(
       onTap: locked ? null : onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.input),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
@@ -636,23 +644,24 @@ class _EditRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                  Text(label, style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(height: 4),
                   Text(
                     isEmpty ? 'Add' : value!,
                     maxLines: maxLines,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isEmpty ? AppColors.primary : Colors.black,
-                      fontWeight: isEmpty ? FontWeight.bold : FontWeight.normal,
-                    ),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: isEmpty ? AppColors.primaryDeep : AppColors.textPrimary,
+                          fontWeight: isEmpty ? FontWeight.bold : FontWeight.normal,
+                        ),
                   ),
                   if (locked) ...[
                     const SizedBox(height: 4),
                     Text(
                       'Contact support to change this',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textTertiary,
+                          ),
                     ),
                   ],
                 ],
@@ -663,13 +672,13 @@ class _EditRow extends StatelessWidget {
                 tooltip: eye.visible ? 'Shown on your profile. Tap to hide' : 'Hidden. Tap to show on your profile',
                 icon: Icon(
                   eye.visible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                  color: eye.visible ? AppColors.primary : Colors.grey[500],
+                  color: eye.visible ? AppColors.primaryDeep : AppColors.textTertiary,
                 ),
                 onPressed: eye.onToggle,
               ),
             Icon(
               locked ? Icons.lock_outline : Icons.chevron_right,
-              color: Colors.grey[400],
+              color: AppColors.textTertiary,
             ),
           ],
         ),

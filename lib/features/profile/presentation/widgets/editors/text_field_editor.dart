@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:eros_app/core/theme/app_colors.dart';
 
 /// A text field with a live `n/maxLength` counter (RFC-004 §6.2).
 ///
@@ -39,16 +38,6 @@ class TextFieldEditor extends StatelessWidget {
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: AppColors.primary,
-            width: 2,
-          ),
-        ),
       ),
       // With maxLength set and no counterText, the field shows its own live `n/maxLength`.
       maxLength: maxLength,

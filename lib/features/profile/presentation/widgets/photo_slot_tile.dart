@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 
 /// One slot of a 2-column photo grid: the onboarding photo screen and the photo editor
@@ -45,14 +46,15 @@ class PhotoSlotTile extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               color: backgroundColor ?? AppColors.cardBackground,
-              borderRadius: BorderRadius.circular(16),
-              border: isPrimary
-                  ? Border.all(color: AppColors.primary, width: 2)
-                  : null,
+              borderRadius: BorderRadius.circular(AppRadius.input),
+              border: Border.all(
+                color: isPrimary ? AppColors.primaryDeep : AppColors.border,
+                width: isPrimary ? 2 : 1,
+              ),
             ),
             child: _hasPhoto
                 ? ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(AppRadius.input - 2),
                     child: SizedBox(
                       width: double.infinity,
                       height: double.infinity,
@@ -65,18 +67,17 @@ class PhotoSlotTile extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.add_photo_alternate_outlined,
-                          size: 48,
-                          color: AppColors.textSecondary.withValues(alpha: 0.5),
+                          size: 40,
+                          color: AppColors.textTertiary,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           isPrimary ? 'Profile\nPicture' : 'Add\nPhoto',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary.withValues(alpha: 0.7),
-                            fontWeight: isPrimary ? FontWeight.w600 : FontWeight.normal,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontWeight: isPrimary ? FontWeight.w600 : FontWeight.w400,
+                                height: 1.3,
+                              ),
                         ),
                       ],
                     ),
@@ -95,15 +96,14 @@ class PhotoSlotTile extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
                 child: Text(
                   primaryLabel,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppColors.textOnPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
               ),
             ),
@@ -118,12 +118,12 @@ class PhotoSlotTile extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
+                    color: AppColors.ink.withValues(alpha: 0.65),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.close,
-                    color: Colors.white,
+                    color: AppColors.white,
                     size: 16,
                   ),
                 ),
@@ -138,18 +138,14 @@ class PhotoSlotTile extends StatelessWidget {
               child: Container(
                 width: 24,
                 height: 24,
-                decoration: BoxDecoration(
-                  color: AppColors.textSecondary.withValues(alpha: 0.2),
+                decoration: const BoxDecoration(
+                  color: AppColors.surfaceMuted,
                   shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: Text(
                     '${index + 1}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary.withValues(alpha: 0.7),
-                    ),
+                    style: Theme.of(context).textTheme.labelMedium,
                   ),
                 ),
               ),

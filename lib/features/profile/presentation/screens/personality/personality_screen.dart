@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/domain/enums/personality.dart';
@@ -92,7 +93,7 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(e.message),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
               duration: const Duration(seconds: 3),
             ),
           );
@@ -112,12 +113,9 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
     final canContinue = MultiChoiceEditor.isValidCount(_selectedTraits.length, minTraits, maxTraits);
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
         bottom: multiChoiceTabBar(
@@ -149,17 +147,14 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
                 children: [
                   Text(
                     'How would you describe yourself?',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
+                    style: Theme.of(context).textTheme.displaySmall,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Select $minTraits-$maxTraits traits',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -172,15 +167,9 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
             // Bottom bar
             Container(
               padding: const EdgeInsets.all(24.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
+              decoration: const BoxDecoration(
+                color: AppColors.cardBackground,
+                border: Border(top: BorderSide(color: AppColors.divider)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -198,29 +187,9 @@ class _PersonalityScreenState extends ConsumerState<PersonalityScreen>
                   ],
 
                   // Continue button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: canContinue ? _continue : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        disabledBackgroundColor: Colors.grey[300],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28),
-                        ),
-                      ),
-                      child: Text(
-                        canContinue
-                            ? 'Continue'
-                            : 'Select ${minTraits - _selectedTraits.length} more',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+                  AppButton(
+                    label: canContinue ? 'Continue' : 'Select ${minTraits - _selectedTraits.length} more',
+                    onPressed: canContinue ? _continue : null,
                   ),
                 ],
               ),

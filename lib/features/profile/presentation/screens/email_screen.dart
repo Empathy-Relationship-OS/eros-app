@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
@@ -87,12 +88,9 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -109,18 +107,15 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
               const SizedBox(height: 32),
               Text(
                 _isEmailFromFirebase ? 'Confirm your email' : 'What\'s your email?',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
+                style: Theme.of(context).textTheme.displaySmall,
               ),
               const SizedBox(height: 8),
               Text(
                 _isEmailFromFirebase
                     ? 'We\'ve pulled this from your account'
                     : 'We\'ll use this to contact you',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppColors.textSecondary,
                     ),
               ),
               const SizedBox(height: 32),
@@ -131,14 +126,6 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
                   decoration: InputDecoration(
                     labelText: 'Email',
                     helperText: _isEmailFromFirebase ? 'You can edit this if needed' : null,
-                    helperStyle: TextStyle(color: Colors.grey[500], fontSize: 12),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.primary, width: 2),
-                    ),
                   ),
                   validator: Validators.validateEmail,
                   keyboardType: TextInputType.emailAddress,
@@ -149,37 +136,15 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
               CheckboxListTile(
                 value: _marketingConsent,
                 onChanged: (value) => setState(() => _marketingConsent = value ?? false),
-                title: const Text(
+                title: Text(
                   'I consent to receive marketing emails from Muse',
-                  style: TextStyle(fontSize: 14),
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 controlAffinity: ListTileControlAffinity.leading,
-                activeColor: AppColors.primary,
                 contentPadding: EdgeInsets.zero,
               ),
               const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _isValid ? _continue : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    disabledBackgroundColor: Colors.grey[300],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
-                  child: const Text(
-                    'Continue',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
+              AppButton(label: 'Continue', onPressed: _isValid ? _continue : null),
             ],
           ),
         ),
