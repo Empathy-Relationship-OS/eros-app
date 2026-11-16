@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/constants/profile_creation.dart';
@@ -40,12 +42,9 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
     final firstName = draft.firstName ?? 'there';
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -62,16 +61,13 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
               const SizedBox(height: 32),
               Text(
                 'Welcome, $firstName!',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
+                style: Theme.of(context).textTheme.displaySmall,
               ),
               const SizedBox(height: 8),
               Text(
                 'Before we begin, please review our terms',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppColors.textSecondary,
                     ),
               ),
               const SizedBox(height: 32),
@@ -79,9 +75,9 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[300]!),
+                    color: AppColors.surfaceMuted,
+                    borderRadius: BorderRadius.circular(AppRadius.input),
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: SingleChildScrollView(
                     child: Column(
@@ -96,10 +92,10 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                         const SizedBox(height: 16),
                         Text(
                           _termsText,
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            height: 1.5,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary,
+                                height: 1.5,
+                              ),
                         ),
                       ],
                     ),
@@ -113,11 +109,11 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                 },
                 child: Text(
                   'See our community guidelines',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.underline,
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.primaryDeep,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -126,66 +122,41 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                 onChanged: (value) => setState(() => _acceptedTerms = value ?? false),
                 title: RichText(
                   text: TextSpan(
-                    style: const TextStyle(fontSize: 14, color: Colors.black),
+                    style: Theme.of(context).textTheme.bodyMedium,
                     children: [
                       const TextSpan(text: 'I agree to the '),
                       TextSpan(
                         text: 'Terms & Conditions',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: AppColors.primaryDeep,
+                            ),
                       ),
                       const TextSpan(text: ' and '),
                       TextSpan(
                         text: 'Privacy Policy',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: AppColors.primaryDeep,
+                            ),
                       ),
                     ],
                   ),
                 ),
                 controlAffinity: ListTileControlAffinity.leading,
-                activeColor: AppColors.primary,
                 contentPadding: EdgeInsets.zero,
               ),
               const SizedBox(height: 12),
               CheckboxListTile(
                 value: _acceptsMarketing,
                 onChanged: (value) => setState(() => _acceptsMarketing = value ?? false),
-                title: const Text(
+                title: Text(
                   'I consent to receive promotional emails and updates from Muse',
-                  style: TextStyle(fontSize: 14, color: Colors.black),
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 controlAffinity: ListTileControlAffinity.leading,
-                activeColor: AppColors.primary,
                 contentPadding: EdgeInsets.zero,
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _acceptedTerms ? _continue : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    disabledBackgroundColor: Colors.grey[300],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
-                  child: const Text(
-                    'Accept and Continue',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
+              AppButton(label: 'Accept and Continue', onPressed: _acceptedTerms ? _continue : null),
             ],
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 
 /// Reusable progress bar widget for profile creation flow
@@ -26,6 +27,7 @@ class ProfileProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = sectionLabel ?? 'Step';
+    final caption = Theme.of(context).textTheme.labelMedium;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,32 +35,18 @@ class ProfileProgressBar extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              '$label $currentStep of $totalSteps',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            Text(
-              '${((currentStep / totalSteps) * 100).toInt()}%',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            Text('$label $currentStep of $totalSteps', style: caption),
+            Text('${((currentStep / totalSteps) * 100).toInt()}%', style: caption),
           ],
         ),
         const SizedBox(height: 8),
         ClipRRect(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
           child: LinearProgressIndicator(
             value: currentStep / totalSteps,
-            backgroundColor: Colors.grey[200],
+            backgroundColor: AppColors.primaryTint,
             valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-            minHeight: 8,
+            minHeight: 6,
           ),
         ),
       ],

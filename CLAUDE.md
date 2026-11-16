@@ -335,6 +335,11 @@ The look comes from `lib/core/theme/`: `AppColors` (palette), `AppRadius` (corne
 - A profile as others see it is built from `profile_display_components.dart`:
   `ProfileHeaderCard`, `ProfileCard` for any further section, and `ProfileLoadError`. The
   public profile and the onboarding preview both use them, so a change shows in both.
+- Choices in onboarding and the profile editor share one look, from
+  `single_choice_editor.dart`: `choiceCardDecoration` for "pick one" cards (a tint with a deep
+  coral outline when chosen) and `choiceTileDecoration` with `choiceTileTextStyle` for "pick
+  several" tiles (coral with ink text when chosen). Use `ChoiceOptionCard` or these helpers
+  instead of drawing a new option.
 - In chat, my bubble is coral with ink text and the partner's is white with a hairline. A
   filled icon button on coral (send) takes an ink icon, like any coral fill.
 - Replace any purple/red tones from reference screenshots with the palette above

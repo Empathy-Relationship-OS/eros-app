@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/utils/validators.dart';
 
 /// Height in feet and inches or in centimetres, with a Feet / CM toggle (RFC-004 §6.2).
@@ -141,11 +140,6 @@ class _HeightEditorState extends State<HeightEditor> {
               onSelected: (selected) {
                 if (selected && !_useFeet) _toggleUnit();
               },
-              selectedColor: AppColors.primary,
-              labelStyle: TextStyle(
-                color: _useFeet ? Colors.white : Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
             ),
             const SizedBox(width: 16),
             ChoiceChip(
@@ -154,11 +148,6 @@ class _HeightEditorState extends State<HeightEditor> {
               onSelected: (selected) {
                 if (selected && _useFeet) _toggleUnit();
               },
-              selectedColor: AppColors.primary,
-              labelStyle: TextStyle(
-                color: !_useFeet ? Colors.white : Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
             ),
           ],
         ),
@@ -175,16 +164,6 @@ class _HeightEditorState extends State<HeightEditor> {
 
   InputDecoration _decoration(String label) => InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: AppColors.primary,
-            width: 2,
-          ),
-        ),
       );
 
   Widget _buildFeetInput() {

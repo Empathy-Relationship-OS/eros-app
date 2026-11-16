@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 
 /// A list of radio cards, one per value, with [selected] highlighted (RFC-004 §6.2).
@@ -40,6 +41,49 @@ class SingleChoiceEditor<T> extends StatelessWidget {
   }
 }
 
+/// How every "pick one" card in the editors looks: white with a border, and a tint with a deep
+/// coral border when it's the chosen one. The label stays ink either way.
+BoxDecoration choiceCardDecoration({required bool isSelected}) {
+  return BoxDecoration(
+    color: isSelected ? AppColors.primaryTint : AppColors.cardBackground,
+    borderRadius: BorderRadius.circular(AppRadius.input),
+    border: Border.all(
+      color: isSelected ? AppColors.primaryDeep : AppColors.border,
+      width: 1.5,
+    ),
+  );
+}
+
+/// How a grid tile you can pick several of looks: a coral fill with ink text when picked, white
+/// with a border otherwise, and greyed out when [isDisabled].
+BoxDecoration choiceTileDecoration({required bool isSelected, bool isDisabled = false}) {
+  return BoxDecoration(
+    color: isSelected
+        ? AppColors.primary
+        : (isDisabled ? AppColors.disabled : AppColors.cardBackground),
+    borderRadius: BorderRadius.circular(AppRadius.input),
+    border: Border.all(
+      color: isSelected ? AppColors.primary : (isDisabled ? AppColors.disabled : AppColors.border),
+      width: 1.5,
+    ),
+  );
+}
+
+/// The label of a [choiceTileDecoration] tile.
+TextStyle? choiceTileTextStyle(
+  BuildContext context, {
+  required bool isSelected,
+  bool isDisabled = false,
+}) {
+  return Theme.of(context).textTheme.bodyMedium?.copyWith(
+        color: isSelected
+            ? AppColors.textOnPrimary
+            : (isDisabled ? AppColors.disabledText : AppColors.textPrimary),
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+        height: 1.25,
+      );
+}
+
 /// One radio card of a [SingleChoiceEditor] or `DisplayableChoiceEditor`.
 class ChoiceOptionCard extends StatelessWidget {
   final String label;
@@ -59,22 +103,15 @@ class ChoiceOptionCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.grey[100],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? AppColors.primary : Colors.grey[300]!,
-              width: 2,
-            ),
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          decoration: choiceCardDecoration(isSelected: isSelected),
           child: Row(
             children: [
               Icon(
                 isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                color: isSelected ? AppColors.primary : Colors.grey[400],
+                color: isSelected ? AppColors.primaryDeep : AppColors.textTertiary,
               ),
               const SizedBox(width: 16),
               // Flexible: a long label wraps instead of overflowing. It changes nothing when the
@@ -82,11 +119,10 @@ class ChoiceOptionCard extends StatelessWidget {
               Flexible(
                 child: Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: isSelected ? AppColors.primary : Colors.black,
-                  ),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        height: 1.3,
+                      ),
                 ),
               ),
             ],

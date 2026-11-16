@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/presentation/providers/qa_provider.dart';
@@ -43,38 +45,23 @@ class _QuestionSelectorScreenState
     final existingQAs = ref.watch(qaDraftsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Pick a question',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text('Pick a question'),
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.black,
+          // A coral pill behind the chosen category, so its label is ink
+          labelColor: AppColors.textOnPrimary,
+          unselectedLabelColor: AppColors.textSecondary,
           indicatorSize: TabBarIndicatorSize.tab,
+          dividerColor: Colors.transparent,
           indicator: BoxDecoration(
             color: AppColors.primary,
-            borderRadius: BorderRadius.circular(25),
-          ),
-          labelStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.normal,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
           ),
           tabs: _categories.map((category) {
             IconData icon;
@@ -126,7 +113,7 @@ class _QuestionSelectorScreenState
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.check_circle, size: 64, color: AppColors.primary),
+                    Icon(Icons.check_circle, size: 64, color: AppColors.primaryDeep),
                     const SizedBox(height: 16),
                     Text(
                       'You\'ve answered all available questions!',
@@ -138,7 +125,9 @@ class _QuestionSelectorScreenState
                     const SizedBox(height: 8),
                     Text(
                       'Go back and review your answers',
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -170,7 +159,7 @@ class _QuestionSelectorScreenState
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                Icon(Icons.error_outline, size: 64, color: AppColors.error),
                 const SizedBox(height: 16),
                 Text(
                   'Failed to load questions',
@@ -181,16 +170,17 @@ class _QuestionSelectorScreenState
                 const SizedBox(height: 8),
                 Text(
                   error.toString(),
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(
+                AppButton(
+                  label: 'Retry',
+                  kind: AppButtonKind.secondary,
+                  expand: false,
                   onPressed: () => ref.refresh(questionsProvider),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                  ),
-                  child: const Text('Retry'),
                 ),
               ],
             ),

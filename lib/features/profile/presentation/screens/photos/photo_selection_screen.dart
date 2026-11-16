@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/presentation/providers/photo_provider.dart';
 import 'package:eros_app/features/profile/presentation/screens/photos/all_photos_screen.dart';
 
@@ -28,12 +29,9 @@ class _PhotoSelectionScreenState extends ConsumerState<PhotoSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -48,7 +46,7 @@ class _PhotoSelectionScreenState extends ConsumerState<PhotoSelectionScreen> {
               // Photo preview
               Expanded(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppRadius.card),
                   child: Image.file(
                     widget.imageFile,
                     fit: BoxFit.cover,
@@ -59,46 +57,16 @@ class _PhotoSelectionScreenState extends ConsumerState<PhotoSelectionScreen> {
               const SizedBox(height: 24),
 
               // Change photo button
-              OutlinedButton(
+              AppButton(
+                label: 'Change photo',
+                kind: AppButtonKind.outline,
                 onPressed: _changePhoto,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: const BorderSide(color: AppColors.textSecondary, width: 1.5),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                ),
-                child: const Text(
-                  'Change photo',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
               ),
 
               const SizedBox(height: 12),
 
               // Continue button
-              ElevatedButton(
-                onPressed: _handleContinue,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                ),
-                child: const Text(
-                  'Continue',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+              AppButton(label: 'Continue', onPressed: _handleContinue),
 
               const SizedBox(height: 24),
             ],

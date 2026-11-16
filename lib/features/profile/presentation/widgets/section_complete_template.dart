@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 
 /// Progress item data model
@@ -39,7 +41,6 @@ class SectionCompleteTemplate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -51,25 +52,26 @@ class SectionCompleteTemplate extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const SizedBox(height: 32),
-                      Icon(
-                        headerIcon,
-                        size: 100,
-                        color: AppColors.primary,
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primaryTint,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(headerIcon, size: 56, color: AppColors.primaryDeep),
                       ),
                       const SizedBox(height: 32),
                       Text(
                         title,
-                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
+                        style: Theme.of(context).textTheme.displayMedium,
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
                       Text(
                         description,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Colors.grey[600],
+                              color: AppColors.textSecondary,
                             ),
                         textAlign: TextAlign.center,
                       ),
@@ -81,7 +83,7 @@ class SectionCompleteTemplate extends StatelessWidget {
                         return Column(
                           children: [
                             if (index > 0) const SizedBox(height: 16),
-                            _buildProgressItem(item),
+                            _buildProgressItem(context, item),
                           ],
                         );
                       }),
@@ -93,27 +95,7 @@ class SectionCompleteTemplate extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.all(24.0),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: onContinue,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
-                  child: Text(
-                    buttonText,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
+              child: AppButton(label: buttonText, onPressed: onContinue),
             ),
           ],
         ),
@@ -121,54 +103,41 @@ class SectionCompleteTemplate extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressItem(ProgressItem item) {
+  Widget _buildProgressItem(BuildContext context, ProgressItem item) {
+    final textTheme = Theme.of(context).textTheme;
+
+    // Done is a tint block; still to do is a quiet outlined one
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: item.isComplete
-            ? AppColors.primary.withValues(alpha: 0.1)
-            : Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
+        color: item.isComplete ? AppColors.primaryTint : AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(AppRadius.input),
         border: Border.all(
-          color: item.isComplete ? AppColors.primary : Colors.grey[300]!,
-          width: 2,
+          color: item.isComplete ? AppColors.primaryTint : AppColors.border,
         ),
       ),
       child: Row(
         children: [
           Icon(
             item.icon,
-            color: item.isComplete ? AppColors.primary : Colors.grey[400],
-            size: 32,
+            color: item.isComplete ? AppColors.primaryDeep : AppColors.textTertiary,
+            size: 28,
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: item.isComplete ? AppColors.primary : Colors.black,
-                  ),
-                ),
+                Text(item.title, style: textTheme.titleMedium),
                 Text(
                   item.status,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
+                  style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
                 ),
               ],
             ),
           ),
           if (item.isComplete)
-            const Icon(
-              Icons.check,
-              color: AppColors.primary,
-            ),
+            const Icon(Icons.check_circle, color: AppColors.primaryDeep),
         ],
       ),
     );

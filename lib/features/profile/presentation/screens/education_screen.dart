@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/constants/profile_creation.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 import 'package:eros_app/features/profile/domain/enums/preferences.dart';
@@ -45,12 +45,9 @@ class _EducationScreenState extends ConsumerState<EducationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -67,10 +64,7 @@ class _EducationScreenState extends ConsumerState<EducationScreen> {
               const SizedBox(height: 32),
               Text(
                 'What\'s your education level?',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
+                style: Theme.of(context).textTheme.displaySmall,
               ),
               const SizedBox(height: 32),
               SingleChoiceEditor<EducationLevel>(
@@ -80,27 +74,9 @@ class _EducationScreenState extends ConsumerState<EducationScreen> {
                 onSelected: (level) => setState(() => _selectedEducation = level),
               ),
               const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _selectedEducation != null ? _continue : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    disabledBackgroundColor: Colors.grey[300],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
-                  child: const Text(
-                    'Continue',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+              AppButton(
+                label: 'Continue',
+                onPressed: _selectedEducation != null ? _continue : null,
               ),
             ],
           ),

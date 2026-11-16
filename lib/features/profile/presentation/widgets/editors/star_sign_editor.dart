@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/single_choice_editor.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/domain/enums/personality.dart';
 
@@ -29,14 +31,15 @@ class StarSignEditor extends StatelessWidget {
       children: [
         Text(
           'What\'s your star sign?',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
         Text(
           'Optional - skip if you prefer',
-          style: TextStyle(color: Colors.grey[600]),
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(height: 24),
         GridView.builder(
@@ -55,24 +58,13 @@ class StarSignEditor extends StatelessWidget {
 
             return InkWell(
               onTap: () => onSelected(isSelected ? null : sign),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.input),
               child: Container(
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : Colors.grey[100],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected ? AppColors.primary : Colors.grey[300]!,
-                    width: 2,
-                  ),
-                ),
+                decoration: choiceTileDecoration(isSelected: isSelected),
                 child: Center(
                   child: Text(
                     sign.displayName,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 14,
-                    ),
+                    style: choiceTileTextStyle(context, isSelected: isSelected),
                     textAlign: TextAlign.center,
                   ),
                 ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/domain/models/question_dto.dart';
 
 /// A list of Q&A questions to choose from, one card each. Shared by onboarding's
@@ -43,32 +45,31 @@ class QuestionPickerItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.input),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(AppRadius.input),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           children: [
             Expanded(
               child: Text(
                 question.question,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: Colors.black,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyLarge
+                    ?.copyWith(fontSize: 15, fontWeight: FontWeight.w500, height: 1.35),
               ),
             ),
             const SizedBox(width: 12),
             const Icon(
               Icons.arrow_forward_ios,
               size: 16,
-              color: Colors.grey,
+              color: AppColors.textTertiary,
             ),
           ],
         ),

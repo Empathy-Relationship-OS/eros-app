@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/presentation/providers/photo_provider.dart';
@@ -17,12 +19,9 @@ class AddProfilePictureScreen extends ConsumerWidget {
     final photoState = ref.watch(photoUploadProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -54,13 +53,9 @@ class AddProfilePictureScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
 
                     // Title
-                    const Text(
+                    Text(
                       'Add your profile picture',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
+                      style: Theme.of(context).textTheme.displayMedium,
                     ),
 
                     const SizedBox(height: 32),
@@ -71,7 +66,7 @@ class AddProfilePictureScreen extends ConsumerWidget {
                         width: double.infinity,
                         decoration: BoxDecoration(
                           color: AppColors.cardBackground,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(AppRadius.card),
                         ),
                         child: Center(
                           child: Column(
@@ -97,7 +92,7 @@ class AddProfilePictureScreen extends ConsumerWidget {
                                       ),
                                       child: const Icon(
                                         Icons.add,
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                         size: 24,
                                       ),
                                     ),
@@ -121,13 +116,9 @@ class AddProfilePictureScreen extends ConsumerWidget {
                           color: AppColors.textPrimary,
                         ),
                         const SizedBox(width: 8),
-                        const Text(
+                        Text(
                           'Pick your best profile picture',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
                       ],
                     ),
@@ -139,13 +130,12 @@ class AddProfilePictureScreen extends ConsumerWidget {
                         // TODO: Show tips dialog
                         _showTipsDialog(context);
                       },
-                      child: const Text(
+                      child: Text(
                         'Tap here for more tips!',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                          decoration: TextDecoration.underline,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                              decoration: TextDecoration.underline,
+                            ),
                       ),
                     ),
 
@@ -158,21 +148,20 @@ class AddProfilePictureScreen extends ConsumerWidget {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.shade200),
+                            color: AppColors.error.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(AppRadius.input),
+                            border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+                              Icon(Icons.error_outline, color: AppColors.error, size: 20),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   photoState.error!,
-                                  style: TextStyle(
-                                    color: Colors.red.shade700,
-                                    fontSize: 14,
-                                  ),
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: AppColors.error,
+                                      ),
                                 ),
                               ),
                             ],
@@ -181,27 +170,7 @@ class AddProfilePictureScreen extends ConsumerWidget {
                       ),
 
                     // Add photo button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: () => _handleAddPhoto(context, ref),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(28),
-                          ),
-                        ),
-                        child: const Text(
-                          'Add a photo',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
+                    AppButton(label: 'Add a photo', onPressed: () => _handleAddPhoto(context, ref)),
 
                     const SizedBox(height: 24),
                   ],
@@ -242,14 +211,7 @@ class AddProfilePictureScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.background,
-        title: const Text(
-          'Photo Tips',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: const Text('Photo Tips'),
         content: const SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,13 +247,7 @@ class AddProfilePictureScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text(
-              'Got it!',
-              style: TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            child: const Text('Got it!'),
           ),
         ],
       ),
@@ -316,16 +272,13 @@ class _TipItem extends StatelessWidget {
         Icon(
           icon,
           size: 20,
-          color: AppColors.primary,
+          color: AppColors.primaryDeep,
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textPrimary,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ),
       ],

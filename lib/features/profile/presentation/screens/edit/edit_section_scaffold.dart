@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/date_preferences/data/date_preferences_repository.dart';
 import 'package:eros_app/features/match_preferences/data/match_preferences_repository.dart';
@@ -127,16 +128,13 @@ class _EditSectionScaffoldState extends State<EditSectionScaffold> {
         if (!didPop && !_saving) _confirmDiscard();
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
         appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            icon: const Icon(Icons.arrow_back),
             tooltip: 'Back',
             onPressed: () => Navigator.of(context).maybePop(),
           ),
-          title: Text(widget.title, style: const TextStyle(color: Colors.black)),
+          title: Text(widget.title),
           actions: [
             if (_saving)
               const Padding(
@@ -148,13 +146,7 @@ class _EditSectionScaffoldState extends State<EditSectionScaffold> {
             else
               TextButton(
                 onPressed: widget.canSave ? _save : null,
-                child: Text(
-                  'Save',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: widget.canSave ? AppColors.primary : Colors.grey[400],
-                  ),
-                ),
+                child: const Text('Save'),
               ),
           ],
           bottom: widget.appBarBottom,
@@ -169,16 +161,16 @@ class _EditSectionScaffoldState extends State<EditSectionScaffold> {
                   margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red[200]!),
+                    color: AppColors.error.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(AppRadius.input),
+                    border: Border.all(color: AppColors.error),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline, color: Colors.red[700]),
+                      const Icon(Icons.error_outline, color: AppColors.error),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(_error!, style: TextStyle(color: Colors.red[900])),
+                        child: Text(_error!, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.error)),
                       ),
                     ],
                   ),
@@ -204,7 +196,7 @@ class EditQuestion extends StatelessWidget {
       text,
       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: AppColors.textPrimary,
           ),
     );
   }

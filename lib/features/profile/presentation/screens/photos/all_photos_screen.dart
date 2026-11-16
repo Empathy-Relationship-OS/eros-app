@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
@@ -22,12 +24,9 @@ class AllPhotosScreen extends ConsumerWidget {
     final photoState = ref.watch(photoUploadProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -52,13 +51,9 @@ class AllPhotosScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Title
-                    const Text(
+                    Text(
                       'Add your photos',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
+                      style: Theme.of(context).textTheme.displayMedium,
                     ),
 
                     const SizedBox(height: 8),
@@ -66,10 +61,9 @@ class AllPhotosScreen extends ConsumerWidget {
                     // Subtitle with count
                     Text(
                       '${photoState.photos.length}/${MediaConstants.maxPhotos} photos (min ${MediaConstants.minPhotos} required)',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: AppColors.textSecondary,
-                      ),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                     ),
 
                     const SizedBox(height: 8),
@@ -78,11 +72,10 @@ class AllPhotosScreen extends ConsumerWidget {
                     if (photoState.photos.length > 1)
                       Text(
                         'Long press and drag to reorder photos',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary.withValues(alpha: 0.7),
-                          fontStyle: FontStyle.italic,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontStyle: FontStyle.italic,
+                            ),
                       ),
 
                     const SizedBox(height: 32),
@@ -112,10 +105,10 @@ class AllPhotosScreen extends ConsumerWidget {
                         // Add visual feedback during drag
                         return Container(
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(AppRadius.card),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.3),
+                                color: AppColors.ink.withValues(alpha: 0.3),
                                 blurRadius: 16,
                                 spreadRadius: 4,
                               ),
@@ -152,8 +145,8 @@ class AllPhotosScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          color: AppColors.primaryTint,
+                          borderRadius: BorderRadius.circular(AppRadius.input),
                           border: Border.all(
                             color: AppColors.primary.withValues(alpha: 0.3),
                           ),
@@ -162,17 +155,14 @@ class AllPhotosScreen extends ConsumerWidget {
                           children: [
                             const Icon(
                               Icons.info_outline,
-                              color: AppColors.primary,
+                              color: AppColors.primaryDeep,
                               size: 20,
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 'Add at least ${MediaConstants.minPhotos} photos to continue',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: AppColors.textPrimary,
-                                ),
+                                style: Theme.of(context).textTheme.bodyMedium,
                               ),
                             ),
                           ],
@@ -182,29 +172,9 @@ class AllPhotosScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
 
                     // Continue button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: photoState.canProceed
-                            ? () => _handleContinue(context)
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          disabledBackgroundColor: AppColors.textSecondary.withValues(alpha: 0.3),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(28),
-                          ),
-                        ),
-                        child: const Text(
-                          'Complete profile',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
+                    AppButton(
+                      label: 'Complete profile',
+                      onPressed: photoState.canProceed ? () => _handleContinue(context) : null,
                     ),
 
                     const SizedBox(height: 24),

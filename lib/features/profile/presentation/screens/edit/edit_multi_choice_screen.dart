@@ -143,7 +143,6 @@ class _EditMultiChoiceScreenState<T> extends ConsumerState<EditMultiChoiceScreen
                 onChanged: (value) => setState(() => _visible = value ?? true),
                 title: const Text('Show on my profile'),
                 controlAffinity: ListTileControlAffinity.leading,
-                activeColor: AppColors.primary,
               ),
             ),
           if (widget.initialVisible != null && widget.usedForMatching)
@@ -158,7 +157,9 @@ class _EditMultiChoiceScreenState<T> extends ConsumerState<EditMultiChoiceScreen
                 widget.max == null
                     ? 'Choose at least ${widget.min}'
                     : 'Choose ${widget.min} to ${widget.max}',
-                style: TextStyle(color: Colors.grey[600]),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
               ),
             ),
                 ],

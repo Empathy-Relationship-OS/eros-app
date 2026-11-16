@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/constants/media_constants.dart';
@@ -88,7 +90,6 @@ class _ProfileCompletionLoadingScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(32.0),
@@ -107,20 +108,15 @@ class _ProfileCompletionLoadingScreenState
                 const SizedBox(height: 32),
                 Text(
                   'Oops!',
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: Theme.of(context).textTheme.displayMedium,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   _errorMessage ?? 'Something went wrong',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: AppColors.textSecondary,
-                    height: 1.5,
-                  ),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppColors.textSecondary,
+                        height: 1.5,
+                      ),
                   textAlign: TextAlign.center,
                 ),
               ] else ...[
@@ -137,13 +133,13 @@ class _ProfileCompletionLoadingScreenState
                         width: 120,
                         height: 120,
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
+                          color: AppColors.primaryTint,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
                           Icons.favorite,
                           size: 60,
-                          color: AppColors.primary,
+                          color: AppColors.primaryDeep,
                         ),
                       ),
                     );
@@ -161,11 +157,7 @@ class _ProfileCompletionLoadingScreenState
                 // Status message
                 Text(
                   _statusMessage,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: Theme.of(context).textTheme.headlineMedium,
                   textAlign: TextAlign.center,
                 ),
 
@@ -174,7 +166,7 @@ class _ProfileCompletionLoadingScreenState
                 // Progress bar (if uploading photos)
                 if (_uploadProgress > 0 && _uploadProgress < 1) ...[
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadius.input),
                     child: LinearProgressIndicator(
                       value: _uploadProgress,
                       backgroundColor: AppColors.textSecondary.withValues(alpha: 0.2),
@@ -187,11 +179,9 @@ class _ProfileCompletionLoadingScreenState
                   const SizedBox(height: 16),
                   Text(
                     '${(_uploadProgress * 100).toInt()}%',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.primaryDeep,
+                        ),
                   ),
                 ] else ...[
                   // Indeterminate progress
@@ -212,10 +202,9 @@ class _ProfileCompletionLoadingScreenState
                 // Helpful message
                 Text(
                   'This won\'t take long...',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary.withValues(alpha: 0.8),
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -224,33 +213,16 @@ class _ProfileCompletionLoadingScreenState
 
               // Retry button (only shown on error)
               if (_hasError) ...[
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _hasError = false;
-                        _errorMessage = null;
-                        _uploadProgress = 0.0;
-                      });
-                      _startProfileCompletion();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                    ),
-                    child: const Text(
-                      'Try again',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+                AppButton(
+                  label: 'Try again',
+                  onPressed: () {
+                    setState(() {
+                      _hasError = false;
+                      _errorMessage = null;
+                      _uploadProgress = 0.0;
+                    });
+                    _startProfileCompletion();
+                  },
                 ),
                 const SizedBox(height: 16),
                 TextButton(
@@ -258,12 +230,11 @@ class _ProfileCompletionLoadingScreenState
                     // Go back to photo screen to review/change photos
                     Navigator.of(context).pop();
                   },
-                  child: const Text(
+                  child: Text(
                     'Go back',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                   ),
                 ),
               ],

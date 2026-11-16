@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/constants/user_text_limits.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
@@ -65,18 +67,19 @@ class _EditQAScreenState extends ConsumerState<EditQAScreen> {
                     const SizedBox(height: 8),
                     Text(
                       '${state.answers.length}/$maxQAAnswers answers (at least $minQAAnswers)',
-                      style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                     ),
                     if (state.answers.length > 1)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           'Drag the handle to reorder.',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textSecondary.withValues(alpha: 0.7),
-                            fontStyle: FontStyle.italic,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary,
+                                fontStyle: FontStyle.italic,
+                              ),
                         ),
                       ),
                     const SizedBox(height: 16),
@@ -104,14 +107,18 @@ class _EditQAScreenState extends ConsumerState<EditQAScreen> {
                         padding: const EdgeInsets.only(bottom: 16),
                         child: Text(
                           'Add at least $minQAAnswers answer to save.',
-                          style: const TextStyle(color: AppColors.textSecondary),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
                         ),
                       ),
                     if (state.canAddMore)
-                      OutlinedButton.icon(
-                        onPressed: state.isSaving ? null : () => _pickQuestion(context, state.answeredQuestionIds),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add an answer'),
+                      AppButton(
+                        label: 'Add an answer',
+                        kind: AppButtonKind.outline,
+                        icon: Icons.add,
+                        onPressed:
+                            state.isSaving ? null : () => _pickQuestion(context, state.answeredQuestionIds),
                       ),
                   ],
                 ),
@@ -143,9 +150,9 @@ class _EditQAScreenState extends ConsumerState<EditQAScreen> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
-                        child: Text('Pick a question', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        child: Text('Pick a question', style: Theme.of(context).textTheme.headlineSmall),
                       ),
                       Expanded(
                         child: available.isEmpty
@@ -189,9 +196,14 @@ class _LoadError extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(message, textAlign: TextAlign.center, style: TextStyle(color: Colors.red[700])),
+            Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.error)),
             const SizedBox(height: 16),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            AppButton(
+              label: 'Try again',
+              kind: AppButtonKind.secondary,
+              expand: false,
+              onPressed: onRetry,
+            ),
           ],
         ),
       ),
@@ -224,8 +236,8 @@ class _AnswerCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.fromLTRB(16, 8, 8, 16),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(AppRadius.input),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -235,7 +247,7 @@ class _AnswerCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   question.question,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
               IconButton(

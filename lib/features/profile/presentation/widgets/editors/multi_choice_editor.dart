@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/single_choice_editor.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 
 /// One tab of a grouped [MultiChoiceEditor], such as an interest category.
@@ -187,13 +189,6 @@ class _MultiChoiceEditorState<T> extends State<MultiChoiceEditor<T>> {
       decoration: InputDecoration(
         hintText: widget.searchHint,
         prefixIcon: const Icon(Icons.search),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.primary, width: 2),
-        ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 12,
@@ -210,10 +205,9 @@ class _MultiChoiceEditorState<T> extends State<MultiChoiceEditor<T>> {
       children: [
         Text(
           widget.max != null ? '$count/${widget.max} selected' : '$count selected',
-          style: TextStyle(
-            color: isValid ? AppColors.primary : Colors.grey[600],
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: isValid ? AppColors.primaryDeep : AppColors.textSecondary,
+              ),
         ),
         if (widget.selected.isNotEmpty)
           TextButton(
@@ -229,7 +223,10 @@ class _MultiChoiceEditorState<T> extends State<MultiChoiceEditor<T>> {
       return Center(
         child: Text(
           widget.emptyText,
-          style: TextStyle(color: Colors.grey[600]),
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: AppColors.textSecondary),
         ),
       );
     }
@@ -278,28 +275,14 @@ class MultiChoiceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.input),
       child: Container(
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary
-              : isMaxed
-                  ? Colors.grey[200]
-                  : Colors.grey[100],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.grey[300]!,
-            width: 2,
-          ),
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: choiceTileDecoration(isSelected: isSelected, isDisabled: isMaxed),
         child: Center(
           child: Text(
             label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              fontSize: 14,
-            ),
+            style: choiceTileTextStyle(context, isSelected: isSelected, isDisabled: isMaxed),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -319,9 +302,6 @@ TabBar multiChoiceTabBar({
   return TabBar(
     controller: controller,
     isScrollable: isScrollable,
-    labelColor: AppColors.primary,
-    unselectedLabelColor: Colors.grey[600],
-    indicatorColor: AppColors.primary,
     tabs: [for (final label in labels) Tab(text: label)],
   );
 }
@@ -352,13 +332,8 @@ class SelectedChipsBar<T> extends StatelessWidget {
               padding: const EdgeInsets.only(right: 8),
               child: Chip(
                 label: Text(labelOf(option)),
-                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 deleteIcon: const Icon(Icons.close, size: 18),
                 onDeleted: () => onRemove(option),
-                labelStyle: TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
               ),
             ),
         ],
