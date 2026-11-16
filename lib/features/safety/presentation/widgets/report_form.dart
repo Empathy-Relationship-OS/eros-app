@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:eros_app/core/constants/user_text_limits.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/features/safety/data/models/safety_models.dart';
 import 'package:eros_app/features/safety/presentation/providers/report_provider.dart';
 import 'package:eros_app/features/safety/presentation/widgets/safety_copy.dart';
@@ -88,9 +89,12 @@ class _ReportFormState extends ConsumerState<ReportForm> {
           error: (_, _) => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 SafetyCopy.reasonsFailed,
-                style: TextStyle(color: AppColors.textSecondary),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
               TextButton(
@@ -114,10 +118,7 @@ class _ReportFormState extends ConsumerState<ReportForm> {
           maxLines: 5,
           maxLength: UserTextLimits.reportDescription,
           keyboardType: TextInputType.multiline,
-          decoration: const InputDecoration(
-            hintText: SafetyCopy.descriptionHint,
-            border: OutlineInputBorder(),
-          ),
+          decoration: const InputDecoration(hintText: SafetyCopy.descriptionHint),
         ),
         const SizedBox(height: 8),
         const _Heading(SafetyCopy.imagesHeading),
@@ -142,14 +143,7 @@ class _Heading extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(bottom: 8),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        child: Text(text, style: Theme.of(context).textTheme.titleSmall),
       );
 }
 
@@ -161,7 +155,7 @@ class _Note extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: 8),
-        child: Text(text, style: TextStyle(fontSize: 13, color: color)),
+        child: Text(text, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color)),
       );
 }
 
@@ -189,7 +183,6 @@ class _ReasonList extends StatelessWidget {
               title: Text(reason.label),
               contentPadding: EdgeInsets.zero,
               dense: true,
-              activeColor: AppColors.primary,
             ),
         ],
       ),
@@ -225,13 +218,14 @@ class _EvidenceRow extends StatelessWidget {
             label: SafetyCopy.addImage,
             child: InkWell(
               onTap: canAdd ? onAdd : null,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppRadius.input),
               child: Container(
                 width: _size,
                 height: _size,
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.divider),
-                  borderRadius: BorderRadius.circular(8),
+                  color: AppColors.surfaceMuted,
+                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(AppRadius.input),
                 ),
                 child: const Icon(Icons.add_photo_alternate_outlined, color: AppColors.textSecondary),
               ),
@@ -251,7 +245,7 @@ class _EvidenceRow extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.input),
             child: Image.memory(
               image.bytes,
               fit: BoxFit.cover,
@@ -260,7 +254,10 @@ class _EvidenceRow extends StatelessWidget {
           ),
           if (image.status == EvidenceUploadStatus.uploading)
             Container(
-              color: Colors.black26,
+              decoration: BoxDecoration(
+                color: AppColors.ink.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(AppRadius.input),
+              ),
               alignment: Alignment.center,
               child: const SizedBox(
                 width: 20,
@@ -271,12 +268,12 @@ class _EvidenceRow extends StatelessWidget {
           if (image.status == EvidenceUploadStatus.failed)
             Container(
               decoration: BoxDecoration(
-                color: Colors.black38,
+                color: AppColors.ink.withValues(alpha: 0.4),
                 border: Border.all(color: AppColors.error, width: 2),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.input),
               ),
               alignment: Alignment.center,
-              child: const Icon(Icons.error_outline, color: Colors.white),
+              child: const Icon(Icons.error_outline, color: AppColors.white),
             ),
           Positioned(
             top: -4,
@@ -286,8 +283,8 @@ class _EvidenceRow extends StatelessWidget {
               onPressed: onRemove == null ? null : () => onRemove!(image.localId),
               icon: const CircleAvatar(
                 radius: 11,
-                backgroundColor: Colors.white,
-                child: Icon(Icons.close, size: 14, color: AppColors.textPrimary),
+                backgroundColor: AppColors.ink,
+                child: Icon(Icons.close, size: 14, color: AppColors.white),
               ),
             ),
           ),

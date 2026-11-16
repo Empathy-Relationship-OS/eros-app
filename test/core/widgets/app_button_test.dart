@@ -1,3 +1,4 @@
+import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/theme/app_theme.dart';
 import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,37 @@ void main() {
       await tester.tap(find.text('Pay deposit'));
 
       expect(taps, 1);
+    });
+
+    testWidgets('destructive is red with white text, and greys out like the others when off',
+        (tester) async {
+      await _pump(
+        tester,
+        Column(
+          children: [
+            AppButton(label: 'Send report', kind: AppButtonKind.destructive, onPressed: () {}),
+            const AppButton(label: 'Off', kind: AppButtonKind.destructive, onPressed: null),
+          ],
+        ),
+      );
+
+      Color? fill(String label) => tester
+          .widget<Material>(find
+              .descendant(
+                of: find.widgetWithText(ElevatedButton, label),
+                matching: find.byType(Material),
+              )
+              .first)
+          .color;
+      expect(fill('Send report'), AppColors.error);
+      expect(fill('Off'), AppColors.disabled);
+      expect(
+        tester.widget<RichText>(find.descendant(
+          of: find.widgetWithText(ElevatedButton, 'Send report'),
+          matching: find.byType(RichText),
+        )).text.style?.color,
+        AppColors.white,
+      );
     });
 
     testWidgets('each kind is the themed Material button for it', (tester) async {

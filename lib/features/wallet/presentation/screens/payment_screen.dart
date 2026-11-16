@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/theme/app_theme.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/features/wallet/presentation/providers/purchase_provider.dart';
 
 /// Screen for entering payment details and completing purchase
@@ -29,25 +32,18 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       }
     });
 
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: purchaseState.isProcessing
               ? null
               : () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'Payment',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text('Payment'),
       ),
       body: SafeArea(
         child: Column(
@@ -65,44 +61,24 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: AppColors.cardBackground,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        borderRadius: BorderRadius.circular(AppRadius.card),
+                        border: Border.all(color: AppColors.divider),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Order Summary',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
+                          Text('Order Summary', style: textTheme.headlineSmall),
                           const SizedBox(height: 16),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
                                 '${purchaseState.selectedPackage?.displayName ?? ''} Package',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: AppColors.textSecondary,
-                                ),
+                                style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
                               ),
                               Text(
                                 '${purchaseState.selectedPackage?.tokens ?? 0} tokens',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
+                                style: textTheme.titleMedium,
                               ),
                             ],
                           ),
@@ -112,20 +88,11 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Total',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
+                              Text('Total', style: textTheme.headlineMedium),
                               Text(
                                 purchaseState.selectedPackage?.formattedPrice ?? '£0.00',
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primary,
+                                style: textTheme.displaySmall?.copyWith(
+                                  fontFeatures: const [FontFeature.tabularFigures()],
                                 ),
                               ),
                             ],
@@ -134,27 +101,18 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
 
                     // Payment method section
-                    const Text(
-                      'Payment method',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                    Text('Payment method', style: textTheme.headlineSmall),
+                    const SizedBox(height: 12),
 
                     // Stripe Card Field
                     Container(
                       decoration: BoxDecoration(
                         color: AppColors.cardBackground,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.textSecondary.withValues(alpha: 0.2),
-                        ),
+                        borderRadius: BorderRadius.circular(AppRadius.input),
+                        border: Border.all(color: AppColors.border),
                       ),
                       child: CardField(
                         onCardChanged: (card) {
@@ -168,39 +126,31 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                           color: AppColors.textPrimary,
                           fontSize: 16,
                         ),
-                        decoration: InputDecoration(
+                        // The box around it draws the border, so the field itself has none
+                        decoration: const InputDecoration(
+                          filled: false,
                           border: InputBorder.none,
-                          contentPadding: const EdgeInsets.all(16),
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          contentPadding: EdgeInsets.all(16),
                           hintText: 'Card number',
-                          hintStyle: TextStyle(
-                            color: AppColors.textSecondary.withValues(alpha: 0.6),
-                          ),
+                          hintStyle: TextStyle(color: AppColors.textTertiary),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
                     // Secure payment indicator
                     Row(
                       children: [
-                        Icon(
-                          Icons.lock_outline,
-                          size: 16,
-                          color: AppColors.textSecondary.withValues(alpha: 0.6),
-                        ),
+                        const Icon(Icons.lock_outline, size: 16, color: AppColors.textSecondary),
                         const SizedBox(width: 8),
-                        Text(
-                          'Secure payment powered by Stripe',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary.withValues(alpha: 0.6),
-                          ),
-                        ),
+                        Text('Secure payment powered by Stripe', style: textTheme.bodySmall),
                       ],
                     ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
 
                     // Test card info (only show in non-production)
                     if (!kReleaseMode)
@@ -208,40 +158,26 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.3),
-                          ),
+                          color: AppColors.surfaceMuted,
+                          borderRadius: BorderRadius.circular(AppRadius.input),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                Icon(
-                                  Icons.info_outline,
-                                  size: 16,
-                                  color: AppColors.primary.withValues(alpha: 0.8),
-                                ),
+                                const Icon(Icons.info_outline, size: 16, color: AppColors.primaryDeep),
                                 const SizedBox(width: 8),
-                                const Text(
+                                Text(
                                   'Test mode',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primary,
-                                  ),
+                                  style: textTheme.labelLarge?.copyWith(color: AppColors.primaryDeep),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 8),
-                            const Text(
+                            Text(
                               'Use test card: 4242 4242 4242 4242\nAny future expiry date and CVC',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                              ),
+                              style: textTheme.bodySmall,
                             ),
                           ],
                         ),
@@ -253,51 +189,17 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
 
             // Bottom CTA
             Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              decoration: const BoxDecoration(
                 color: AppColors.cardBackground,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
+                border: Border(top: BorderSide(color: AppColors.divider)),
               ),
               child: SafeArea(
                 top: false,
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: (_isCardComplete && !purchaseState.isProcessing)
-                        ? _handlePayment
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      disabledBackgroundColor: AppColors.textSecondary.withValues(alpha: 0.3),
-                    ),
-                    child: purchaseState.isProcessing
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Text(
-                            'Pay ${purchaseState.selectedPackage?.formattedPrice ?? '£0.00'}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
+                child: AppButton(
+                  label: 'Pay ${purchaseState.selectedPackage?.formattedPrice ?? '£0.00'}',
+                  loading: purchaseState.isProcessing,
+                  onPressed: _isCardComplete ? _handlePayment : null,
                 ),
               ),
             ),
@@ -319,12 +221,11 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
             Icon(Icons.check_circle, color: AppColors.success, size: 28),
             SizedBox(width: 12),
-            Text('Payment successful!'),
+            Flexible(child: Text('Payment successful!')),
           ],
         ),
         content: Text(
@@ -340,7 +241,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               // Close purchase screen
               Navigator.of(context).pop();
             },
-            child: const Text('Done', style: TextStyle(color: AppColors.primary)),
+            child: const Text('Done'),
           ),
         ],
       ),
@@ -351,26 +252,26 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
             Icon(Icons.error_outline, color: AppColors.error, size: 28),
             SizedBox(width: 12),
-            Text('Payment failed'),
+            Flexible(child: Text('Payment failed')),
           ],
         ),
         content: Text(errorMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close', style: TextStyle(color: AppColors.textSecondary)),
+            style: AppTheme.quietLink,
+            child: const Text('Close'),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
               ref.read(purchaseProvider.notifier).retry();
             },
-            child: const Text('Try again', style: TextStyle(color: AppColors.primary)),
+            child: const Text('Try again'),
           ),
         ],
       ),

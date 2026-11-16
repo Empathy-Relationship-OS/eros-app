@@ -20,10 +20,7 @@ Future<void> openReportFlow(
   final result = await showModalBottomSheet<ReportResult>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
+    showDragHandle: true,
     builder: (_) => ReportSheet(
       dateId: dateDetail.dateId.toString(),
       partnerName: dateDetail.partnerName,
