@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
 
@@ -223,20 +224,6 @@ class _EmailOTPVerificationScreenState
                         contentPadding: const EdgeInsets.symmetric(
                           vertical: 16,
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: AppColors.border,
-                            width: 1,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: AppColors.primaryOrange,
-                            width: 2,
-                          ),
-                        ),
                       ),
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       onChanged: (value) {
@@ -273,11 +260,6 @@ class _EmailOTPVerificationScreenState
                     _resendTimer > 0
                         ? 'Resend code in $_resendTimer seconds'
                         : 'Resend code',
-                    style: TextStyle(
-                      color: _resendTimer > 0
-                          ? AppColors.textTertiary
-                          : AppColors.primaryOrange,
-                    ),
                   ),
                 ),
               ),
@@ -285,25 +267,10 @@ class _EmailOTPVerificationScreenState
               const Spacer(),
 
               // Verify Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isOTPComplete() && !_isLoading
-                      ? _verifyOTP
-                      : null,
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.white,
-                            ),
-                          ),
-                        )
-                      : const Text('Verify'),
-                ),
+              AppButton(
+                label: 'Verify',
+                loading: _isLoading,
+                onPressed: _isOTPComplete() ? _verifyOTP : null,
               ),
 
               const SizedBox(height: 16),

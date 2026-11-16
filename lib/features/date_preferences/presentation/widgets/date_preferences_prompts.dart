@@ -179,10 +179,12 @@ class DatePreferencesUpdateLink extends StatelessWidget {
           foregroundColor: AppColors.textSecondary,
           minimumSize: const Size.fromHeight(44),
         ),
-        child: const Text(
+        child: Text(
           DatePreferencesPromptCopy.rankingLink,
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 14, decoration: TextDecoration.underline),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                decoration: TextDecoration.underline,
+              ),
         ),
       ),
     );

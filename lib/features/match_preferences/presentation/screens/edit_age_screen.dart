@@ -62,11 +62,9 @@ class _EditAgeScreenState extends ConsumerState<EditAgeScreen> {
                 Text(
                   formatAgeRange(_min, _max, bounds),
                   key: const Key('age-range-value'),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: AppColors.primaryDeep,
+                      ),
                 ),
                 RangeSlider(
                   values: RangeValues(_min.toDouble(), _max.toDouble()),
@@ -74,7 +72,6 @@ class _EditAgeScreenState extends ConsumerState<EditAgeScreen> {
                   max: bounds.max.toDouble(),
                   divisions: bounds.max - bounds.min,
                   semanticFormatterCallback: (value) => formatAge(value.round(), bounds),
-                  activeColor: AppColors.primary,
                   onChanged: (values) => setState(() {
                     _min = values.start.round();
                     _max = values.end.round();
@@ -86,12 +83,12 @@ class _EditAgeScreenState extends ConsumerState<EditAgeScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       ExcludeSemantics(
-                        child: Text('${bounds.min}', style: TextStyle(color: Colors.grey[600])),
+                        child: Text('${bounds.min}', style: TextStyle(color: AppColors.textSecondary)),
                       ),
                       ExcludeSemantics(
                         child: Text(
                           formatAge(bounds.max, bounds),
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: TextStyle(color: AppColors.textSecondary),
                         ),
                       ),
                     ],

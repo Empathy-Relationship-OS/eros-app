@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/notifications/notification_router.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
@@ -81,7 +82,6 @@ class _VerificationStatusScreenState extends ConsumerState<VerificationStatusScr
   Widget build(BuildContext context) {
     final status = ref.watch(verificationStatusProvider);
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text(VerificationCopy.verifyYourProfile)),
       body: RefreshIndicator(
         onRefresh: _refresh,
@@ -107,7 +107,7 @@ class _VerificationStatusScreenState extends ConsumerState<VerificationStatusScr
       if (status.hasError) {
         return _Layout(icon: Icons.cloud_off_outlined, lines: const [VerificationCopy.statusFailed]);
       }
-      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+      return const Center(child: CircularProgressIndicator());
     }
 
     switch (value.state) {
@@ -188,7 +188,7 @@ class _Layout extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ExcludeSemantics(child: Icon(icon, size: 56, color: AppColors.primary)),
+        ExcludeSemantics(child: Icon(icon, size: 56, color: AppColors.primaryDeep)),
         const SizedBox(height: 24),
         if (title != null) ...[
           Semantics(
@@ -196,11 +196,7 @@ class _Layout extends StatelessWidget {
             child: Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
+              style: Theme.of(context).textTheme.displaySmall,
             ),
           ),
           const SizedBox(height: 16),
@@ -209,13 +205,13 @@ class _Layout extends StatelessWidget {
           Text(
             line,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 16, height: 1.5, color: AppColors.textPrimary),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.5),
           ),
           const SizedBox(height: 8),
         ],
         if (actionLabel != null) ...[
           const SizedBox(height: 24),
-          ElevatedButton(onPressed: onAction, child: Text(actionLabel)),
+          AppButton(label: actionLabel, onPressed: onAction),
         ],
         if (secondaryLabel != null) ...[
           const SizedBox(height: 8),

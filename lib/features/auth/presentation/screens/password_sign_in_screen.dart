@@ -116,7 +116,6 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please complete your profile setup'),
-            backgroundColor: AppColors.primary,
           ),
         );
 
@@ -211,7 +210,7 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Welcome back!'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           duration: Duration(seconds: 2),
         ),
       );
@@ -222,7 +221,6 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(status.message ?? 'Please complete your profile'),
-          backgroundColor: AppColors.primary,
           duration: const Duration(seconds: 3),
         ),
       );
@@ -262,7 +260,7 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
                   ? 'Password reset email sent!'
                   : 'Failed to send reset email',
             ),
-            backgroundColor: success ? Colors.green : AppColors.error,
+            backgroundColor: success ? AppColors.success : AppColors.error,
           ),
         );
       }
@@ -350,13 +348,7 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: _onForgotPassword,
-                    child: Text(
-                      'Forgot password?',
-                      style: TextStyle(
-                        color: AppColors.primaryOrange,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: const Text('Forgot password?'),
                   ),
                 ),
 

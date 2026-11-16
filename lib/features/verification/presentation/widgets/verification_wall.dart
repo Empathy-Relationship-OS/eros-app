@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/verification/domain/models/verification_models.dart';
@@ -90,21 +91,17 @@ class _VerificationWallState extends ConsumerState<VerificationWall> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
+        Text(
           VerificationCopy.wallTitle,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+          style: Theme.of(context).textTheme.titleMedium,
         ),
         if (deadline != null) ...[
           const SizedBox(height: 6),
           Text(
             VerificationCopy.keepYourDate(deadline),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
         const SizedBox(height: 12),
@@ -169,7 +166,9 @@ class _VerificationWallState extends ConsumerState<VerificationWall> {
             // and its last words tell the user what to do.
             child: Text(
               text,
-              style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
             ),
           ),
           if (action != null)
@@ -183,15 +182,12 @@ class _VerificationWallState extends ConsumerState<VerificationWall> {
     );
   }
 
-  Widget _button(String label) => ElevatedButton(
-        onPressed: _startVerification,
-        child: Text(label),
-      );
+  Widget _button(String label) => AppButton(label: label, onPressed: _startVerification);
 
   Widget _line(String text) => Text(
         text,
         textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
       );
 
   Widget _spinner() => const Center(

@@ -46,7 +46,6 @@ class PreferenceChoiceTile extends StatelessWidget {
         title: Text(label),
         subtitle: note == null ? null : Text(note!),
         controlAffinity: ListTileControlAffinity.leading,
-        activeColor: AppColors.primary,
       ),
     );
   }
@@ -75,7 +74,6 @@ class PreferenceSwitchTile extends StatelessWidget {
       onChanged: onChanged,
       title: Text(label),
       subtitle: note == null ? null : Text(note!),
-      activeTrackColor: AppColors.primary,
     );
   }
 }
@@ -88,6 +86,6 @@ class PreferenceHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text, style: TextStyle(fontSize: 15, color: Colors.grey[700]));
+    return Text(text, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary));
   }
 }

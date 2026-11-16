@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'email_entry_screen.dart';
 
@@ -119,12 +120,12 @@ class _AuthMethodCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppRadius.card),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           border: Border.all(color: AppColors.border, width: 1.5),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadius.card),
         ),
         child: Row(
           children: [
@@ -132,10 +133,10 @@ class _AuthMethodCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primaryOrange.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: AppColors.primaryTint,
+                borderRadius: BorderRadius.circular(AppRadius.input),
               ),
-              child: Icon(icon, size: 28, color: AppColors.primaryOrange),
+              child: Icon(icon, size: 28, color: AppColors.primaryDeep),
             ),
 
             const SizedBox(width: 16),

@@ -148,16 +148,13 @@ class _StartPointMapScreenState extends ConsumerState<StartPointMapScreen> {
     final initial = widget.start ?? widget.city.centre;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           tooltip: _Copy.back,
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(_Copy.title, style: TextStyle(color: Colors.black)),
+        title: const Text(_Copy.title),
       ),
       body: Column(
         children: [

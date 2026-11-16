@@ -191,7 +191,6 @@ class _EditHeightScreenState extends ConsumerState<EditHeightScreen> {
                     max: (stops.length - 1).toDouble(),
                     divisions: stops.length - 1,
                     semanticFormatterCallback: (value) => stops[value.round()].label,
-                    activeColor: AppColors.primary,
                     onChanged: (values) {
                       final start = values.start.round();
                       final end = values.end.round();
@@ -235,11 +234,6 @@ class _UnitToggle extends StatelessWidget {
         onSelected: (_) {
           if (!selected) onChanged(value);
         },
-        selectedColor: AppColors.primary,
-        labelStyle: TextStyle(
-          color: selected ? Colors.white : Colors.black,
-          fontWeight: FontWeight.bold,
-        ),
       );
     }
 
@@ -274,16 +268,14 @@ class _End extends StatelessWidget {
       child: Column(
         crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(color: Colors.grey[600])),
+          Text(title, style: TextStyle(color: AppColors.textSecondary)),
           const SizedBox(height: 4),
           Text(
             value,
             key: valueKey,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primary,
-            ),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppColors.primaryDeep,
+                ),
           ),
         ],
       ),

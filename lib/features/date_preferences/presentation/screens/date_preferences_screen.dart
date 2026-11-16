@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/date_preferences/data/date_preferences_repository.dart';
@@ -111,16 +112,14 @@ class DatePreferencesScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           tooltip: _Copy.back,
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(_Copy.title, style: TextStyle(color: Colors.black)),
+        title: const Text(_Copy.title),
       ),
       body: body,
     );
@@ -164,7 +163,10 @@ class _Hub extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       children: [
-        Text(_Copy.intro, style: TextStyle(fontSize: 15, color: Colors.grey[700])),
+        Text(
+          _Copy.intro,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+        ),
         if (!preferences.isSet) ...[
           const SizedBox(height: 16),
           const _NotSetBanner(),
@@ -348,17 +350,17 @@ class _NotSetBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.secondaryOrange.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.primaryTint,
+        borderRadius: BorderRadius.circular(AppRadius.input),
       ),
-      child: const Row(
+      child: Row(
         children: [
           Icon(Icons.auto_awesome_outlined, color: AppColors.accentOrange),
           SizedBox(width: 12),
           Expanded(
             child: Text(
               _Copy.notSetBanner,
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
         ],
@@ -398,18 +400,21 @@ class _Section extends StatelessWidget {
           label: title,
           hint: _Copy.editHint(title),
           child: Material(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.cardBackground,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              side: const BorderSide(color: AppColors.divider),
+            ),
             child: InkWell(
               onTap: onTap,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.input),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
                     Expanded(
                       child: DefaultTextStyle.merge(
-                        style: const TextStyle(fontSize: 16, color: Colors.black),
+                        style: Theme.of(context).textTheme.bodyLarge,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -422,7 +427,7 @@ class _Section extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Icon(Icons.chevron_right, color: Colors.grey[400]),
+                    Icon(Icons.chevron_right, color: AppColors.textTertiary),
                   ],
                 ),
               ),
@@ -446,7 +451,7 @@ class _LevelLine extends StatelessWidget {
     return Row(
       children: [
         Expanded(child: Text(name)),
-        Text(level, style: TextStyle(color: Colors.grey[700])),
+        Text(level, style: TextStyle(color: AppColors.textSecondary)),
       ],
     );
   }
@@ -488,16 +493,14 @@ class _SectionPlaceholderScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           tooltip: _Copy.back,
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(title, style: const TextStyle(color: Colors.black)),
+        title: Text(title),
       ),
       body: const Center(
         child: Padding(

@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/date_preferences/domain/models/date_preference_options.dart';
@@ -107,17 +108,17 @@ class _KeepOneNotice extends StatelessWidget {
         key: const Key('keep-one-notice'),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.secondaryOrange.withValues(alpha: 0.35),
-          borderRadius: BorderRadius.circular(12),
+          color: AppColors.primaryTint,
+          borderRadius: BorderRadius.circular(AppRadius.input),
         ),
-        child: const Row(
+        child: Row(
           children: [
             Icon(Icons.info_outline, color: AppColors.accentOrange),
             SizedBox(width: 12),
             Expanded(
               child: Text(
                 _Copy.keepOne,
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
           ],
@@ -143,9 +144,9 @@ class _ActivityRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        color: AppColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(AppRadius.input),
+        border: Border.all(color: AppColors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,23 +167,23 @@ class _ActivityRow extends StatelessWidget {
                       children: [
                         Text(
                           activity.name,
-                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
                         if (activity.status == _comingSoon) const _ComingSoonTag(),
                       ],
                     ),
                     if (ageNote != null) ...[
                       const SizedBox(height: 4),
-                      Text(ageNote, style: TextStyle(fontSize: 14, color: Colors.grey[800])),
+                      Text(ageNote, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),
                     ],
                     if (description != null) ...[
                       const SizedBox(height: 4),
-                      Text(description, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+                      Text(description, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),
                     ],
                     const SizedBox(height: 4),
                     Text(
                       _Copy.deposit(activity.tokenCost),
-                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 ),
@@ -243,11 +244,11 @@ class _ComingSoonTag extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: AppColors.secondaryOrange.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.input),
       ),
-      child: const Text(
+      child: Text(
         _Copy.comingSoon,
-        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        style: Theme.of(context).textTheme.labelMedium,
       ),
     );
   }

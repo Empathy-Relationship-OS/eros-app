@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/match_preferences/data/match_preferences_repository.dart';
 import 'package:eros_app/features/match_preferences/domain/models/filter_patch.dart';
 import 'package:eros_app/features/match_preferences/presentation/providers/match_preference_options_provider.dart';
@@ -49,8 +48,7 @@ class InterestedInSheet extends ConsumerWidget {
         // Without options there's no suggestion, but the question can still be answered.
         error: (_, _) => _screen(context, ref, const []),
         loading: () => const Scaffold(
-          backgroundColor: Colors.white,
-          body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+          body: Center(child: CircularProgressIndicator()),
         ),
       ),
     );

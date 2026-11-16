@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/constants/languages.dart';
@@ -29,7 +30,7 @@ class LanguageSelectionPopup extends ConsumerWidget {
               height: 4,
               decoration: BoxDecoration(
                 color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(AppRadius.small),
               ),
             ),
 
@@ -57,7 +58,7 @@ class LanguageSelectionPopup extends ConsumerWidget {
                   return ListTile(
                     leading: Text(
                       language.flag,
-                      style: const TextStyle(fontSize: 24),
+                      style: Theme.of(context).textTheme.displaySmall,
                     ),
                     title: Text(
                       language.nativeName,
@@ -74,7 +75,7 @@ class LanguageSelectionPopup extends ConsumerWidget {
                     trailing: isSelected
                         ? const Icon(
                             Icons.check_circle,
-                            color: AppColors.primaryOrange,
+                            color: AppColors.primaryDeep,
                           )
                         : null,
                     onTap: () {
@@ -86,7 +87,7 @@ class LanguageSelectionPopup extends ConsumerWidget {
                       Navigator.pop(context);
                     },
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadius.input),
                     ),
                   );
                 },

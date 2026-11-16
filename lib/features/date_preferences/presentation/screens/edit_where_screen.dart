@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/date_preferences/data/date_preferences_repository.dart';
@@ -204,7 +205,7 @@ class _EditWhereScreenState extends ConsumerState<EditWhereScreen> {
         children: [
           const _Heading(_Copy.cities),
           const SizedBox(height: 4),
-          Text(_Copy.citiesHint, style: TextStyle(color: Colors.grey[600])),
+          Text(_Copy.citiesHint, style: TextStyle(color: AppColors.textSecondary)),
           const SizedBox(height: 16),
           DatingCityPicker(
             selectedCityIds: [for (final city in _cities) city.cityId],
@@ -277,15 +278,15 @@ class _StartingFromRow extends StatelessWidget {
     return MergeSemantics(
       child: Material(
         color: AppColors.background,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.input),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                const Icon(Icons.place_outlined, color: AppColors.primary),
+                const Icon(Icons.place_outlined, color: AppColors.primaryDeep),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -293,13 +294,13 @@ class _StartingFromRow extends StatelessWidget {
                     children: [
                       Text(city.cityName, style: const TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 2),
-                      Text(_Copy.startingFrom, style: TextStyle(color: Colors.grey[600])),
+                      Text(_Copy.startingFrom, style: TextStyle(color: AppColors.textSecondary)),
                     ],
                   ),
                 ),
                 Text(startLabel),
                 const SizedBox(width: 8),
-                Icon(Icons.chevron_right, color: Colors.grey[400]),
+                Icon(Icons.chevron_right, color: AppColors.textTertiary),
               ],
             ),
           ),
@@ -322,7 +323,7 @@ class _OptionsError extends StatelessWidget {
         : _Copy.optionsError;
     return Column(
       children: [
-        Text(message, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[700])),
+        Text(message, textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
         const SizedBox(height: 12),
         ElevatedButton(onPressed: onRetry, child: const Text(_Copy.retry)),
       ],

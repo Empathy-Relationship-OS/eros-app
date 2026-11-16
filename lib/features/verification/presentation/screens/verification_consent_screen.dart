@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/core/theme/app_theme.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter/services.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/verification/presentation/widgets/verification_copy.dart';
@@ -26,16 +28,13 @@ class VerificationConsentScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const bodyStyle = TextStyle(fontSize: 16, height: 1.5, color: AppColors.textPrimary);
+    final bodyStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.5);
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        // The app's AppBar theme is white on orange, icons and status bar included. On this
-        // light background both need to be dark.
+        // Dark status bar icons, for this light page
         systemOverlayStyle: SystemUiOverlayStyle.dark,
-        elevation: 0,
         leading: IconButton(
+          // Stated, not inherited: a test holds this to the dark colour
           icon: const Icon(Icons.close, color: AppColors.textPrimary),
           tooltip: VerificationCopy.closeLabel,
           onPressed: onClose,
@@ -51,17 +50,13 @@ class VerificationConsentScreen extends StatelessWidget {
                 children: [
                   Semantics(
                     header: true,
-                    child: const Text(
+                    child: Text(
                       VerificationCopy.consentTitle,
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
+                      style: Theme.of(context).textTheme.displaySmall,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(VerificationCopy.consentIntro, style: bodyStyle),
+                  Text(VerificationCopy.consentIntro, style: bodyStyle),
                   const SizedBox(height: 16),
                   for (final point in VerificationCopy.consentPoints)
                     Padding(
@@ -73,7 +68,7 @@ class VerificationConsentScreen extends StatelessWidget {
                             padding: EdgeInsets.only(top: 3, right: 12),
                             child: ExcludeSemantics(
                               child: Icon(Icons.check_circle_outline,
-                                  size: 20, color: AppColors.primary),
+                                  size: 20, color: AppColors.primaryDeep),
                             ),
                           ),
                           Expanded(child: Text(point, style: bodyStyle)),
@@ -99,27 +94,21 @@ class VerificationConsentScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  ElevatedButton(
-                    onPressed: busy ? null : onAgree,
-                    child: busy
-                        ? const SizedBox.square(
-                            dimension: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text(VerificationCopy.consentAgree),
+                  AppButton(
+                    label: VerificationCopy.consentAgree,
+                    loading: busy,
+                    onPressed: onAgree,
                   ),
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: busy ? null : onPersonInstead,
-                    child: const Text(
-                      VerificationCopy.consentPersonInstead,
-                      style: TextStyle(color: AppColors.textSecondary),
-                    ),
+                    style: AppTheme.quietLink,
+                    child: const Text(VerificationCopy.consentPersonInstead),
                   ),
-                  const Text(
+                  Text(
                     VerificationCopy.consentPersonInsteadHint,
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
               ),

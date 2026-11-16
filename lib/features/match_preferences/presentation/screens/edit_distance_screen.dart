@@ -155,16 +155,16 @@ class _FromRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           child: Row(
             children: [
-              const Icon(Icons.place_outlined, color: AppColors.primary),
+              const Icon(Icons.place_outlined, color: AppColors.primaryDeep),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   district == null ? _Copy.fromCityCentre : _Copy.fromNear(district),
-                  style: const TextStyle(fontSize: 15, color: Colors.black),
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(Icons.chevron_right, color: Colors.grey[400]),
+              Icon(Icons.chevron_right, color: AppColors.textTertiary),
             ],
           ),
         ),
@@ -185,16 +185,14 @@ class _WhereEditor extends ConsumerWidget {
     }
     final error = preferences.hasError && !preferences.isLoading ? preferences.error : null;
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           tooltip: _Copy.back,
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(_Copy.where, style: TextStyle(color: Colors.black)),
+        title: const Text(_Copy.where),
       ),
       body: Center(
         child: error == null

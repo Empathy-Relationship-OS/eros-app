@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:eros_app/features/profile/presentation/widgets/editors/single_choice_editor.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/match_preferences/data/match_preferences_repository.dart';
 import 'package:eros_app/features/match_preferences/domain/models/filter_values.dart';
@@ -79,14 +82,12 @@ class _InterestedInScreenState extends State<InterestedInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
         leading: widget.showBack
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                icon: const Icon(Icons.arrow_back),
                 tooltip: 'Back',
                 onPressed: () => Navigator.of(context).maybePop(),
               )
@@ -114,27 +115,10 @@ class _InterestedInScreenState extends State<InterestedInScreen> {
               child: SizedBox(
                 width: double.infinity,
                 height: 56,
-                child: ElevatedButton(
+                child: AppButton(
+                  label: 'Continue',
+                  loading: _saving,
                   onPressed: _selected.isNotEmpty && !_saving ? _continue : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    disabledBackgroundColor: Colors.grey[300],
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                  ),
-                  child: _saving
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text(
-                          'Continue',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
                 ),
               ),
             ),
@@ -156,13 +140,13 @@ class _InterestedInScreenState extends State<InterestedInScreen> {
           'Who are you interested in?',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: AppColors.textPrimary,
               ),
         ),
         const SizedBox(height: 8),
         Text(
           'Choose all that apply. We\'ll only show you people you\'re interested in.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );
@@ -174,15 +158,20 @@ class _InterestedInScreenState extends State<InterestedInScreen> {
       margin: const EdgeInsets.fromLTRB(24, 12, 24, 0),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.red[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red[200]!),
+        color: AppColors.error.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.input),
+        border: Border.all(color: AppColors.error),
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline, color: Colors.red[700]),
+          const Icon(Icons.error_outline, color: AppColors.error),
           const SizedBox(width: 12),
-          Expanded(child: Text(_error!, style: TextStyle(color: Colors.red[900]))),
+          Expanded(
+            child: Text(
+              _error!,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.error),
+            ),
+          ),
         ],
       ),
     );
@@ -206,31 +195,23 @@ class _InterestedInTile extends StatelessWidget {
         checked: isSelected,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.input),
           child: Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? AppColors.primary : Colors.grey[300]!,
-                width: 2,
-              ),
-            ),
+            decoration: choiceCardDecoration(isSelected: isSelected),
             child: Row(
               children: [
                 Icon(
                   isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-                  color: isSelected ? AppColors.primary : Colors.grey[400],
+                  color: isSelected ? AppColors.primaryDeep : AppColors.textTertiary,
                 ),
                 const SizedBox(width: 16),
                 Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: isSelected ? AppColors.primary : Colors.black,
-                  ),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        height: 1.3,
+                      ),
                 ),
               ],
             ),
