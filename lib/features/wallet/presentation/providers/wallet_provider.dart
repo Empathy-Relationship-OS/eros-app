@@ -102,13 +102,21 @@ class WalletBalanceNotifier extends StateNotifier<WalletBalanceState> {
   final WalletRepository _repository;
   final Logger _logger = Logger();
 
+  /// The fetch under way, which a second caller waits on instead of starting another.
+  Future<void>? _fetching;
+
   WalletBalanceNotifier(this._repository)
       : super(const WalletBalanceState());
 
   /// Fetch wallet balance
-  Future<void> fetchBalance() async {
-    if (state.isLoading) return;
+  Future<void> fetchBalance() {
+    // A block body: an arrow would hand whenComplete the cleared future to wait on.
+    return _fetching ??= _fetchBalance().whenComplete(() {
+      _fetching = null;
+    });
+  }
 
+  Future<void> _fetchBalance() async {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
@@ -133,7 +141,12 @@ class WalletBalanceNotifier extends StateNotifier<WalletBalanceState> {
   }
 
   /// Refresh balance (force reload)
+  ///
+  /// Always ends with a fetch that started after the call. A fetch already under way may have
+  /// started before whatever changed the balance (a purchase, a refund), so it is waited out
+  /// first.
   Future<void> refresh() async {
+    await _fetching;
     await fetchBalance();
   }
 
@@ -172,19 +185,34 @@ class TransactionHistoryNotifier
   String? _activeFilterType;
   List<TransactionStatus>? _activeFilterStatuses;
 
+  /// The first-page fetch under way, which a second caller waits on instead of starting another.
+  Future<void>? _fetching;
+
   TransactionHistoryNotifier(this._repository)
       : super(const TransactionHistoryState());
 
   /// Fetch initial page of transactions
   ///
   /// By default, filters to COMPLETED and REFUNDED transactions only
-  /// (excludes PENDING, FAILED, CANCELLED, REFUND_FAILED)
+  /// (excludes PENDING, FAILED, CANCELLED, REFUND_FAILED). A call while a fetch is under way
+  /// waits for that one, filters included, as before.
   Future<void> fetchTransactions({
     String? filterType,
     List<TransactionStatus>? filterStatuses,
-  }) async {
-    if (state.isLoading) return;
+  }) {
+    // A block body: an arrow would hand whenComplete the cleared future to wait on.
+    return _fetching ??= _fetchTransactions(
+      filterType: filterType,
+      filterStatuses: filterStatuses,
+    ).whenComplete(() {
+      _fetching = null;
+    });
+  }
 
+  Future<void> _fetchTransactions({
+    String? filterType,
+    List<TransactionStatus>? filterStatuses,
+  }) async {
     state = const TransactionHistoryState(isLoading: true);
 
     try {
@@ -287,10 +315,14 @@ class TransactionHistoryNotifier
   }
 
   /// Refresh transactions (force reload)
+  ///
+  /// Always ends with a fetch that started after the call: one already under way may have
+  /// started before the change being shown, so it is waited out first.
   Future<void> refresh({
     String? filterType,
     List<TransactionStatus>? filterStatuses,
   }) async {
+    await _fetching;
     await fetchTransactions(
       filterType: filterType,
       filterStatuses: filterStatuses,
