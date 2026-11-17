@@ -70,6 +70,7 @@ Future<FakeDatePreferencesApi> _open(
   Map<String, dynamic>? preferences,
   MyProfile? profile,
   Future<MyProfile>? profileLater,
+  Map<String, dynamic>? optionsJson,
 }) async {
   tester.view.physicalSize = const Size(800, 2000);
   tester.view.devicePixelRatio = 1;
@@ -79,10 +80,10 @@ Future<FakeDatePreferencesApi> _open(
   final api = FakeDatePreferencesApi(responses: {
     _getPreferences: prefsJson,
     _patchPreferences: _saved(),
-    _getOptions: _options(),
+    _getOptions: optionsJson ?? _options(),
   });
   final prefs = DatePreferences.fromJson(prefsJson);
-  final options = DatePreferenceOptions.fromJson(_options());
+  final options = DatePreferenceOptions.fromJson(optionsJson ?? _options());
 
   await tester.pumpWidget(ProviderScope(
     overrides: [
@@ -142,7 +143,40 @@ List<dynamic> _patches(FakeDatePreferencesApi api) => [
 
 void main() {
   group('EditFoodScreen', () {
-    testWidgets('caps "Cuisines I love" at the limit and saves only the food section',
+    testWidgets('has no cap when the limits cover every cuisine', (tester) async {
+      final options = _options();
+      final all = (options['cuisines'] as List<dynamic>).length;
+      options['limits'] = {'maxCuisinesLoved': all, 'maxCuisinesExcluded': all};
+      final api = await _open(tester, _food, preferences: _defaults(), optionsJson: options);
+
+      final loved = ['British', 'Italian', 'Japanese', 'Thai', 'Chinese', 'French', 'Greek'];
+      for (final cuisine in loved) {
+        await tester.tap(find.text(cuisine));
+        await tester.pump();
+      }
+      expect(find.text('7 selected'), findsOneWidget);
+
+      await tester.tap(find.text('Cuisines I won\'t eat'));
+      await tester.pumpAndSettle();
+      for (final cuisine in ['Indian', 'Mexican', 'Spanish']) {
+        await tester.tap(find.text(cuisine));
+        await tester.pump();
+      }
+      expect(find.text('3 selected'), findsOneWidget);
+
+      await _tapSave(tester);
+      expect(_patches(api), [
+        {
+          'food': {
+            'cuisinesLoved': ['BRITISH', 'ITALIAN', 'JAPANESE', 'THAI', 'CHINESE', 'FRENCH', 'GREEK'],
+            'cuisinesExcluded': ['INDIAN', 'MEXICAN', 'SPANISH'],
+            'dietaryNeeds': <String>[],
+          },
+        },
+      ]);
+    });
+
+    testWidgets('an older backend\'s limit still caps "Cuisines I love" and saves only the food section',
         (tester) async {
       final api = await _open(tester, _food, preferences: _defaults());
 
@@ -170,7 +204,7 @@ void main() {
       expect(find.byType(EditFoodScreen), findsNothing);
     });
 
-    testWidgets('caps "Cuisines I won\'t eat" at the limit and says they\'re never suggested',
+    testWidgets('an older backend\'s limit still caps "Cuisines I won\'t eat"; says they\'re never suggested',
         (tester) async {
       await _open(tester, _food, preferences: _defaults());
 
