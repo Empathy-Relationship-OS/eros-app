@@ -426,8 +426,10 @@ enum RefundOutcome {
   /// The refund is with the payment provider and the tokens have left the wallet.
   accepted,
 
-  /// The backend refused and changed nothing.
-  refused,
+  /// A replay of an earlier attempt under the same key that ended without a refund. That
+  /// attempt was refused, or the payment provider didn't take it and the tokens were put
+  /// back; the response doesn't say which.
+  notTaken,
 
   /// The response doesn't settle it either way.
   unconfirmed,
@@ -461,11 +463,12 @@ class RefundResponse {
     );
   }
 
-  /// A 201 is not always a yes. A refusal sent again with the same key comes back as a 201
-  /// with status REFUND_FAILED, and a refund the provider never took has no provider id.
+  /// A 201 is not always a yes. A key sent again after an attempt that ended without a refund
+  /// comes back as a 201 with status REFUND_FAILED, and a refund the provider never took has
+  /// no provider id.
   RefundOutcome get outcome {
     final normalised = status.toUpperCase();
-    if (normalised == 'REFUND_FAILED') return RefundOutcome.refused;
+    if (normalised == 'REFUND_FAILED') return RefundOutcome.notTaken;
 
     const accepted = {'SUCCEEDED', 'PENDING', 'COMPLETED', 'REFUNDED'};
     final hasProviderId = clientSecret.isNotEmpty && clientSecret != 'error';

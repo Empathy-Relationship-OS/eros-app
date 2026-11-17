@@ -68,6 +68,10 @@ class WalletCopy {
 
   static const String refundTryAgain = 'We couldn\'t request this refund. Please try again.';
 
+  /// An earlier attempt ended without a refund, and the backend doesn't say why.
+  static const String refundDidNotGoThrough =
+      'Your last refund request didn\'t go through. Please try again.';
+
   /// The request may have gone through: say so, and don't invite a blind retry.
   static const String refundUnconfirmed =
       'Something went wrong and we can\'t tell whether this refund went through. Check your '

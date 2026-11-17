@@ -91,8 +91,8 @@ void main() {
       expect(outcome('COMPLETED', 're_1'), RefundOutcome.accepted);
     });
 
-    test('is refused when it replays a stored refusal', () {
-      expect(outcome('REFUND_FAILED', 'error'), RefundOutcome.refused);
+    test('is not taken when it replays an attempt that ended without a refund', () {
+      expect(outcome('REFUND_FAILED', 'error'), RefundOutcome.notTaken);
     });
 
     test('is unconfirmed without a provider id, or when the provider failed it', () {

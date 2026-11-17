@@ -82,17 +82,31 @@ void main() {
       expect(repository.historyFetches, 1);
     });
 
-    test('a stored refusal replayed as a 201 is still a refusal', () async {
+    test('a replayed REFUND_FAILED is not a success, and a fresh attempt gets the real answer',
+        () async {
+      // The first attempt timed out; the backend had already refused it, or the payment
+      // provider failed it and the tokens were put back. The retry replays that row.
       repository.answers = [
+        () => throw const NetworkException('timeout'),
         () => RefundResponse(transactionId: 99, clientSecret: 'error', status: 'REFUND_FAILED'),
+        accepted,
       ];
 
-      final result = await refunder.refund(_purchase);
+      await refunder.refund(_purchase);
+      final replay = await refunder.refund(_purchase);
 
-      expect(result.kind, RefundResultKind.refused);
-      expect(result.message, WalletCopy.refundNotAllowed);
+      expect(replay.kind, RefundResultKind.failed);
+      expect(replay.message, WalletCopy.refundDidNotGoThrough);
       expect(refunder.wasRefunded(_purchase.transactionId), isFalse);
-      expect(repository.balanceFetches, 0);
+      // Brought up to date, since the response can't say whether tokens moved.
+      expect(repository.balanceFetches, 1);
+      expect(repository.historyFetches, 1);
+
+      // The key only ever replays that answer, so the next attempt goes out under a new one.
+      final retry = await refunder.refund(_purchase);
+      expect(retry.kind, RefundResultKind.refunded);
+      expect(repository.keys[0], repository.keys[1]);
+      expect(repository.keys[2], isNot(repository.keys[1]));
     });
 
     test('a refund the provider never took is not called a success', () async {

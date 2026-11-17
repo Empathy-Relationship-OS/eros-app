@@ -101,11 +101,14 @@ class PurchaseRefunder {
           await _keys.clearKey(operation);
           await _refreshWallet();
           return const RefundResult.refunded();
-        case RefundOutcome.refused:
-          // A refusal is stored against its key, so the key has to go or every later attempt
-          // would get this same refusal back.
+        case RefundOutcome.notTaken:
+          // An earlier attempt under this key ended without a refund: refused, or the payment
+          // provider didn't take it and the tokens were put back. The response doesn't say
+          // which, and the key will only ever replay this answer, so it goes, the wallet is
+          // brought up to date, and a new attempt gets the backend's real answer.
           await _keys.clearKey(operation);
-          return const RefundResult.refused(WalletCopy.refundNotAllowed);
+          await _refreshWallet();
+          return const RefundResult.failed(WalletCopy.refundDidNotGoThrough);
         case RefundOutcome.unconfirmed:
           await _refreshWallet();
           return const RefundResult.unconfirmed();
