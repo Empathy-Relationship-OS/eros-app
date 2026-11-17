@@ -63,6 +63,12 @@ class ProfileCreationNotifier extends StateNotifier<ProfileCreationDraft> {
     await _service.saveDraft(state);
   }
 
+  /// Remove the phone number: the user skipped the step (RFC-010 D-3).
+  Future<void> clearPhoneNumber() async {
+    state = state.copyWith(clearPhoneNumber: true);
+    await _service.saveDraft(state);
+  }
+
   /// Clear the draft
   Future<void> clearDraft() async {
     state = ProfileCreationDraft();
@@ -72,6 +78,10 @@ class ProfileCreationNotifier extends StateNotifier<ProfileCreationDraft> {
   /// Check if draft is complete
   bool get isComplete => state.isComplete;
 }
+
+/// True when the backend refused the sign-up's phone number (a 400 naming `phoneNumber`). The
+/// phone step shows why and clears it once the user changes the number or skips.
+final phoneNumberRejectedProvider = StateProvider<bool>((ref) => false);
 
 /// Provider for ProfileCreationNotifier
 final profileCreationProvider =

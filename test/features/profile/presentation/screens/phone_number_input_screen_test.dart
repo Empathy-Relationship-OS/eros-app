@@ -1,5 +1,6 @@
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/features/profile/domain/models/profile_creation_draft.dart';
+import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 import 'package:eros_app/features/profile/presentation/screens/phone_number_input_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -43,12 +44,16 @@ void main() {
     String? firebasePhone,
     ProfileCreationDraft? draft,
     String? region = 'GB',
+    bool rejected = false,
   }) async {
     await harness.pump(
       tester,
       PhoneNumberInputScreen(deviceRegion: () => region),
       initialDraft: draft,
-      overrides: [authServiceProvider.overrideWithValue(_Auth(firebasePhone))],
+      overrides: [
+        authServiceProvider.overrideWithValue(_Auth(firebasePhone)),
+        phoneNumberRejectedProvider.overrideWith((ref) => rejected),
+      ],
     );
     await tester.pumpAndSettle();
   }
@@ -149,5 +154,61 @@ void main() {
     expect(find.text('+44'), findsOneWidget);
     expect(fieldText(tester), isEmpty);
     expect(canContinue(tester), isFalse);
+  });
+
+  group('optional (RFC-010)', () {
+    const rejectedMessage = 'That number didn\'t work. Check it, or skip this step.';
+
+    testWidgets('says what the number is for', (tester) async {
+      await pump(tester);
+
+      expect(
+        find.text('Add your number so you can share it with a date if you choose. '
+            'Nobody sees it unless you do.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('Skip continues with no number, even after typing one', (tester) async {
+      await pump(tester);
+      await type(tester, '7400123456');
+
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+
+      expect(harness.draft.phoneNumber, isNull);
+      expect(harness.draft.email, 'sam@example.com');
+      expect(harness.pushed, ['/profile-creation/terms']);
+    });
+
+    testWidgets('Skip removes a number saved in the draft', (tester) async {
+      await pump(tester, draft: ProfileCreationDraft(phoneNumber: '+447400123456'));
+
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+
+      expect(harness.draft.phoneNumber, isNull);
+    });
+
+    testWidgets('a number the backend refused shows why until it is edited', (tester) async {
+      await pump(tester, draft: ProfileCreationDraft(phoneNumber: '+447400123456'), rejected: true);
+
+      expect(find.text(rejectedMessage), findsOneWidget);
+
+      await type(tester, '7');
+
+      expect(find.text(rejectedMessage), findsNothing);
+      expect(harness.container.read(phoneNumberRejectedProvider), isFalse);
+    });
+
+    testWidgets('skipping clears the refusal', (tester) async {
+      await pump(tester, draft: ProfileCreationDraft(phoneNumber: '+447400123456'), rejected: true);
+
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+
+      expect(harness.container.read(phoneNumberRejectedProvider), isFalse);
+      expect(harness.draft.phoneNumber, isNull);
+    });
   });
 }

@@ -3,6 +3,15 @@ import 'package:eros_app/features/profile/domain/models/profile_creation_draft.d
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('ProfileCreationDraft phone number (RFC-010)', () {
+    test('copyWith keeps the number unless told to clear it', () {
+      final draft = ProfileCreationDraft(phoneNumber: '+447400123456');
+
+      expect(draft.copyWith(firstName: 'Sam').phoneNumber, '+447400123456');
+      expect(draft.copyWith(clearPhoneNumber: true).phoneNumber, isNull);
+    });
+  });
+
   group('ProfileCreationDraft gender', () {
     test('reads a draft saved before the Non-Binary fix', () {
       final draft = ProfileCreationDraft.fromJson({'gender': 'Non-binary'});

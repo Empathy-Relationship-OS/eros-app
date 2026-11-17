@@ -77,6 +77,8 @@ class _ProfileSubmissionScreenState
       traits: draft.traits!,
       occupation: draft.occupation,
       bio: draft.bio ?? '',
+      // Optional (RFC-010): null when the user skipped the phone step.
+      phoneNumber: draft.phoneNumber,
 
       // Collected DisplayableFields
       spokenLanguages: draft.spokenLanguages!,
@@ -198,6 +200,10 @@ class _ProfileSubmissionScreenState
         Navigator.pushReplacementNamed(context, '/profile-creation/qa');
       }
     } on ProfileValidationException catch (e) {
+      if (e.namesField('phoneNumber')) {
+        _backToPhoneStep();
+        return;
+      }
       setState(() {
         _isSubmitting = false;
         _errorMessage = e.getUserMessage();
@@ -214,6 +220,22 @@ class _ProfileSubmissionScreenState
       });
     }
   }
+
+  /// The backend refused the phone number: back to the phone step, which says why (RFC-010).
+  /// The draft keeps everything else, so the user walks the later steps again with them filled.
+  void _backToPhoneStep() {
+    ref.read(phoneNumberRejectedProvider.notifier).state = true;
+    if (!mounted) return;
+    var found = false;
+    Navigator.of(context).popUntil((route) {
+      found = route.settings.name == phoneStepRoute;
+      return found || route.isFirst;
+    });
+    if (!found) Navigator.of(context).pushNamed(phoneStepRoute);
+  }
+
+  /// The phone step's route (`main.dart`).
+  static const phoneStepRoute = '/profile-creation/phone';
 
   /// Saves the Interested in step's choice now that the user exists (RFC-007 §4.9). A failure
   /// doesn't hold up sign-up: the Matches tab asks again when `GET /match/` returns 409.

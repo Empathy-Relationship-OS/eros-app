@@ -20,6 +20,10 @@ import 'package:eros_app/features/profile/presentation/providers/profile_creatio
 ///
 /// The country starts as the one of the number already known (the Firebase account's, else the
 /// draft's), else the device's region, else [PhoneNumberInputScreen.fallbackIsoCode].
+///
+/// The number is optional (RFC-010 D-3): it's kept only so the user can share it with a date if
+/// they choose, and **Skip** continues without one. If the backend refuses the number at the end
+/// of sign-up, the user is brought back here ([phoneNumberRejectedProvider]) to fix it or skip.
 class PhoneNumberInputScreen extends ConsumerStatefulWidget {
   /// The country used when neither a saved number nor the device's region gives one.
   static const String fallbackIsoCode = 'GB';
@@ -46,6 +50,10 @@ class _PhoneNumberInputScreenState extends ConsumerState<PhoneNumberInputScreen>
 
   /// The user has typed something, so an invalid number gets an error under the field.
   bool _hasTyped = false;
+
+  /// The field's text last time it changed, to tell a real edit from the package reporting the
+  /// initial value.
+  String? _lastText;
 
   @override
   void initState() {
@@ -101,7 +109,21 @@ class _PhoneNumberInputScreenState extends ConsumerState<PhoneNumberInputScreen>
           phoneNumber: phoneNumber,
           email: email,
         );
+    _next();
+  }
 
+  /// Continues with no number in the draft, removing one typed or saved earlier.
+  Future<void> _skip() async {
+    final notifier = ref.read(profileCreationProvider.notifier);
+    await notifier.clearPhoneNumber();
+    // The email is filled in here whichever way the user leaves the step.
+    final email = ref.read(authServiceProvider).currentUser?.email;
+    if (email != null) await notifier.updateFields(email: email);
+    _next();
+  }
+
+  void _next() {
+    ref.read(phoneNumberRejectedProvider.notifier).state = false;
     if (mounted) {
       Navigator.pushNamed(context, '/profile-creation/terms');
     }
@@ -116,6 +138,7 @@ class _PhoneNumberInputScreenState extends ConsumerState<PhoneNumberInputScreen>
   @override
   Widget build(BuildContext context) {
     final initial = _initial;
+    final rejected = ref.watch(phoneNumberRejectedProvider);
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -144,7 +167,8 @@ class _PhoneNumberInputScreenState extends ConsumerState<PhoneNumberInputScreen>
               Text(
                 _isPhoneFromFirebase
                     ? 'We\'ve pulled this from your account'
-                    : 'We\'ll use this to contact you about your dates',
+                    : 'Add your number so you can share it with a date if you choose. '
+                        'Nobody sees it unless you do.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -158,8 +182,14 @@ class _PhoneNumberInputScreenState extends ConsumerState<PhoneNumberInputScreen>
                   textFieldController: _phoneController,
                   onInputChanged: (number) {
                     _current = number;
-                    final typed = _phoneController.text.isNotEmpty;
+                    final text = _phoneController.text;
+                    final typed = text.isNotEmpty;
                     if (typed != _hasTyped) setState(() => _hasTyped = typed);
+                    // An edit after the backend refused the number clears the message.
+                    if (_lastText != null && text != _lastText && ref.read(phoneNumberRejectedProvider)) {
+                      ref.read(phoneNumberRejectedProvider.notifier).state = false;
+                    }
+                    _lastText = text;
                   },
                   onInputValidated: (valid) {
                     if (valid != _isValid) setState(() => _isValid = valid);
@@ -185,7 +215,9 @@ class _PhoneNumberInputScreenState extends ConsumerState<PhoneNumberInputScreen>
                   selectorTextStyle: Theme.of(context).textTheme.bodyLarge,
                   inputDecoration: InputDecoration(
                     labelText: 'Phone number',
-                    errorText: _hasTyped && !_isValid ? 'Enter a valid number for this country' : null,
+                    errorText: rejected
+                        ? 'That number didn\'t work. Check it, or skip this step.'
+                        : (_hasTyped && !_isValid ? 'Enter a valid number for this country' : null),
                     helperText: _isPhoneFromFirebase
                         ? 'You can edit this if needed'
                         : 'Pick your country, then enter your number',
@@ -193,6 +225,10 @@ class _PhoneNumberInputScreenState extends ConsumerState<PhoneNumberInputScreen>
                 ),
               const Spacer(),
               AppButton(label: 'Continue', onPressed: _isValid ? _continue : null),
+              const SizedBox(height: 8),
+              Center(
+                child: TextButton(onPressed: _skip, child: const Text('Skip')),
+              ),
             ],
           ),
         ),
