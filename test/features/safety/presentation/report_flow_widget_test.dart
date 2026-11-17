@@ -312,6 +312,18 @@ void main() {
       expect(find.textContaining('check your wallet'), findsOneWidget);
     });
 
+    testWidgets('hides Report on date detail once the viewer has reported the date',
+        (tester) async {
+      await pumpDetail(
+        tester,
+        dateDetailJson(state: 'CANCELLED', cancellable: false, youReported: true),
+        now: _finishedAt.add(const Duration(days: 2)),
+      );
+
+      expect(find.text('This date was cancelled'), findsOneWidget);
+      expect(find.text(SafetyCopy.report), findsNothing);
+    });
+
     testWidgets('date detail passes yourRefundUnderReview through', (tester) async {
       await pumpDetail(
         tester,
@@ -332,6 +344,22 @@ void main() {
 
       expect(find.text(SafetyCopy.reportAndBlock), findsOneWidget);
       expect(find.text('Cancel date'), findsNothing);
+    });
+
+    testWidgets('leaves Report and block out once the viewer has reported the date',
+        (tester) async {
+      await pumpDetail(tester, dateDetailJson(youReported: true));
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Cancel date'), findsOneWidget);
+      expect(find.text(SafetyCopy.reportAndBlock), findsNothing);
+    });
+
+    testWidgets('has no menu once reported on a date that cannot be cancelled', (tester) async {
+      await pumpDetail(tester, dateDetailJson(cancellable: false, youReported: true));
+
+      expect(find.byIcon(Icons.more_vert), findsNothing);
     });
 
     testWidgets('has no menu on a finished date', (tester) async {

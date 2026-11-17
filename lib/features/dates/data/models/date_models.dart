@@ -333,6 +333,10 @@ class DateDetail {
   /// describes the partner.
   final bool verificationRequired;
 
+  /// The viewer has already reported this date, so another report would get a 409: every report
+  /// link is hidden. Never says whether the partner reported (D-10).
+  final bool youReported;
+
   const DateDetail({
     required this.dateId,
     required this.matchId,
@@ -367,6 +371,7 @@ class DateDetail {
     required this.updatedAt,
     this.yourRefundUnderReview = false,
     this.verificationRequired = false,
+    this.youReported = false,
   });
 
   factory DateDetail.fromJson(Map<String, dynamic> json) => DateDetail(
@@ -412,6 +417,9 @@ class DateDetail {
         yourRefundUnderReview: json['yourRefundUnderReview'] as bool? ?? false,
         // Absent until the backend has VF-B5.
         verificationRequired: json['verificationRequired'] as bool? ?? false,
+        // Absent on a backend from before `youReported`: links show, and a second report gets
+        // the existing "already reported" 409 message.
+        youReported: json['youReported'] as bool? ?? false,
       );
 
   // Helpers every screen needs
