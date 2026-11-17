@@ -147,6 +147,16 @@ void main() {
     expect(repository.keys, isEmpty);
   });
 
+  test('a call after the refund went through sends nothing and says it is done', () async {
+    repository.answers = [accepted];
+
+    await refunder.refund(_purchase);
+    final again = await refunder.refund(_purchase);
+
+    expect(again.kind, RefundResultKind.refunded);
+    expect(repository.keys, hasLength(1));
+  });
+
   test('a second call while the first is in flight sends nothing', () async {
     repository.answers = [accepted];
 

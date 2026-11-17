@@ -67,6 +67,9 @@ class PurchaseRefunder {
   /// going returns the first one's result and sends nothing.
   Future<RefundResult> refund(Transaction purchase) {
     final id = purchase.transactionId;
+    // Refunded already, from a sheet opened while that refund was in flight: say so and send
+    // nothing. A second request would go out under a new key and come back refused.
+    if (_refunded.contains(id)) return Future.value(const RefundResult.refunded());
     // A block body: an arrow would hand whenComplete the removed future, its own, to wait on.
     return _inFlight[id] ??= _refund(purchase).whenComplete(() {
       _inFlight.remove(id);

@@ -238,6 +238,37 @@ void main() {
     });
   });
 
+  testWidgets('a sheet reopened mid-request sends nothing more once the refund is through',
+      (tester) async {
+    final purchase = _purchase(boughtDaysAgo: 2);
+    final repository = _FakeWalletRepository(balance: 3, transactions: [purchase]);
+    final answer = Completer<RefundResponse>();
+    repository.onRefund = (_) => answer.future;
+    await _pumpWallet(tester, repository);
+
+    // The first sheet sends, and is swiped away while it waits.
+    await _openConfirmStep(tester, purchase);
+    await tester.tap(find.text(WalletCopy.confirmRefund));
+    await tester.pump();
+    Navigator.of(tester.element(find.byType(PurchaseDetailSheet))).pop();
+    await tester.pumpAndSettle();
+
+    // A second sheet for the same purchase gets as far as the confirm step.
+    await _openConfirmStep(tester, purchase);
+    expect(find.text(WalletCopy.confirmRefund), findsOneWidget);
+
+    // The first refund goes through before the second sheet confirms.
+    answer.complete(
+      RefundResponse(transactionId: 99, clientSecret: 're_123', status: 'succeeded'),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(WalletCopy.confirmRefund));
+    await tester.pumpAndSettle();
+
+    expect(repository.refundRequests, hasLength(1));
+    expect(find.text(WalletCopy.refundDoneBody('3 tokens', '£20.00')), findsOneWidget);
+  });
+
   group('rows that open nothing', () {
     testWidgets('only purchases take a tap', (tester) async {
       final purchase = _purchase(boughtDaysAgo: 2);
