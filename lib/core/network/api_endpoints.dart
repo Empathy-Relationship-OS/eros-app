@@ -38,6 +38,9 @@ class _UsersEndpoints {
   /// PATCH /users/me - Update current user profile
   String updateCurrentUser() => '/users/me';
 
+  /// PUT /users/me/phone - Set, replace or remove the current user's phone number (RFC-010)
+  String updatePhoneNumber() => '/users/me/phone';
+
   /// GET /users/id/{userId}/public - Get public profile by ID
   String getPublicProfile(String userId) => '/users/id/$userId/public';
 }
