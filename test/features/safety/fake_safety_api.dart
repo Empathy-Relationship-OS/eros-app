@@ -129,6 +129,7 @@ Map<String, dynamic> dateDetailJson({
   bool cancellable = true,
   String updatedAt = '2026-10-23T12:00:00Z',
   bool? yourRefundUnderReview,
+  bool? youReported,
   String cityName = 'London',
   String? scheduledStart = '2026-11-20T19:00:00Z',
 }) =>
@@ -164,4 +165,5 @@ Map<String, dynamic> dateDetailJson({
       'createdAt': '2026-10-20T12:00:00Z',
       'updatedAt': updatedAt,
       'yourRefundUnderReview': ?yourRefundUnderReview,
+      'youReported': ?youReported,
     };

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:eros_app/core/navigation/app_navigator.dart';
 import 'package:eros_app/core/time/server_clock.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/theme/app_radius.dart';
@@ -46,7 +47,34 @@ class DateDetailScreen extends ConsumerStatefulWidget {
   ConsumerState<DateDetailScreen> createState() => _DateDetailScreenState();
 }
 
-class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
+class _DateDetailScreenState extends ConsumerState<DateDetailScreen> with RouteAware {
+  ModalRoute<dynamic>? _route;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null && route != _route) {
+      if (_route != null) appPageRouteObserver.unsubscribe(this);
+      _route = route;
+      appPageRouteObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    appPageRouteObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  /// Something shown on top of this screen closed: the availability picker, the deposit sheet,
+  /// the venue ranking screen the sheet opens once both have paid, a dialog. Any of them may have
+  /// moved the date on, so refetch rather than show a step that's already done.
+  @override
+  void didPopNext() {
+    ref.read(dateDetailProvider(widget.dateId).notifier).refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
     final detailState = ref.watch(dateDetailProvider(widget.dateId));
@@ -149,8 +177,10 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           ),
         ),
 
-        // Overflow menu overlay: "Report and block" on any non-terminal date (CH-F5)
-        if (!dateDetail.state.isTerminal)
+        // Overflow menu overlay: "Report and block" on any non-terminal date the viewer hasn't
+        // reported (CH-F5), with "Cancel date" when cancellable. No menu with neither.
+        if (!dateDetail.state.isTerminal &&
+            (_shouldShowOverflowMenu(dateDetail) || !dateDetail.youReported))
           Positioned(
             top: 16,
             right: 16,
@@ -171,10 +201,11 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
                       value: 'cancel',
                       child: Text('Cancel date'),
                     ),
-                  const PopupMenuItem(
-                    value: 'report',
-                    child: Text(SafetyCopy.reportAndBlock),
-                  ),
+                  if (!dateDetail.youReported)
+                    const PopupMenuItem(
+                      value: 'report',
+                      child: Text(SafetyCopy.reportAndBlock),
+                    ),
                 ],
               ),
             ),
@@ -381,7 +412,10 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           state: dateDetail.state,
           finishedAt: dateDetail.updatedAt,
           refundUnderReview: dateDetail.yourRefundUnderReview,
-          onReport: () => openReportFlow(context, ref, dateDetail: dateDetail),
+          // Once reported, there's nothing more to report: the backend would answer 409.
+          onReport: dateDetail.youReported
+              ? null
+              : () => openReportFlow(context, ref, dateDetail: dateDetail),
           onBackToDates: () {
             // Pop until we reach HomeScreen and ensure Dates tab is selected
             Navigator.of(context).popUntil((route) => route.isFirst);
@@ -425,10 +459,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           round: dateDetail.availabilityRound,
         ),
       ),
-    ).then((_) {
-      // Refetch when returning from availability picker
-      ref.read(dateDetailProvider(widget.dateId).notifier).refresh();
-    });
+    );
   }
 
   void _navigateToVenueRanking(BuildContext context, DateDetail dateDetail, bool hasRanked) {
@@ -440,10 +471,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           readOnly: hasRanked,
         ),
       ),
-    ).then((_) {
-      // Refetch when returning from venue ranking
-      ref.read(dateDetailProvider(widget.dateId).notifier).refresh();
-    });
+    );
   }
 
   Widget _buildDepositCTA(BuildContext context, DateDetail dateDetail, String currentUid) {

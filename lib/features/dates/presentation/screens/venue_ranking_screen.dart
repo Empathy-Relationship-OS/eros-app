@@ -630,18 +630,9 @@ class _VenueAssignedResultScreen extends StatelessWidget {
               const Spacer(),
               AppButton(
                 label: DatesCopy.venueAssignedButton,
-                onPressed: () {
-                  // Pop back 2 screens: VenueAssignedResultScreen + VenueRankingScreen
-                  // This returns us to the date detail screen
-                  int popCount = 0;
-                  Navigator.of(context).popUntil((route) {
-                    if (popCount < 2) {
-                      popCount++;
-                      return false; // Keep popping
-                    }
-                    return true; // Stop popping
-                  });
-                },
+                // This screen replaced the ranking screen, so one pop goes back to whatever opened
+                // it: the date detail screen, or the dates list.
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ],
           ),

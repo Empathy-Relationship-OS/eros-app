@@ -17,6 +17,11 @@ const String homeRoute = '/match';
 /// `pushReplacementNamed`.
 final HomeRouteObserver appRouteObserver = HomeRouteObserver();
 
+/// Attached to `MaterialApp.navigatorObservers` next to [appRouteObserver]. Screens that show
+/// server state subscribe as a [RouteAware] and refetch in `didPopNext`, so whatever was shown on
+/// top of them (a sheet, a dialog, or a screen that sheet pushed) can't leave them stale.
+final RouteObserver<ModalRoute<dynamic>> appPageRouteObserver = RouteObserver<ModalRoute<dynamic>>();
+
 /// Counts [homeRoute] routes in the navigator's stack. [isHomeInStack] is true while there is one.
 class HomeRouteObserver extends NavigatorObserver {
   int _homeRoutes = 0;

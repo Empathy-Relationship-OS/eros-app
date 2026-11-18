@@ -22,6 +22,7 @@ import 'package:eros_app/features/wallet/presentation/providers/wallet_provider.
 ///
 /// Per CH-F5: "Something came up" is the plain cancel above. "I don't feel safe" swaps the
 /// note for the report form and files a safety claim with origin `CANCEL` (RFC-006 §4.7).
+/// A viewer who has already reported the date gets the plain cancel only.
 class CancelDateDialog extends ConsumerStatefulWidget {
   final String dateId;
   final DateDetail dateDetail;
@@ -224,11 +225,15 @@ class _CancelDateDialogState extends ConsumerState<CancelDateDialog> {
         children: [
           Text(copy.body),
           const SizedBox(height: 16),
-          _CancelChoice(
-            safety: _safety,
-            onChanged: isLoading ? null : (safety) => setState(() => _safety = safety),
-          ),
-          const SizedBox(height: 8),
+          // Once the viewer has reported the date, "I don't feel safe" would file a second
+          // report, so only the plain cancel is left.
+          if (!widget.dateDetail.youReported) ...[
+            _CancelChoice(
+              safety: _safety,
+              onChanged: isLoading ? null : (safety) => setState(() => _safety = safety),
+            ),
+            const SizedBox(height: 8),
+          ],
           if (_safety) ...[
             ReportForm(dateId: widget.dateId, initialReasonCode: _feelsUnsafeCode),
             if (report?.errorMessage != null) ...[

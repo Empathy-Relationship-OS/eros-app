@@ -7,6 +7,7 @@ import 'package:eros_app/core/time/server_clock.dart';
 import 'package:eros_app/features/wallet/presentation/providers/wallet_provider.dart';
 import 'package:eros_app/features/wallet/presentation/screens/wallet_info_screen.dart';
 import 'package:eros_app/features/wallet/presentation/screens/purchase_tokens_screen.dart';
+import 'package:eros_app/features/wallet/presentation/widgets/purchase_detail_sheet.dart';
 import 'package:eros_app/features/wallet/domain/models/wallet_models.dart';
 import 'package:intl/intl.dart';
 
@@ -269,6 +270,9 @@ class _BalanceCard extends StatelessWidget {
 }
 
 /// Transaction tile widget
+///
+/// A purchase opens its details, where a refund can be asked for. Every other row has nothing
+/// behind it, so it takes no tap and shows no ripple.
 class _TransactionTile extends StatelessWidget {
   final Transaction transaction;
 
@@ -278,6 +282,68 @@ class _TransactionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final amountColor = transaction.isCredit ? AppColors.success : AppColors.error;
+    final opensDetails = transaction.type == TransactionType.purchase;
+
+    final content = Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        children: [
+          // Icon
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: transaction.isCredit
+                  ? AppColors.success.withValues(alpha: 0.1)
+                  : AppColors.primaryTint,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              _getIcon(),
+              color: _getIconColor(),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Description
+          Expanded(
+            child: Text(
+              transaction.displayText,
+              style: textTheme.bodyLarge?.copyWith(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                height: 1.3,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Amount
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: amountColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+            child: Text(
+              transaction.formattedAmount,
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: amountColor,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+
+          // The sign that a row opens something
+          if (opensDetails) ...[
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          ],
+        ],
+      ),
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -288,66 +354,12 @@ class _TransactionTile extends StatelessWidget {
           side: const BorderSide(color: AppColors.divider),
         ),
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () {
-            // TODO: Handle tap (e.g., show transaction details or navigate to related date)
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                // Icon
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: transaction.isCredit
-                        ? AppColors.success.withValues(alpha: 0.1)
-                        : AppColors.primaryTint,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    _getIcon(),
-                    color: _getIconColor(),
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-
-                // Description
-                Expanded(
-                  child: Text(
-                    transaction.displayText,
-                    style: textTheme.bodyLarge?.copyWith(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      height: 1.3,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-
-                // Amount
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: amountColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: Text(
-                    transaction.formattedAmount,
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: amountColor,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        child: opensDetails
+            ? InkWell(
+                onTap: () => PurchaseDetailSheet.show(context, transaction),
+                child: content,
+              )
+            : content,
       ),
     );
   }
