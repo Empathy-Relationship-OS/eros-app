@@ -1,97 +1,105 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:flutter/material.dart';
-import 'package:eros_app/core/widgets/app_button.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl_phone_number_input/intl_phone_number_input.dart';
+import 'package:eros_app/core/auth/auth_service.dart';
+import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/constants/profile_creation.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 
-/// Phone number input screen for profile creation
-/// Will be sent to backend in future updates
+/// Phone number step of profile creation.
+///
+/// A country picker (searchable, with flags and dial codes) sits inside the field, and the number
+/// is formatted for that country as it's typed (a UK number typed with its leading 0 is accepted
+/// but left unformatted: the package formats "+44" plus what was typed). Continue is enabled only for a number that's valid
+/// for the chosen country (libphonenumber), and the draft stores it in E.164 (`+447911123456`), so
+/// the country code is never left out.
+///
+/// The country starts as the one of the number already known (the Firebase account's, else the
+/// draft's), else the device's region, else [PhoneNumberInputScreen.fallbackIsoCode].
 class PhoneNumberInputScreen extends ConsumerStatefulWidget {
-  const PhoneNumberInputScreen({super.key});
+  /// The country used when neither a saved number nor the device's region gives one.
+  static const String fallbackIsoCode = 'GB';
+
+  /// The device's region, e.g. `US`. Replaceable in tests.
+  final String? Function() deviceRegion;
+
+  const PhoneNumberInputScreen({super.key, this.deviceRegion = _platformRegion});
+
+  static String? _platformRegion() => PlatformDispatcher.instance.locale.countryCode;
 
   @override
-  ConsumerState<PhoneNumberInputScreen> createState() =>
-      _PhoneNumberInputScreenState();
+  ConsumerState<PhoneNumberInputScreen> createState() => _PhoneNumberInputScreenState();
 }
 
-class _PhoneNumberInputScreenState
-    extends ConsumerState<PhoneNumberInputScreen> {
-  final _formKey = GlobalKey<FormState>();
+class _PhoneNumberInputScreenState extends ConsumerState<PhoneNumberInputScreen> {
   final _phoneController = TextEditingController();
+
+  /// What the field starts with. Null while a saved number is being parsed for its country.
+  PhoneNumber? _initial;
+  PhoneNumber? _current;
   bool _isValid = false;
   bool _isPhoneFromFirebase = false;
+
+  /// The user has typed something, so an invalid number gets an error under the field.
+  bool _hasTyped = false;
 
   @override
   void initState() {
     super.initState();
     _loadPhoneData();
-    _phoneController.addListener(_validateForm);
   }
 
-  void _loadPhoneData() {
-    final draft = ref.read(profileCreationProvider);
+  Future<void> _loadPhoneData() async {
+    final firebasePhone = ref.read(authServiceProvider).currentUser?.phoneNumber;
+    final draftPhone = ref.read(profileCreationProvider).phoneNumber;
+    _isPhoneFromFirebase = firebasePhone != null && firebasePhone.isNotEmpty;
+    final known = _isPhoneFromFirebase ? firebasePhone : draftPhone;
 
-    // Try to get phone from Firebase Auth
-    final firebaseUser = FirebaseAuth.instance.currentUser;
-    if (firebaseUser?.phoneNumber != null) {
-      _phoneController.text = firebaseUser!.phoneNumber!;
-      _isPhoneFromFirebase = true;
-      // Auto-save to draft if from Firebase
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(profileCreationProvider.notifier).updateFields(
-              phoneNumber: firebaseUser.phoneNumber!,
-            );
-      });
-    } else if (draft.phoneNumber != null) {
-      // Fallback to saved draft
-      _phoneController.text = draft.phoneNumber!;
+    // Awaited before anything touches the draft: initState may not modify a provider while the
+    // tree builds.
+    final initial = await _parse(known) ?? PhoneNumber(isoCode: _defaultIsoCode());
+    if (!mounted) return;
+    setState(() => _initial = _current = initial);
+
+    if (_isPhoneFromFirebase) {
+      // Saved to the draft straight away, as the user may not change it.
+      await ref.read(profileCreationProvider.notifier).updateFields(phoneNumber: firebasePhone);
     }
-
-    // Trigger initial validation
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _validateForm();
-    });
   }
 
-  void _validateForm() {
-    setState(() {
-      _isValid = _formKey.currentState?.validate() ?? false;
-    });
+  /// [phone] with its country, or null when there's none or it can't be parsed (an older draft
+  /// may hold free text without a country code).
+  Future<PhoneNumber?> _parse(String? phone) async {
+    if (phone == null || phone.trim().isEmpty) return null;
+    try {
+      final parsed = await PhoneNumber.getRegionInfoFromPhoneNumber(phone.trim());
+      return parsed.isoCode == null ? null : parsed;
+    } catch (_) {
+      return null;
+    }
   }
 
-  String? _validatePhoneNumber(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Phone number is required';
-    }
-
-    // Remove all non-digit characters for validation
-    final digitsOnly = value.replaceAll(RegExp(r'[^\d]'), '');
-
-    // Check if it's a valid length (10-15 digits is typical for international numbers)
-    if (digitsOnly.length < 10 || digitsOnly.length > 15) {
-      return 'Please enter a valid phone number';
-    }
-
-    return null;
+  String _defaultIsoCode() {
+    final region = widget.deviceRegion()?.toUpperCase();
+    return region != null && RegExp(r'^[A-Z]{2}$').hasMatch(region)
+        ? region
+        : PhoneNumberInputScreen.fallbackIsoCode;
   }
 
   Future<void> _continue() async {
-    if (!_isValid) return;
-
-    final phoneNumber = _phoneController.text.trim();
+    final phoneNumber = _current?.phoneNumber;
+    if (!_isValid || phoneNumber == null) return;
 
     // Auto-populate email from Firebase in the background
-    final firebaseUser = FirebaseAuth.instance.currentUser;
-    final email = firebaseUser?.email;
+    final email = ref.read(authServiceProvider).currentUser?.email;
 
-    // Update draft with both phone and email
     await ref.read(profileCreationProvider.notifier).updateFields(
           phoneNumber: phoneNumber,
-          email: email, // Auto-populate from Firebase
+          email: email,
         );
 
     if (mounted) {
@@ -107,6 +115,7 @@ class _PhoneNumberInputScreenState
 
   @override
   Widget build(BuildContext context) {
+    final initial = _initial;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -141,32 +150,47 @@ class _PhoneNumberInputScreenState
                     ),
               ),
               const SizedBox(height: 32),
-              Form(
-                key: _formKey,
-                child: TextFormField(
-                  controller: _phoneController,
-                  decoration: InputDecoration(
-                    labelText: 'Phone Number',
-                    hintText: '+1 234 567 8900',
+              if (initial == null)
+                const Center(child: CircularProgressIndicator())
+              else
+                InternationalPhoneNumberInput(
+                  initialValue: initial,
+                  textFieldController: _phoneController,
+                  onInputChanged: (number) {
+                    _current = number;
+                    final typed = _phoneController.text.isNotEmpty;
+                    if (typed != _hasTyped) setState(() => _hasTyped = typed);
+                  },
+                  onInputValidated: (valid) {
+                    if (valid != _isValid) setState(() => _isValid = valid);
+                  },
+                  onSubmit: _continue,
+                  selectorConfig: const SelectorConfig(
+                    selectorType: PhoneInputSelectorType.BOTTOM_SHEET,
+                    useBottomSheetSafeArea: true,
+                    setSelectorButtonAsPrefixIcon: true,
+                    leadingPadding: 12,
+                    trailingSpace: false,
+                  ),
+                  searchBoxDecoration: const InputDecoration(
+                    labelText: 'Search by country name or dial code',
+                    prefixIcon: Icon(Icons.search),
+                  ),
+                  formatInput: true,
+                  // The package's own validator calls setState after every frame it runs in, so
+                  // with autovalidation frames never stop. The error is shown through errorText.
+                  autoValidateMode: AutovalidateMode.disabled,
+                  keyboardType: const TextInputType.numberWithOptions(signed: true),
+                  keyboardAction: TextInputAction.done,
+                  selectorTextStyle: Theme.of(context).textTheme.bodyLarge,
+                  inputDecoration: InputDecoration(
+                    labelText: 'Phone number',
+                    errorText: _hasTyped && !_isValid ? 'Enter a valid number for this country' : null,
                     helperText: _isPhoneFromFirebase
                         ? 'You can edit this if needed'
-                        : 'Include country code (e.g., +1 for US)',
-                    prefixIcon: const Icon(Icons.phone),
+                        : 'Pick your country, then enter your number',
                   ),
-                  validator: _validatePhoneNumber,
-                  keyboardType: TextInputType.phone,
-                  textInputAction: TextInputAction.done,
-                  inputFormatters: [
-                    // Allow digits, spaces, parentheses, hyphens, and plus sign
-                    FilteringTextInputFormatter.allow(RegExp(r'[\d\s\+\-\(\)]')),
-                  ],
-                  onFieldSubmitted: (_) {
-                    if (_isValid) {
-                      _continue();
-                    }
-                  },
                 ),
-              ),
               const Spacer(),
               AppButton(label: 'Continue', onPressed: _isValid ? _continue : null),
             ],
