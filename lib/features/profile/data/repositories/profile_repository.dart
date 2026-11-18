@@ -296,6 +296,11 @@ class ProfileValidationException implements Exception {
     return 'ProfileValidationException: $message';
   }
 
+  /// True when the backend's 400 is about [field], by its field errors or its message
+  /// (`phoneNumber is not a valid phone number`, RFC-010 §6). Only the field name is matched.
+  bool namesField(String field) =>
+      (errors?.containsKey(field) ?? false) || message.contains(field);
+
   /// Get user-friendly error message
   String getUserMessage() {
     if (errors != null && errors!.isNotEmpty) {

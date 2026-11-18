@@ -30,6 +30,10 @@ class CreateUserRequest {
   final String? occupation;
   final String bio; // max 300 chars
 
+  /// The user's phone number in E.164, or null when they skipped it (RFC-010). Optional, kept
+  /// so they can share it with a date if they choose; nobody else sees it. Never log it.
+  final String? phoneNumber;
+
   // Displayable fields - client controls both value and visibility
   final DisplayableField<List<Language>> spokenLanguages;
   final DisplayableField<Religion?> religion;
@@ -83,6 +87,7 @@ class CreateUserRequest {
     required this.bodyDescription,
     this.occupation,
     this.bio = '',
+    this.phoneNumber,
   }) {
     _validate();
   }
@@ -150,6 +155,8 @@ class CreateUserRequest {
       'traits': traits.map((t) => t.toBackend()).toList(),
       if (occupation != null) 'occupation': occupation,
       'bio': bio,
+      // Left out when there's none: a backend without RFC-010 PH-B1 rejects the unknown key.
+      if (phoneNumber != null) 'phoneNumber': phoneNumber,
       'spokenLanguages': spokenLanguages.toJson(
         (langs) => langs.map((l) => l.toBackend()).toList(),
       ),
@@ -196,6 +203,7 @@ class CreateUserRequest {
     List<Trait>? traits,
     String? occupation,
     String? bio,
+    String? phoneNumber,
     DisplayableField<List<Language>>? spokenLanguages,
     DisplayableField<Religion?>? religion,
     DisplayableField<PoliticalView?>? politicalView,
@@ -231,6 +239,7 @@ class CreateUserRequest {
       traits: traits ?? this.traits,
       occupation: occupation ?? this.occupation,
       bio: bio ?? this.bio,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
       spokenLanguages: spokenLanguages ?? this.spokenLanguages,
       religion: religion ?? this.religion,
       politicalView: politicalView ?? this.politicalView,

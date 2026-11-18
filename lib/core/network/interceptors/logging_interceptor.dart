@@ -9,7 +9,8 @@ import '../api_config.dart';
 /// religion or ethnicity among others (RFC-007 D-9). Verification calls carry the selfie's
 /// presigned upload link, a credential that must never be printed (RFC-008 primer rule 4). For
 /// those paths it logs the method, path and status only, with
-/// no query, headers or bodies. A streamed response (`ResponseType.stream`) is never read
+/// no query, headers or bodies. Everywhere else a `phoneNumber` field, at any depth, is printed as
+/// redacted (RFC-010: sign-up and `GET /users/me` carry the user's number). A streamed response (`ResponseType.stream`) is never read
 /// here either: its body belongs to whoever listens to it.
 class LoggingInterceptor extends Interceptor {
   final Logger _logger;
@@ -52,7 +53,7 @@ Body: ${_sanitizeBody(options.data)}
       _logger.d('''
 📥 RESPONSE
 ${response.statusCode} ${response.requestOptions.uri}
-Body: ${_truncateData(response.data)}
+Body: ${_truncateData(redactPhoneNumbers(response.data))}
 ''');
     }
     handler.next(response);
@@ -69,7 +70,7 @@ Body: ${_truncateData(response.data)}
 ${err.requestOptions.method} ${err.requestOptions.uri}
 Status: ${err.response?.statusCode}
 Error: ${err.message}
-Response: ${err.response?.data}
+Response: ${redactPhoneNumbers(err.response?.data)}
 ''');
     }
     handler.next(err);
@@ -86,6 +87,7 @@ Response: ${err.response?.data}
 
   /// Redact sensitive body fields (passwords, tokens, etc.)
   dynamic _sanitizeBody(dynamic body) {
+    body = redactPhoneNumbers(body);
     if (body is Map) {
       final sanitized = Map.from(body);
       const sensitiveFields = ['password', 'token', 'secret'];
@@ -99,6 +101,21 @@ Response: ${err.response?.data}
     }
     return body;
   }
+
+  /// [data] with every non-null `phoneNumber` value, in maps and lists at any depth, replaced by
+  /// a placeholder. Anything else is returned as it is.
+  static dynamic redactPhoneNumbers(dynamic data) {
+    if (data is Map) {
+      return data.map((key, value) => MapEntry(
+            key,
+            key == 'phoneNumber' && value != null ? _redacted : redactPhoneNumbers(value),
+          ));
+    }
+    if (data is List) return data.map(redactPhoneNumbers).toList();
+    return data;
+  }
+
+  static const _redacted = '***REDACTED***';
 
   /// Truncate large response bodies for readability
   String _truncateData(dynamic data) {

@@ -43,12 +43,22 @@ class _FakeAuthService implements AuthService {
 
 /// Records each call in [log], shared with the match preferences API, so the order shows.
 class _FakeProfileRepository implements ProfileRepository {
-  _FakeProfileRepository(this.log);
+  _FakeProfileRepository(this.log, {this.error});
 
   final List<String> log;
 
+  /// Thrown by [createUser] instead of succeeding.
+  final Object? error;
+
+  /// The last request [createUser] received.
+  CreateUserRequest? sent;
+
   @override
-  Future<void> createUser(CreateUserRequest request) async => log.add('POST /users');
+  Future<void> createUser(CreateUserRequest request) async {
+    log.add('POST /users');
+    sent = request;
+    if (error != null) throw error!;
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -76,7 +86,8 @@ class _LoggingApi extends FakeMatchPreferencesApi {
   }
 }
 
-ProfileCreationDraft _draft({List<Gender>? interestedIn}) => ProfileCreationDraft(
+ProfileCreationDraft _draft({List<Gender>? interestedIn, String? phoneNumber}) => ProfileCreationDraft(
+      phoneNumber: phoneNumber,
       firstName: 'Alex',
       lastName: 'Smith',
       email: 'alex@example.com',
@@ -101,14 +112,19 @@ Map<String, dynamic> _saved() {
   return body;
 }
 
-Future<void> _pump(WidgetTester tester, ProfileCreationDraft draft, _LoggingApi api) async {
+Future<void> _pump(
+  WidgetTester tester,
+  ProfileCreationDraft draft,
+  _LoggingApi api, {
+  _FakeProfileRepository? repository,
+}) async {
   SharedPreferences.setMockInitialValues({'profile_creation_draft': jsonEncode(draft.toJson())});
   final prefs = await SharedPreferences.getInstance();
   await tester.pumpWidget(ProviderScope(
     overrides: [
       sharedPreferencesProvider.overrideWithValue(prefs),
       authServiceProvider.overrideWithValue(_FakeAuthService()),
-      profileRepositoryProvider.overrideWithValue(_FakeProfileRepository(api.log)),
+      profileRepositoryProvider.overrideWithValue(repository ?? _FakeProfileRepository(api.log)),
       marketingPreferenceRepositoryProvider.overrideWithValue(_FakeMarketingRepository()),
       matchPreferencesRepositoryProvider.overrideWithValue(
         MatchPreferencesRepository(apiClient: api, logger: Logger(level: Level.off)),
@@ -116,7 +132,10 @@ Future<void> _pump(WidgetTester tester, ProfileCreationDraft draft, _LoggingApi 
     ],
     child: MaterialApp(
       home: const ProfileSubmissionScreen(),
-      routes: {'/profile-creation/qa': (_) => const Text('Q&A')},
+      routes: {
+        '/profile-creation/qa': (_) => const Text('Q&A'),
+        '/profile-creation/phone': (_) => const Text('Phone step'),
+      },
     ),
   ));
   await tester.pumpAndSettle();
@@ -161,6 +180,56 @@ void main() {
 
       expect(log, ['POST /users']);
       expect(find.text('Q&A'), findsOneWidget);
+    });
+  });
+
+  group('ProfileSubmissionScreen and the phone number (RFC-010)', () {
+    testWidgets('sends the draft\'s number with the profile', (tester) async {
+      final api = _LoggingApi(<String>[]);
+      final repository = _FakeProfileRepository(api.log);
+
+      await _pump(tester, _draft(phoneNumber: '+447400123456'), api, repository: repository);
+
+      expect(repository.sent!.phoneNumber, '+447400123456');
+      expect(repository.sent!.toJson()['phoneNumber'], '+447400123456');
+      expect(find.text('Q&A'), findsOneWidget);
+    });
+
+    testWidgets('sends no phoneNumber key when the user skipped it', (tester) async {
+      final api = _LoggingApi(<String>[]);
+      final repository = _FakeProfileRepository(api.log);
+
+      await _pump(tester, _draft(), api, repository: repository);
+
+      expect(repository.sent!.toJson().containsKey('phoneNumber'), isFalse);
+    });
+
+    testWidgets('a 400 naming phoneNumber goes back to the phone step, flagged', (tester) async {
+      final api = _LoggingApi(<String>[]);
+      final repository = _FakeProfileRepository(
+        api.log,
+        error: ProfileValidationException('phoneNumber is not a valid phone number'),
+      );
+
+      await _pump(tester, _draft(phoneNumber: '+447400123456'), api, repository: repository);
+
+      expect(find.text('Phone step'), findsOneWidget);
+      expect(find.text('Oops! Something went wrong'), findsNothing);
+      final container = ProviderScope.containerOf(tester.element(find.text('Phone step')));
+      expect(container.read(phoneNumberRejectedProvider), isTrue);
+    });
+
+    testWidgets('another 400 shows the error as before', (tester) async {
+      final api = _LoggingApi(<String>[]);
+      final repository = _FakeProfileRepository(
+        api.log,
+        error: ProfileValidationException('Interests must be between 5 and 10 items'),
+      );
+
+      await _pump(tester, _draft(), api, repository: repository);
+
+      expect(find.text('Oops! Something went wrong'), findsOneWidget);
+      expect(find.text('Phone step'), findsNothing);
     });
   });
 }
