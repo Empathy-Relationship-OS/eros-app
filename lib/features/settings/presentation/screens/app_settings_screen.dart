@@ -5,9 +5,11 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/constants/languages.dart';
 import 'package:eros_app/features/devtools/devtools_config.dart';
 import 'package:eros_app/features/devtools/presentation/dev_menu_navigation.dart';
+import 'package:eros_app/features/profile/presentation/widgets/phone_number_settings_tile.dart';
 import '../providers/app_settings_provider.dart';
 
 /// App Settings Screen - Allows users to configure app-level settings
+/// - Add, change or remove their phone number (RFC-010)
 /// - Toggle notifications on/off (with permission handling)
 /// - Change app language
 class AppSettingsScreen extends ConsumerStatefulWidget {
@@ -100,6 +102,15 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // Account. Only the phone number so far (RFC-010 PH-F2); the Profile tab's "Account
+        // settings" row is still a placeholder, so it lives here for now.
+        const _SettingsSection(
+          title: 'Account',
+          children: [PhoneNumberSettingsTile()],
+        ),
+
+        const SizedBox(height: 24),
+
         // Notifications Section
         _SettingsSection(
           title: 'Notifications',

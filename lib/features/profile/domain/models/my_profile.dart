@@ -183,6 +183,8 @@ class MyProfile {
     DisplayableField<String?>? bodyDescription,
     int? profileCompleteness,
     String? photoValidationStatus,
+    String? phoneNumber,
+    bool clearPhoneNumber = false,
   }) {
     // Name, email, date of birth and gender are locked after creation (RFC-004 D-6), so they
     // aren't parameters here.
@@ -222,8 +224,7 @@ class MyProfile {
       bodyDescription: bodyDescription ?? this.bodyDescription,
       profileCompleteness: profileCompleteness ?? this.profileCompleteness,
       photoValidationStatus: photoValidationStatus ?? this.photoValidationStatus,
-      // Not a parameter: it changes only through PUT /users/me/phone, then a refetch (RFC-010).
-      phoneNumber: phoneNumber,
+      phoneNumber: clearPhoneNumber ? null : (phoneNumber ?? this.phoneNumber),
     );
   }
 
