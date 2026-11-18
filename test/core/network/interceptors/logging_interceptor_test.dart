@@ -117,6 +117,51 @@ void main() {
     expect(log, contains('400'));
   });
 
+  group('phone numbers (RFC-010)', () {
+    const number = '+447400123456';
+
+    test('prints no phone number in a sign-up body, sent or echoed back', () async {
+      final (:dio, :output) = _dio();
+
+      await dio.post('/users', data: {'firstName': 'Sam', 'phoneNumber': number});
+
+      final log = output.lines.join('\n');
+      expect(log, isNot(contains('7400123456')));
+      expect(log, contains('***REDACTED***'));
+      expect(log, contains('Sam'), reason: 'the rest of the body is still printed');
+    });
+
+    test('prints no phone number on an error response', () async {
+      final (:dio, :output) = _dio(status: 400);
+
+      await expectLater(
+        dio.put('/users/me/phone', data: {'phoneNumber': number}),
+        throwsA(isA<DioException>()),
+      );
+
+      expect(output.lines.join('\n'), isNot(contains('7400123456')));
+    });
+
+    test('redacts phoneNumber at any depth and leaves a null alone', () {
+      expect(
+        LoggingInterceptor.redactPhoneNumbers({
+          'user': {'phoneNumber': number, 'bio': 'hi'},
+          'list': [
+            {'phoneNumber': number},
+          ],
+          'none': {'phoneNumber': null},
+        }),
+        {
+          'user': {'phoneNumber': '***REDACTED***', 'bio': 'hi'},
+          'list': [
+            {'phoneNumber': '***REDACTED***'},
+          ],
+          'none': {'phoneNumber': null},
+        },
+      );
+    });
+  });
+
   test('still prints bodies for other paths', () async {
     final (:dio, :output) = _dio();
 

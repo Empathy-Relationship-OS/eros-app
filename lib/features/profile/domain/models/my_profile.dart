@@ -55,6 +55,10 @@ class MyProfile {
   /// `UNVALIDATED`, `PENDING` or `VALIDATED`. Null when the backend predates PE-B1.
   final String? photoValidationStatus;
 
+  /// The user's own phone number, E.164, or null when they haven't given one or the backend
+  /// predates RFC-010 PH-B1. Never log it.
+  final String? phoneNumber;
+
   const MyProfile({
     required this.userId,
     required this.firstName,
@@ -91,6 +95,7 @@ class MyProfile {
     required this.bodyDescription,
     this.profileCompleteness,
     this.photoValidationStatus,
+    this.phoneNumber,
   });
 
   /// Whether the user's photo verification is complete.
@@ -144,6 +149,7 @@ class MyProfile {
       bodyDescription: _field(json, 'bodyDescription', (v) => v as String?),
       profileCompleteness: json['profileCompleteness'] as int?,
       photoValidationStatus: json['photoValidationStatus'] as String?,
+      phoneNumber: json['phoneNumber'] as String?,
     );
   }
 
@@ -177,6 +183,8 @@ class MyProfile {
     DisplayableField<String?>? bodyDescription,
     int? profileCompleteness,
     String? photoValidationStatus,
+    String? phoneNumber,
+    bool clearPhoneNumber = false,
   }) {
     // Name, email, date of birth and gender are locked after creation (RFC-004 D-6), so they
     // aren't parameters here.
@@ -216,6 +224,7 @@ class MyProfile {
       bodyDescription: bodyDescription ?? this.bodyDescription,
       profileCompleteness: profileCompleteness ?? this.profileCompleteness,
       photoValidationStatus: photoValidationStatus ?? this.photoValidationStatus,
+      phoneNumber: clearPhoneNumber ? null : (phoneNumber ?? this.phoneNumber),
     );
   }
 

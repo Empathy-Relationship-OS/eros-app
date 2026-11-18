@@ -207,6 +207,42 @@ class ProfileRepository {
     }
   }
 
+  /// Sets, replaces or (with null) removes the user's phone number (RFC-010 §5.3).
+  /// PUT /users/me/phone
+  /// Returns the number as the server stored it (E.164), or null. Never logs the number.
+  Future<String?> updatePhoneNumber(String? e164) async {
+    try {
+      _logger.i(e164 == null ? '📵 Removing phone number' : '📱 Saving phone number');
+      final response = await _apiClient.put<Map<String, dynamic>>(
+        ApiEndpoints.users.updatePhoneNumber(),
+        data: {'phoneNumber': e164},
+      );
+      return response['phoneNumber'] as String?;
+    } on ValidationException {
+      // The server's message names the field; the user gets the same words as at sign-up.
+      throw ProfileValidationException(phoneNumberRejectedMessage);
+    } on UnauthorizedException {
+      throw ProfileRepositoryException(
+        'There was a problem verifying your identity. Please try signing in again.',
+      );
+    } on NotFoundException {
+      throw ProfileRepositoryException(
+        'We couldn\'t find your profile. Please complete your profile setup.',
+      );
+    } on NetworkException {
+      throw ProfileRepositoryException(
+        'Unable to connect to the server. Please check your internet connection and try again.',
+      );
+    } on ApiException catch (e) {
+      // The type only: never anything that could hold the number.
+      _logger.e('❌ Unexpected error saving phone number (${e.runtimeType})');
+      throw ProfileRepositoryException('We couldn\'t save your phone number. Please try again.');
+    }
+  }
+
+  /// What the user sees when the server refuses a phone number.
+  static const phoneNumberRejectedMessage = 'That number didn\'t work. Check it and try again.';
+
   /// Parses a `UserDTO`. A body the app can't read (a missing field, an enum value it doesn't
   /// know) throws a TypeError, ArgumentError or FormatException, none of which the `on`
   /// clauses above catch, so it becomes a [ProfileRepositoryException] with [message] here.
@@ -295,6 +331,11 @@ class ProfileValidationException implements Exception {
     }
     return 'ProfileValidationException: $message';
   }
+
+  /// True when the backend's 400 is about [field], by its field errors or its message
+  /// (`phoneNumber is not a valid phone number`, RFC-010 §6). Only the field name is matched.
+  bool namesField(String field) =>
+      (errors?.containsKey(field) ?? false) || message.contains(field);
 
   /// Get user-friendly error message
   String getUserMessage() {

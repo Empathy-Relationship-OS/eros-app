@@ -15,6 +15,25 @@ Map<String, dynamic> _fixture(String name) =>
     jsonDecode(File('test/fixtures/users/$name').readAsStringSync()) as Map<String, dynamic>;
 
 void main() {
+  group('MyProfile phone number (RFC-010)', () {
+    test('reads the caller\'s number', () {
+      final json = _fixture('get_users_me.json')..['phoneNumber'] = '+447400123456';
+
+      expect(MyProfile.fromJson(json).phoneNumber, '+447400123456');
+    });
+
+    test('is null when there is none, or the backend predates it', () {
+      expect(MyProfile.fromJson(_fixture('get_users_me.json')..['phoneNumber'] = null).phoneNumber, isNull);
+      expect(MyProfile.fromJson(_fixture('get_users_me.json')..remove('phoneNumber')).phoneNumber, isNull);
+    });
+
+    test('copyWith keeps it', () {
+      final json = _fixture('get_users_me.json')..['phoneNumber'] = '+447400123456';
+
+      expect(MyProfile.fromJson(json).copyWith(bio: 'New').phoneNumber, '+447400123456');
+    });
+  });
+
   group('MyProfile.fromJson', () {
     late MyProfile profile;
 

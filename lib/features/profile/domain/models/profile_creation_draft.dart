@@ -13,7 +13,8 @@ class ProfileCreationDraft {
   String? firstName;
   String? lastName;
   String? email;
-  String? phoneNumber; // For future backend integration
+  /// E.164, or null when the user skipped the step. Sent with the profile (RFC-010).
+  String? phoneNumber;
   int? heightCm;
   DateTime? dateOfBirth;
   String? city;
@@ -162,6 +163,7 @@ class ProfileCreationDraft {
       traits: traits!,
       occupation: occupation,
       bio: bio ?? '',
+      phoneNumber: phoneNumber,
       spokenLanguages: spokenLanguages!,
       religion: religion!,
       politicalView: politicalView!,
@@ -430,7 +432,11 @@ class ProfileCreationDraft {
   }
 
   /// Create a copy with updated fields
+  ///
+  /// [clearPhoneNumber] removes the number (the user skipped the step); otherwise a null
+  /// [phoneNumber] keeps the current one, as for every other field.
   ProfileCreationDraft copyWith({
+    bool clearPhoneNumber = false,
     String? firstName,
     String? lastName,
     String? email,
@@ -472,7 +478,7 @@ class ProfileCreationDraft {
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       email: email ?? this.email,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
+      phoneNumber: clearPhoneNumber ? null : (phoneNumber ?? this.phoneNumber),
       heightCm: heightCm ?? this.heightCm,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       city: city ?? this.city,

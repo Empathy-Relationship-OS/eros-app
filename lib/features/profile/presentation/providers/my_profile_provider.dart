@@ -26,6 +26,18 @@ class MyProfileNotifier extends AsyncNotifier<MyProfile> {
     return saved;
   }
 
+  /// Saves the phone number ([e164], or null to remove it) with `PUT /users/me/phone`
+  /// (RFC-010). On success the state takes the number as the server stored it; on failure the
+  /// state is kept and the error rethrown for the screen to show.
+  Future<String?> savePhoneNumber(String? e164) async {
+    final stored = await ref.read(profileRepositoryProvider).updatePhoneNumber(e164);
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(current.copyWith(phoneNumber: stored, clearPhoneNumber: stored == null));
+    }
+    return stored;
+  }
+
   /// Reloads from the server.
   Future<void> refresh() async {
     state = const AsyncLoading<MyProfile>().copyWithPrevious(state);
