@@ -14,7 +14,9 @@ import 'package:eros_app/features/profile/presentation/widgets/editors/multi_cho
 
 /// The "Dinner" editor (RFC-005 §4.2), one tab per list: cuisines the user loves (soft),
 /// cuisines they won't eat (a hard block, D-13) and dietary needs (hard). A cuisine can't be in
-/// both cuisine lists, and each is capped by `options.limits`. Save sends only a [FoodPatch].
+/// both cuisine lists. Neither list has a cap: the backend's `limits` cover every cuisine. A
+/// backend that still sends a smaller limit is honoured (see [_capOf]). Save sends only a
+/// [FoodPatch].
 ///
 /// While the user has never saved date preferences (`isSet` false), dietary needs that follow
 /// from the profile's diet are ticked and marked "Suggested from your profile". They are saved
@@ -75,10 +77,16 @@ class _EditFoodScreenState extends ConsumerState<EditFoodScreen>
     _tabController.index = _dietaryTab;
   }
 
+  /// The cap for a list whose backend limit is [limit]: none when it covers every cuisine (the
+  /// backend since cuisine caps were lifted), else [limit], which an older backend still enforces.
+  int? _capOf(int limit) => limit < widget.options.cuisines.length ? limit : null;
+
   bool get _isValid {
     final limits = widget.options.limits;
-    return _draft.cuisinesLoved.length <= limits.maxCuisinesLoved &&
-        _draft.cuisinesExcluded.length <= limits.maxCuisinesExcluded &&
+    return MultiChoiceEditor.isValidCount(
+          _draft.cuisinesLoved.length, 0, _capOf(limits.maxCuisinesLoved)) &&
+        MultiChoiceEditor.isValidCount(
+          _draft.cuisinesExcluded.length, 0, _capOf(limits.maxCuisinesExcluded)) &&
         !_draft.cuisinesLoved.any(_draft.cuisinesExcluded.contains);
   }
 
@@ -110,7 +118,7 @@ class _EditFoodScreenState extends ConsumerState<EditFoodScreen>
           _CuisineList(
             cuisines: options.cuisines,
             selected: _draft.cuisinesLoved,
-            max: options.limits.maxCuisinesLoved,
+            max: _capOf(options.limits.maxCuisinesLoved),
             taken: _draft.cuisinesExcluded,
             takenNote: DetailSectionsCopy.inExcluded,
             onChanged: (loved) => setState(() => _draft = _draft.copyWith(cuisinesLoved: loved)),
@@ -118,7 +126,7 @@ class _EditFoodScreenState extends ConsumerState<EditFoodScreen>
           _CuisineList(
             cuisines: options.cuisines,
             selected: _draft.cuisinesExcluded,
-            max: options.limits.maxCuisinesExcluded,
+            max: _capOf(options.limits.maxCuisinesExcluded),
             taken: _draft.cuisinesLoved,
             takenNote: DetailSectionsCopy.inLoved,
             hint: DetailSectionsCopy.excludedHint,
@@ -150,12 +158,12 @@ class _EditFoodScreenState extends ConsumerState<EditFoodScreen>
   }
 }
 
-/// One cuisine tab: up to [max] of [cuisines], with a search field and counter. Cuisines in
+/// One cuisine tab: any number of [cuisines], or up to [max], with a search field and counter. Cuisines in
 /// [taken] (the other list) are greyed out with [takenNote].
 class _CuisineList extends StatelessWidget {
   final List<OptionValue> cuisines;
   final List<String> selected;
-  final int max;
+  final int? max;
   final List<String> taken;
   final String takenNote;
   final String? hint;
@@ -164,7 +172,7 @@ class _CuisineList extends StatelessWidget {
   const _CuisineList({
     required this.cuisines,
     required this.selected,
-    required this.max,
+    this.max,
     required this.taken,
     required this.takenNote,
     this.hint,
