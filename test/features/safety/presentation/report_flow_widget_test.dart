@@ -412,5 +412,22 @@ void main() {
       expect(api.sent('POST', '/dates/7/cancel'), isEmpty);
       expect(find.byType(ReportResultScreen), findsOneWidget);
     });
+
+    testWidgets('offers only the plain cancel once the viewer has reported the date',
+        (tester) async {
+      api.responses['POST /dates/7/cancel'] = _cancelResponse;
+      await pumpDetail(tester, dateDetailJson(youReported: true));
+      await openOverflow(tester, 'Cancel date');
+
+      expect(find.text(SafetyCopy.cancelNotSafe), findsNothing);
+      expect(find.text(SafetyCopy.cancelSomethingCameUp), findsNothing);
+
+      await tester.enterText(find.byType(TextField), 'Work trip');
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel date'));
+      await tester.pumpAndSettle();
+
+      expect(api.sent('POST', '/dates/7/cancel').single, {'reason': 'Work trip'});
+      expect(lastReport(), isNull);
+    });
   });
 }

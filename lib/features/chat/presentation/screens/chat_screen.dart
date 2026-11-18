@@ -212,7 +212,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
       await dates.refresh();
       dateDetail = ref.read(dateDetailProvider(widget.dateId)).dateDetail;
     }
-    if (dateDetail == null || !mounted) return;
+    // The refresh may say the viewer has reported it since the menu was opened.
+    if (dateDetail == null || dateDetail.youReported || !mounted) return;
     await openReportFlow(context, ref, dateDetail: dateDetail);
   }
 
