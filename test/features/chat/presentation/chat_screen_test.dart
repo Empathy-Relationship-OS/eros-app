@@ -166,6 +166,14 @@ void main() {
       await _close(tester);
     });
 
+    testWidgets('has no ⋯ menu once the viewer has reported the date', (tester) async {
+      await _pump(tester, FakeChatRepository(), date: chatDate(youReported: true));
+
+      expect(find.byTooltip(ChatCopy.moreOptions), findsNothing);
+
+      await _close(tester);
+    });
+
     testWidgets('goes read-only when the chat closes while open', (tester) async {
       final chat = FakeChatRepository();
       await _pump(tester, chat, date: chatDate(state: DateState.ready));

@@ -212,7 +212,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
       await dates.refresh();
       dateDetail = ref.read(dateDetailProvider(widget.dateId)).dateDetail;
     }
-    if (dateDetail == null || !mounted) return;
+    // The refresh may say the viewer has reported it since the menu was opened.
+    if (dateDetail == null || dateDetail.youReported || !mounted) return;
     await openReportFlow(context, ref, dateDetail: dateDetail);
   }
 
@@ -237,6 +238,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
   }
 
   PreferredSizeWidget _buildAppBar(ChatViewState chatState) {
+    final youReported = ref.watch(
+      dateDetailProvider(widget.dateId).select((s) => s.dateDetail?.youReported ?? false),
+    );
     final chat = chatState.chat;
     final subtitle = _headerSubtitle(chat);
     final textTheme = Theme.of(context).textTheme;
@@ -270,16 +274,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
               ],
             ),
       actions: [
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_horiz),
-          tooltip: ChatCopy.moreOptions,
-          onSelected: (value) {
-            if (value == 'report') _openReportAndBlock();
-          },
-          itemBuilder: (context) => const [
-            PopupMenuItem(value: 'report', child: Text(ChatCopy.reportAndBlock)),
-          ],
-        ),
+        // Its only item is "Report and block", gone once the viewer has reported the date.
+        if (!youReported)
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_horiz),
+            tooltip: ChatCopy.moreOptions,
+            onSelected: (value) {
+              if (value == 'report') _openReportAndBlock();
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'report', child: Text(ChatCopy.reportAndBlock)),
+            ],
+          ),
       ],
     );
   }

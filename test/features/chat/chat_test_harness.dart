@@ -49,6 +49,7 @@ DateDetail chatDate({
   DateState state = DateState.ready,
   ChatStatus chat = ChatStatus.open,
   bool verificationRequired = false,
+  bool youReported = false,
 }) =>
     DateDetail(
       dateId: 42,
@@ -77,6 +78,7 @@ DateDetail chatDate({
       createdAt: DateTime.utc(2026, 11, 1),
       updatedAt: DateTime.utc(2026, 11, 6),
       verificationRequired: verificationRequired,
+      youReported: youReported,
     );
 
 /// Overrides for a chat screen or date detail test.

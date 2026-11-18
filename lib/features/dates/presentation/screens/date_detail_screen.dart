@@ -149,8 +149,10 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           ),
         ),
 
-        // Overflow menu overlay: "Report and block" on any non-terminal date (CH-F5)
-        if (!dateDetail.state.isTerminal)
+        // Overflow menu overlay: "Report and block" on any non-terminal date the viewer hasn't
+        // reported (CH-F5), with "Cancel date" when cancellable. No menu with neither.
+        if (!dateDetail.state.isTerminal &&
+            (_shouldShowOverflowMenu(dateDetail) || !dateDetail.youReported))
           Positioned(
             top: 16,
             right: 16,
@@ -171,10 +173,11 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
                       value: 'cancel',
                       child: Text('Cancel date'),
                     ),
-                  const PopupMenuItem(
-                    value: 'report',
-                    child: Text(SafetyCopy.reportAndBlock),
-                  ),
+                  if (!dateDetail.youReported)
+                    const PopupMenuItem(
+                      value: 'report',
+                      child: Text(SafetyCopy.reportAndBlock),
+                    ),
                 ],
               ),
             ),
@@ -381,7 +384,10 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
           state: dateDetail.state,
           finishedAt: dateDetail.updatedAt,
           refundUnderReview: dateDetail.yourRefundUnderReview,
-          onReport: () => openReportFlow(context, ref, dateDetail: dateDetail),
+          // Once reported, there's nothing more to report: the backend would answer 409.
+          onReport: dateDetail.youReported
+              ? null
+              : () => openReportFlow(context, ref, dateDetail: dateDetail),
           onBackToDates: () {
             // Pop until we reach HomeScreen and ensure Dates tab is selected
             Navigator.of(context).popUntil((route) => route.isFirst);
