@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:eros_app/core/navigation/app_navigator.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/core/network/api_endpoints.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
@@ -524,7 +525,11 @@ void main() {
           authServiceProvider.overrideWithValue(_FakeAuthService()),
           datesRepositoryProvider.overrideWithValue(repository),
         ],
-        child: const MaterialApp(home: DateDetailScreen(dateId: '7')),
+        // The app's observer: the detail screen refetches through it when the picker closes.
+        child: MaterialApp(
+          navigatorObservers: [appPageRouteObserver],
+          home: const DateDetailScreen(dateId: '7'),
+        ),
       ));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ElevatedButton, 'Pick your times'));
