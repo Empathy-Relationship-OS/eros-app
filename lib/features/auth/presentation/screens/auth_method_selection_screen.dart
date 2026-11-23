@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:eros_app/core/notifications/push_host.dart';
 import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/features/legal/domain/models/legal_document.dart';
+import 'package:eros_app/features/legal/presentation/legal_links.dart';
+import 'package:eros_app/features/legal/presentation/providers/legal_documents_provider.dart';
+import 'package:eros_app/features/legal/presentation/widgets/legal_copy.dart';
+import 'package:eros_app/features/legal/presentation/widgets/legal_document_tile.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'email_entry_screen.dart';
 
@@ -79,19 +86,8 @@ class AuthMethodSelectionScreen extends StatelessWidget {
 
               const Spacer(),
 
-              // Privacy notice
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(
-                    'By continuing, you agree to our Terms & Conditions\nand Privacy Policy',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                ),
-              ),
+              // The current terms and privacy notice (RFC-009 §5.11)
+              const Center(child: _AgreementLinks()),
 
               const SizedBox(height: 16),
             ],
@@ -172,6 +168,43 @@ class _AuthMethodCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// "By continuing, you agree to our Terms of use and Privacy notice", each a link to the current
+/// document (`ALL` region). Before sign-in `GET /legal/documents` can't be called, so the links
+/// go to the website's page for each kind until then.
+class _AgreementLinks extends ConsumerWidget {
+  const _AgreementLinks();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final signedIn = ref.watch(signedInUidProvider) != null;
+    final documents =
+        signedIn ? ref.watch(legalDocumentsForCityProvider(null)).valueOrNull : null;
+    Uri urlFor(DocumentKind kind) =>
+        LegalLinks.urlFor(kind, documents == null ? null : documentOf(documents, kind));
+
+    final style = Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textTertiary);
+    Widget link(DocumentKind kind, String label) => Semantics(
+          link: true,
+          child: TextButton(
+            key: Key('auth-link-${kind.backendValue}'),
+            onPressed: () => openLegalLink(context, ref, urlFor(kind)),
+            child: Text(label),
+          ),
+        );
+
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(LegalCopy.authAgreePrefix, style: style),
+        link(DocumentKind.terms, LegalCopy.authTerms),
+        Text(LegalCopy.authAnd, style: style),
+        link(DocumentKind.privacyNotice, LegalCopy.authPrivacy),
+      ],
     );
   }
 }

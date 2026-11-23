@@ -5,6 +5,7 @@ import 'package:eros_app/core/network/api_client_provider.dart';
 import 'package:eros_app/core/network/api_endpoints.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
+import 'package:eros_app/features/legal/domain/consent_required.dart';
 import 'package:eros_app/features/profile/domain/models/create_user_request.dart';
 import 'package:eros_app/features/profile/domain/models/my_profile.dart';
 import 'package:eros_app/features/profile/domain/models/update_user_request.dart';
@@ -37,6 +38,7 @@ class ProfileRepository {
   /// Create a new user profile
   /// POST /users
   /// After successful creation, forces a token refresh to get updated role claims
+  /// Throws [ConsentRequiredException] for a 400 `CONSENT_REQUIRED` (RFC-009 §5.2).
   Future<void> createUser(CreateUserRequest request) async {
     try {
       _logger.i('📝 Creating user profile');
@@ -58,6 +60,12 @@ class ProfileRepository {
         'It looks like you already have an account. Please try logging in instead.',
       );
     } on ValidationException catch (e) {
+      // A consent missing or out of date (RFC-009 §5.2): the screen sends the user back to it.
+      final consentRequired = ConsentRequiredException.from(e);
+      if (consentRequired != null) {
+        _logger.w('⚠️  Consent required: ${consentRequired.missing.map((k) => k.backendValue)}');
+        throw consentRequired;
+      }
       _logger.w('⚠️  Validation error: ${e.message}');
       throw ProfileValidationException(
         e.message,

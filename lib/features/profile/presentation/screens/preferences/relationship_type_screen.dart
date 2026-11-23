@@ -3,6 +3,7 @@ import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/constants/profile_creation.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/features/legal/presentation/legal_routes.dart';
 import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
@@ -50,7 +51,8 @@ class _RelationshipTypeScreenState
     await ref.read(profileCreationProvider.notifier).updateDraft(updatedDraft);
 
     if (mounted) {
-      Navigator.pushNamed(context, '/profile-creation/preferences/sexual-orientation');
+      // The sensitive data consent comes before the first special category question (CF-F1).
+      Navigator.pushNamed(context, LegalRoutes.sensitiveData);
     }
   }
 

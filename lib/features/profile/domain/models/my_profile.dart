@@ -58,6 +58,11 @@ class MyProfile {
   /// predates RFC-010 PH-B1. Never log it.
   final String? phoneNumber;
 
+  /// The required documents (kinds, as the backend names them) the user still has to accept,
+  /// because they never did or a newer version replaced the one they did (RFC-009 §5.2). Only
+  /// `GET /users/me` fills it; empty when the backend predates CF-B2.
+  final List<String> outstandingConsents;
+
   const MyProfile({
     required this.userId,
     required this.firstName,
@@ -94,6 +99,7 @@ class MyProfile {
     this.profileCompleteness,
     this.photoValidationStatus,
     this.phoneNumber,
+    this.outstandingConsents = const [],
   });
 
   /// Whether the user's photo verification is complete.
@@ -147,6 +153,9 @@ class MyProfile {
       profileCompleteness: json['profileCompleteness'] as int?,
       photoValidationStatus: json['photoValidationStatus'] as String?,
       phoneNumber: json['phoneNumber'] as String?,
+      outstandingConsents: json['outstandingConsents'] == null
+          ? const []
+          : _strings(json['outstandingConsents']),
     );
   }
 
@@ -220,6 +229,7 @@ class MyProfile {
       profileCompleteness: profileCompleteness ?? this.profileCompleteness,
       photoValidationStatus: photoValidationStatus ?? this.photoValidationStatus,
       phoneNumber: clearPhoneNumber ? null : (phoneNumber ?? this.phoneNumber),
+      outstandingConsents: outstandingConsents,
     );
   }
 

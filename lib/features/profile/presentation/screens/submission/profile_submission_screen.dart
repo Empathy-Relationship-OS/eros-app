@@ -4,14 +4,17 @@ import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
-import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/profile/domain/models/create_user_request.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
-import 'package:eros_app/features/auth/presentation/providers/marketing_consent_provider.dart';
-import 'package:eros_app/features/auth/data/repositories/marketing_preference_repository.dart';
+import 'package:eros_app/features/legal/domain/consent_required.dart';
+import 'package:eros_app/features/legal/domain/models/legal_document.dart';
+import 'package:eros_app/features/legal/presentation/legal_routes.dart';
+import 'package:eros_app/features/legal/presentation/widgets/legal_copy.dart';
+import 'package:eros_app/features/legal/presentation/providers/legal_documents_provider.dart';
+import 'package:eros_app/features/legal/presentation/providers/signup_consents_provider.dart';
 import 'package:eros_app/features/match_preferences/domain/models/filter_patch.dart';
 import 'package:eros_app/features/match_preferences/presentation/providers/match_preferences_provider.dart';
 
@@ -99,6 +102,9 @@ class _ProfileSubmissionScreenState
       brainDescription: draft.brainDescription ?? DisplayableField(field: null, visible: false),
       bodyAttributes: draft.bodyAttributes ?? DisplayableField(field: null, visible: false),
       bodyDescription: draft.bodyDescription ?? DisplayableField(field: null, visible: false),
+      // Every consent given at sign-up, each on the version shown (RFC-009 §5.2). Marketing is
+      // among them when ticked.
+      consents: ref.read(signupConsentsProvider).toRequest(),
     );
   }
 
@@ -166,22 +172,8 @@ class _ProfileSubmissionScreenState
       // Submit to backend
       final repository = ref.read(profileRepositoryProvider);
       await repository.createUser(request);
-
-      // After profile creation, token is refreshed with role claims
-      // Now we can send marketing preference to backend
-      try {
-        final marketingConsent = ref.read(marketingConsentProvider).acceptsMarketing;
-        final marketingRepo = ref.read(marketingPreferenceRepositoryProvider);
-        await marketingRepo.createMarketingPreference(
-          marketingConsent: marketingConsent,
-        );
-      } on ConflictException {
-        // Preference already exists - this is fine, continue
-        debugPrint('Marketing preference already exists');
-      } on ApiException catch (e) {
-        // Log but don't block user flow - marketing preference is non-critical
-        debugPrint('Warning: Failed to save marketing preference: ${e.message}');
-      }
+      // The consents are on the server now, with the profile.
+      await ref.read(signupConsentsProvider.notifier).clear();
 
       await _saveInterestedIn();
 
@@ -198,6 +190,16 @@ class _ProfileSubmissionScreenState
         // Navigate to Q&A section (replace current route)
         Navigator.pushReplacementNamed(context, '/profile-creation/qa');
       }
+    } on ConsentRequiredException catch (e) {
+      final step = LegalRoutes.stepFor(e.missing);
+      if (step != null) {
+        _backToConsentStep(e.missing, step);
+        return;
+      }
+      setState(() {
+        _isSubmitting = false;
+        _errorMessage = LegalCopy.updateToSignUp;
+      });
     } on ProfileValidationException catch (e) {
       if (e.namesField('phoneNumber')) {
         _backToPhoneStep();
@@ -231,6 +233,16 @@ class _ProfileSubmissionScreenState
       return found || route.isFirst;
     });
     if (!found) Navigator.of(context).pushNamed(phoneStepRoute);
+  }
+
+  /// The backend wants [missing] agreed to again (400 `CONSENT_REQUIRED`): forget them, reload
+  /// the current documents, and go back to [step], the first step that takes one of them.
+  void _backToConsentStep(List<DocumentKind> missing, String step) {
+    ref.read(signupConsentsProvider.notifier).forget(missing);
+    ref.read(consentsToReviewProvider.notifier).state = missing.toSet();
+    ref.invalidate(legalDocumentsForCityProvider);
+    if (!mounted) return;
+    LegalRoutes.returnTo(context, step);
   }
 
   /// The phone step's route (`main.dart`).

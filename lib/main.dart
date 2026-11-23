@@ -56,6 +56,9 @@ import 'features/devtools/presentation/dev_menu_navigation.dart';
 import 'features/devtools/presentation/dev_menu_screen.dart';
 import 'features/devtools/presentation/widgets/dev_menu_button.dart';
 import 'features/verification/presentation/screens/verification_status_screen.dart';
+import 'features/legal/presentation/legal_routes.dart';
+import 'features/legal/presentation/screens/sensitive_data_consent_screen.dart';
+import 'features/legal/presentation/widgets/reconsent_gate.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -137,6 +140,7 @@ class ErosApp extends StatelessWidget {
         '/profile-creation/preferences/smoking': (context) => const SmokingScreen(),
         '/profile-creation/preferences/occupation': (context) => const OccupationScreen(),
         '/profile-creation/preferences/relationship-type': (context) => const RelationshipTypeScreen(),
+        LegalRoutes.sensitiveData: (context) => const SensitiveDataConsentScreen(),
         '/profile-creation/preferences/sexual-orientation': (context) => const SexualOrientationScreen(),
         '/profile-creation/preferences/bio': (context) => const BioScreen(),
         '/profile-creation/preferences/pronouns': (context) => const PronounsScreen(),
@@ -162,7 +166,8 @@ class ErosApp extends StatelessWidget {
         '/profile-creation/submit': (context) => const ProfileSubmissionScreen(),
 
         // Main app routes
-        '/match': (context) => const HomeScreen(),
+        // The re-consent check runs over the signed-in home (RFC-009 §5.2).
+        '/match': (context) => const ReconsentGate(child: HomeScreen()),
 
         // The user's own verification status (RFC-008 VF-F3). A decision push opens it.
         VerificationStatusScreen.routeName: (context) => const VerificationStatusScreen(),

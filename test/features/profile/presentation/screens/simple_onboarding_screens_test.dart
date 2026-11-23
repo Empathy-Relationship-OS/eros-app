@@ -115,7 +115,8 @@ void main() {
         DateIntentions.values, (v) => v.displayName, (d) => d.dateIntentions, '$route/kids'),
     _ChoiceScreen<RelationshipType>('RelationshipTypeScreen', () => const RelationshipTypeScreen(),
         RelationshipType.values, (v) => v.displayName, (d) => d.relationshipType,
-        '$route/sexual-orientation'),
+        // The sensitive data consent comes before the orientation question (CF-F1).
+        '$route/sensitive-data'),
   ];
   for (final screen in choiceScreens) {
     screen.define();

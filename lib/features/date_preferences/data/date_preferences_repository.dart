@@ -9,6 +9,7 @@ import 'package:eros_app/features/date_preferences/domain/models/date_preference
 import 'package:eros_app/features/date_preferences/domain/models/date_preferences.dart';
 import 'package:eros_app/features/date_preferences/domain/models/dating_city.dart';
 import 'package:eros_app/features/date_preferences/domain/models/section_patch.dart';
+import 'package:eros_app/features/legal/domain/consent_required.dart';
 
 /// Repository for date preference API calls (RFC-005 §5).
 ///
@@ -150,7 +151,15 @@ class DatePreferencesRepository {
 
   /// Turns an [ApiException] into this repository's exceptions. A 400 keeps the server's message,
   /// which says what was wrong (RFC-005 §5, "Validation").
+  ///
+  /// A 403 `CONSENT_REQUIRED` (a starting pin without `LOCATION_PIN`, RFC-009 §5.4) stays a
+  /// [ConsentRequiredException], so "Where" can ask for it and save again.
   Exception _mapError(ApiException e, String fallbackMessage) {
+    final consentRequired = ConsentRequiredException.from(e);
+    if (consentRequired != null) {
+      _logger.w('⚠️  Consent required (${e.statusCode})');
+      return consentRequired;
+    }
     switch (e) {
       case ValidationException():
         // The server's message can name a value the user chose, so it isn't logged.
