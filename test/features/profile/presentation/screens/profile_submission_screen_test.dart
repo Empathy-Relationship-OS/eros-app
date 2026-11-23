@@ -8,6 +8,11 @@ import 'package:eros_app/features/legal/domain/consent_required.dart';
 import 'package:eros_app/features/legal/domain/models/legal_document.dart';
 import 'package:eros_app/features/legal/presentation/legal_routes.dart';
 import 'package:eros_app/features/legal/presentation/providers/signup_consents_provider.dart';
+import 'package:eros_app/features/legal/data/repositories/age_signal_repository.dart';
+import 'package:eros_app/features/legal/domain/models/store_age_signal.dart';
+import 'package:eros_app/features/legal/presentation/age_signal_copy.dart';
+import 'package:eros_app/features/legal/presentation/providers/age_signal_providers.dart';
+import 'package:eros_app/features/legal/presentation/screens/underage_screen.dart';
 import 'package:eros_app/features/match_preferences/data/match_preferences_repository.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 import 'package:eros_app/features/profile/domain/enums/gender.dart';
@@ -122,6 +127,7 @@ Future<void> _pump(
   _LoggingApi api, {
   _FakeProfileRepository? repository,
   Map<String, String?>? consents,
+  List<Override> overrides = const [],
 }) async {
   SharedPreferences.setMockInitialValues({
     'profile_creation_draft': jsonEncode(draft.toJson()),
@@ -137,6 +143,7 @@ Future<void> _pump(
       matchPreferencesRepositoryProvider.overrideWithValue(
         MatchPreferencesRepository(apiClient: api, logger: Logger(level: Level.off)),
       ),
+      ...overrides,
     ],
     child: MaterialApp(
       home: const ProfileSubmissionScreen(),
@@ -302,6 +309,65 @@ void main() {
 
       expect(find.text('Terms step'), findsOneWidget);
       expect(find.text('Oops! Something went wrong'), findsNothing);
+    });
+  });
+
+  group('ProfileSubmissionScreen and the app-store age signal (RFC-009 CF-F6)', () {
+    const adult = StoreAgeSignal(source: AgeSignalSource.apple, band: AgeBand.adult);
+
+    Override checked(StoreAgeSignal? signal, {String uid = 'user1'}) =>
+        signupAgeCheckProvider.overrideWith((ref) => SignupAgeCheck(uid, signal));
+
+    testWidgets('sends what the store said with the profile', (tester) async {
+      final api = _LoggingApi(<String>[]);
+      final repository = _FakeProfileRepository(api.log);
+
+      await _pump(tester, _draft(), api, repository: repository, overrides: [checked(adult)]);
+
+      expect(repository.sent!.toJson()['ageSignal'], {'source': 'APPLE', 'band': 'ADULT'});
+      final prefs = ProviderScope.containerOf(tester.element(find.text('Q&A')))
+          .read(sharedPreferencesProvider);
+      expect(prefs.getBool(ExistingUserAgeSignal.askedKey('user1')), isTrue,
+          reason: 'the next launch does not ask again');
+    });
+
+    testWidgets('sends no ageSignal key when the store gave none', (tester) async {
+      final api = _LoggingApi(<String>[]);
+      final repository = _FakeProfileRepository(api.log);
+
+      await _pump(tester, _draft(), api, repository: repository, overrides: [checked(null)]);
+
+      expect(repository.sent!.toJson().containsKey('ageSignal'), isFalse);
+      expect(find.text('Q&A'), findsOneWidget);
+    });
+
+    testWidgets('a check for another user is not sent, and nothing is marked', (tester) async {
+      final api = _LoggingApi(<String>[]);
+      final repository = _FakeProfileRepository(api.log);
+
+      await _pump(tester, _draft(), api,
+          repository: repository, overrides: [checked(adult, uid: 'someone-else')]);
+
+      expect(repository.sent!.toJson().containsKey('ageSignal'), isFalse);
+      final prefs = ProviderScope.containerOf(tester.element(find.text('Q&A')))
+          .read(sharedPreferencesProvider);
+      expect(prefs.getBool(ExistingUserAgeSignal.askedKey('user1')), isNull);
+    });
+
+    testWidgets('403 UNDERAGE shows the underage screen and signs out', (tester) async {
+      final api = _LoggingApi(<String>[]);
+      final repository =
+          _FakeProfileRepository(api.log, error: const UnderageSignUpException());
+      var signOuts = 0;
+
+      await _pump(tester, _draft(), api, repository: repository, overrides: [
+        checked(null),
+        underageSignOutProvider.overrideWithValue(() async => signOuts++),
+      ]);
+
+      expect(find.text(AgeSignalCopy.underageTitle), findsOneWidget);
+      expect(find.text('Oops! Something went wrong'), findsNothing);
+      expect(signOuts, 1);
     });
   });
 }

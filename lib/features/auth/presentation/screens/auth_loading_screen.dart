@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
@@ -5,6 +7,8 @@ import 'package:eros_app/core/widgets/auth_error_boundary.dart';
 import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
+import 'package:eros_app/core/auth/auth_service.dart';
+import 'package:eros_app/features/legal/presentation/providers/age_signal_providers.dart';
 import 'package:logger/logger.dart';
 
 /// Loading screen that determines initial app route based on auth state
@@ -80,9 +84,11 @@ class _AuthLoadingScreenState extends ConsumerState<AuthLoadingScreen> {
       if (userExistsResponse.exists) {
         // User has completed profile - navigate to home/match screen
         _logger.i('✅ Profile exists - navigating to match screen');
+        final sendAgeSignal = _existingUserAgeSignal();
         if (mounted) {
           Navigator.of(context).pushReplacementNamed('/match');
         }
+        sendAgeSignal?.call();
       } else {
         // User authenticated but no backend profile - navigate to profile creation
         _logger.i('📝 No profile - navigating to profile creation');
@@ -109,6 +115,21 @@ class _AuthLoadingScreenState extends ConsumerState<AuthLoadingScreen> {
           _errorMessage = errorMsg;
         });
       }
+    }
+  }
+
+  /// The once-per-user app-store age check (RFC-009 CF-F6): sends the store's answer to
+  /// `POST /users/me/age-signal`. Read here, before navigating away, because it outlives this
+  /// screen. Null when it can't be set up; nothing about it may stop the app from opening.
+  void Function()? _existingUserAgeSignal() {
+    try {
+      final uid = ref.read(authServiceProvider).currentUser?.uid;
+      if (uid == null) return null;
+      final ageSignal = ref.read(existingUserAgeSignalProvider);
+      return () => unawaited(ageSignal.sendOnce(uid));
+    } catch (e) {
+      _logger.w('Age signal check skipped (${e.runtimeType})');
+      return null;
     }
   }
 

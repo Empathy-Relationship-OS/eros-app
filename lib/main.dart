@@ -17,6 +17,7 @@ import 'features/profile/presentation/screens/dating_cities_screen.dart';
 import 'features/profile/presentation/screens/gender_screen.dart';
 import 'features/profile/presentation/screens/interested_in_step_screen.dart';
 import 'features/profile/presentation/screens/date_of_birth_screen.dart';
+import 'features/legal/presentation/screens/store_age_check_gate.dart';
 import 'features/profile/presentation/screens/languages_screen.dart';
 import 'features/profile/presentation/screens/height_input_screen.dart';
 import 'features/profile/presentation/screens/education_screen.dart';
@@ -125,7 +126,8 @@ class ErosApp extends StatelessWidget {
         '/profile-creation/dating-cities': (context) => const DatingCitiesScreen(),
         '/profile-creation/gender': (context) => const GenderScreen(),
         '/profile-creation/interested-in': (context) => const InterestedInStepScreen(),
-        '/profile-creation/dob': (context) => const DateOfBirthScreen(),
+        // The app-store age check comes first (RFC-009 CF-F6).
+        '/profile-creation/dob': (context) => const StoreAgeCheckGate(child: DateOfBirthScreen()),
         '/profile-creation/languages': (context) => const LanguagesScreen(),
         '/profile-creation/height': (context) => const HeightInputScreen(),
         '/profile-creation/education': (context) => const EducationScreen(),

@@ -17,6 +17,9 @@ import 'package:eros_app/features/legal/presentation/providers/legal_documents_p
 import 'package:eros_app/features/legal/presentation/providers/signup_consents_provider.dart';
 import 'package:eros_app/features/match_preferences/domain/models/filter_patch.dart';
 import 'package:eros_app/features/match_preferences/presentation/providers/match_preferences_provider.dart';
+import 'package:eros_app/features/legal/data/repositories/age_signal_repository.dart';
+import 'package:eros_app/features/legal/presentation/providers/age_signal_providers.dart';
+import 'package:eros_app/features/legal/presentation/screens/underage_screen.dart';
 
 /// Profile submission screen - final step before creating user
 class ProfileSubmissionScreen extends ConsumerStatefulWidget {
@@ -82,6 +85,8 @@ class _ProfileSubmissionScreenState
       bio: draft.bio ?? '',
       // Optional (RFC-010): null when the user skipped the phone step.
       phoneNumber: draft.phoneNumber,
+      // Optional (RFC-009 CF-F6): what the store said before the date of birth step.
+      ageSignal: _ageCheck(userId)?.signal,
 
       // Collected DisplayableFields
       spokenLanguages: draft.spokenLanguages!,
@@ -106,6 +111,12 @@ class _ProfileSubmissionScreenState
       // among them when ticked.
       consents: ref.read(signupConsentsProvider).toRequest(),
     );
+  }
+
+  /// The store check from before the date of birth step, if it was for this user.
+  SignupAgeCheck? _ageCheck(String userId) {
+    final check = ref.read(signupAgeCheckProvider);
+    return check?.uid == userId ? check : null;
   }
 
   // Default values for missing preferences
@@ -175,6 +186,11 @@ class _ProfileSubmissionScreenState
       // The consents are on the server now, with the profile.
       await ref.read(signupConsentsProvider.notifier).clear();
 
+      // Sign-up sent the store's answer, so the next launch doesn't ask again (CF-F6).
+      if (_ageCheck(user.uid) != null) {
+        await ExistingUserAgeSignal.markAskedIn(ref.read(sharedPreferencesProvider), user.uid);
+      }
+
       await _saveInterestedIn();
 
       // Navigate to Q&A section (user account is now created)
@@ -200,6 +216,9 @@ class _ProfileSubmissionScreenState
         _isSubmitting = false;
         _errorMessage = LegalCopy.updateToSignUp;
       });
+    } on UnderageSignUpException {
+      // The backend's 403 `UNDERAGE` (RFC-009 CF-B12): nothing was created.
+      if (mounted) UnderageScreen.show(context);
     } on ProfileValidationException catch (e) {
       if (e.namesField('phoneNumber')) {
         _backToPhoneStep();
