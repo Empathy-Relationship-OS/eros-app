@@ -6,6 +6,7 @@ import 'package:eros_app/features/matching/domain/models/match_models.dart';
 import 'package:eros_app/features/matching/presentation/providers/match_provider.dart';
 import 'package:eros_app/features/matching/presentation/widgets/match_card_components.dart';
 import 'package:eros_app/features/matching/presentation/screens/public_profile_view_screen.dart';
+import 'package:eros_app/features/safety/presentation/profile_safety_flow.dart';
 
 /// Carousel view for match cards using Flutter's built-in CarouselView
 ///
@@ -162,6 +163,16 @@ class _CarouselCardV2State extends ConsumerState<_CarouselCardV2> {
     );
   }
 
+  /// "Report" (CF-F4): once filed the card leaves the batch, and the batch is refetched.
+  Future<void> _report() async {
+    final hidden = await openContentReport(
+      context,
+      userId: widget.profile.userId,
+      name: widget.profile.name,
+    );
+    if (hidden) widget.notifier.hideProfile(widget.profile.matchId);
+  }
+
   void _navigateToPublicProfile() {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -181,9 +192,19 @@ class _CarouselCardV2State extends ConsumerState<_CarouselCardV2> {
         // Large profile photo - tappable to open full profile
         Expanded(
           flex: 3,
-          child: GestureDetector(
-            onTap: _navigateToPublicProfile,
-            child: ProfileImageSection(profile: widget.profile),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              GestureDetector(
+                onTap: _navigateToPublicProfile,
+                child: ProfileImageSection(profile: widget.profile),
+              ),
+              Positioned(
+                top: 12,
+                right: 12,
+                child: ProfileSafetyMenu(overPhoto: true, onReport: _report),
+              ),
+            ],
           ),
         ),
 

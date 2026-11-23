@@ -1,6 +1,7 @@
 import 'package:eros_app/features/safety/data/models/safety_models.dart';
 
-/// Copy for reports and safety cancels (RFC-006 §6.5, CH-F5).
+/// Copy for reports and safety cancels (RFC-006 §6.5, CH-F5), and for reports and blocks
+/// outside a date (RFC-009 §5.5, §5.8, CF-F4).
 ///
 /// Calm and plain. No em dashes. The partner is called by name. Nothing here may hint at who
 /// reported whom, or why (D-10).
@@ -91,4 +92,42 @@ class SafetyCopy {
     'houston': '911',
     'new york': '911',
   };
+
+  // Reports outside a date (CF-F4). A report never tells them; nor does a block.
+  static const String reportPhoto = 'Report this photo';
+  static const String block = 'Block';
+  static const String moreOptions = 'More options';
+  static String contentReportTitle({required bool photo}) =>
+      photo ? 'Report this photo' : 'Report this profile';
+  static String contentReportIntro(String name) =>
+      '$name won\'t be told. You won\'t see them again.';
+  static const String categoryHeading = 'What\'s wrong?';
+  static String categoryLabel(ContentReportCategory category) => switch (category) {
+        ContentReportCategory.intimateImage => 'Nude or sexual image',
+        ContentReportCategory.underage => 'Looks under 18',
+        ContentReportCategory.scam => 'Scam or asking for money',
+        ContentReportCategory.impersonation => 'Pretending to be someone else',
+        ContentReportCategory.harassment => 'Harassment',
+        ContentReportCategory.illegalContent => 'Something illegal',
+        ContentReportCategory.copyright => 'Uses my photo or work',
+        ContentReportCategory.other => 'Something else',
+      };
+  static const String chooseCategory = 'Choose what\'s wrong.';
+  static const String sendReport = 'Send report';
+  static const String contentReportThanks =
+      'Thanks. We\'ll look at this within 48 hours. You won\'t see them again.';
+  static const String profileGone = 'This profile isn\'t available any more.';
+
+  // Block (CF-F4)
+  static String blockTitle(String name) => 'Block $name?';
+  static const String blockBody =
+      'They won\'t see you and you won\'t see them. They won\'t be told.';
+  static const String blockConfirm = 'Block';
+  static const String notNow = 'Not now';
+  static const String blocked = 'Blocked. You won\'t see them again.';
+  static const String blockActiveDateTitle = 'You have a date together';
+  static const String blockActiveDate = 'Cancel your date first. Then you can block them.';
+  static const String cancelDate = 'Cancel date';
+  static const String ok = 'OK';
+  static const String blockFailed = 'We couldn\'t block them. Please try again.';
 }

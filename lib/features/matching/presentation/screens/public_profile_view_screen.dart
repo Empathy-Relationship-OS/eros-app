@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/features/dates/data/models/date_models.dart';
+import 'package:eros_app/features/safety/presentation/profile_safety_flow.dart';
+import 'package:eros_app/features/safety/presentation/widgets/safety_copy.dart';
 import 'package:eros_app/features/profile/domain/models/public_profile.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_display_components.dart';
@@ -25,6 +28,10 @@ class PublicProfileViewScreen extends ConsumerStatefulWidget {
   /// and a "This is how others see you" banner is shown instead.
   final bool previewMode;
 
+  /// Set when opened from a date: they're a match, so the menu offers "Block" too, and the
+  /// screen pops a [DatePartnerSafetyExit] for the date screen to act on (CF-F4).
+  final DateDetail? date;
+
   const PublicProfileViewScreen({
     super.key,
     required this.userId,
@@ -32,6 +39,7 @@ class PublicProfileViewScreen extends ConsumerStatefulWidget {
     this.isFromLast24Hours = false,
     this.hideActionButtons = false,
     this.previewMode = false,
+    this.date,
   });
 
   /// The user's own profile as others see it, from the profile editor. There is no match, so
@@ -40,7 +48,8 @@ class PublicProfileViewScreen extends ConsumerStatefulWidget {
       : matchId = 0,
         isFromLast24Hours = false,
         hideActionButtons = true,
-        previewMode = true;
+        previewMode = true,
+        date = null;
 
   @override
   ConsumerState<PublicProfileViewScreen> createState() =>
@@ -142,8 +151,65 @@ class _PublicProfileViewScreenState
     );
   }
 
+  /// Whether the `⋯` menu shows: on anyone else's profile, unless they're a date partner the
+  /// viewer has already reported.
+  bool get _showSafetyMenu {
+    if (widget.previewMode) return false;
+    final date = widget.date;
+    return date == null || showDatePartnerSafety(date);
+  }
+
+  /// "Report" on the profile, or on its photo [mediaId] (CF-F4). Once filed the profile leaves
+  /// the list it came from, which is refetched, and this screen closes.
+  Future<void> _report({int? mediaId}) async {
+    final date = widget.date;
+    // A date partner goes through the date's rules, unless it's a photo on a finished date.
+    if (date != null && (mediaId == null || !date.state.isTerminal)) {
+      return _datePartnerAction(date, ProfileSafetyAction.report);
+    }
+    final profile = await _profileFuture;
+    if (!mounted) return;
+    final hidden = await openContentReport(
+      context,
+      userId: widget.userId,
+      name: profile.name,
+      mediaId: mediaId,
+    );
+    if (!hidden || !mounted) return;
+    if (date != null) {
+      refreshDatesAfterHiding(ref);
+      Navigator.of(context).pop(DatePartnerSafetyExit.hidden);
+      return;
+    }
+    if (widget.isFromLast24Hours) {
+      ref.read(last24HoursProvider.notifier).hideProfile(widget.matchId);
+    } else {
+      ref.read(matchBatchProvider.notifier).hideProfile(widget.matchId);
+    }
+    Navigator.of(context).pop();
+  }
+
+  Future<void> _datePartnerAction(DateDetail date, ProfileSafetyAction action) async {
+    final exit = await runDatePartnerSafety(
+      context,
+      ref,
+      date: date,
+      partnerId: widget.userId,
+      action: action,
+    );
+    if (exit != null && mounted) Navigator.of(context).pop(exit);
+  }
+
+  /// A long-press on a photo: "Report this photo". Sends the photo's media id when the backend
+  /// sent one; otherwise the report is on the profile alone.
+  Future<void> _onPhotoLongPress(int? mediaId) async {
+    if (!await showPhotoActions(context) || !mounted) return;
+    await _report(mediaId: mediaId);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final date = widget.date;
     return Scaffold(
       extendBodyBehindAppBar: true,
       // No bar over the photo: just the back button on its own dark disc, which reads over a
@@ -162,6 +228,20 @@ class _PublicProfileViewScreenState
             onPressed: () => Navigator.of(context).pop(),
           ),
         ),
+        actions: [
+          if (_showSafetyMenu)
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: ProfileSafetyMenu(
+                overPhoto: true,
+                reportLabel: date == null ? SafetyCopy.report : datePartnerReportLabel(date),
+                onReport: _report,
+                onBlock: date == null
+                    ? null
+                    : () => _datePartnerAction(date, ProfileSafetyAction.block),
+              ),
+            ),
+        ],
       ),
       body: FutureBuilder<PublicProfileDTO>(
         future: _profileFuture,
@@ -190,7 +270,10 @@ class _PublicProfileViewScreenState
               // Scrollable profile content
               SingleChildScrollView(
                 controller: _scrollController,
-                child: _ProfileContent(profile: profile),
+                child: _ProfileContent(
+                  profile: profile,
+                  onPhotoLongPress: _showSafetyMenu ? _onPhotoLongPress : null,
+                ),
               ),
 
               if (widget.previewMode)
@@ -281,7 +364,22 @@ class _PreviewBanner extends StatelessWidget {
 class _ProfileContent extends StatelessWidget {
   final PublicProfileDTO profile;
 
-  const _ProfileContent({required this.profile});
+  /// A long-press on the photo with this media id (null if unknown). Null on a profile whose
+  /// photos can't be reported.
+  final void Function(int? mediaId)? onPhotoLongPress;
+
+  const _ProfileContent({required this.profile, this.onPhotoLongPress});
+
+  /// The long-press for the photo at [index], if photos can be reported.
+  VoidCallback? _longPressFor(int index) {
+    final onLongPress = onPhotoLongPress;
+    if (onLongPress == null) return null;
+    final ids = profile.profile.photoIds;
+    // Only trusted when it lines up with the photos.
+    final mediaId =
+        ids != null && ids.length == profile.profile.photos.length ? ids[index] : null;
+    return () => onLongPress(mediaId);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -291,15 +389,10 @@ class _ProfileContent extends StatelessWidget {
     // Use backend photos (no local photos in this context)
     final String? thumbnailPath =
     backendPhotos.isNotEmpty ? backendPhotos.first : null;
-    final List<ProfilePhoto> remainingPhotos = backendPhotos.length > 1
-        ? backendPhotos
-        .sublist(1)
-        .map((p) => ProfilePhoto(
-      path: p,
-      isLocal: false,
-    ))
-        .toList()
-        : [];
+    final List<ProfilePhoto> remainingPhotos = [
+      for (var i = 1; i < backendPhotos.length; i++)
+        ProfilePhoto(path: backendPhotos[i], isLocal: false, onLongPress: _longPressFor(i)),
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,6 +402,7 @@ class _ProfileContent extends StatelessWidget {
           ThumbnailPhoto(
             photoPath: thumbnailPath,
             isLocal: false,
+            onLongPress: _longPressFor(0),
           )
         else
           // Nothing to sit under the back button, so the content starts below it. The top
