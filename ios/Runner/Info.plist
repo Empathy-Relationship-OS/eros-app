@@ -22,8 +22,23 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<!-- Google sign-in returns to the app through this: REVERSED_CLIENT_ID of GoogleService-Info.plist (RFC-011 §5.2) -->
+				<string>com.googleusercontent.apps.785930119954-hhfjlgptdm404siatsras7p4gk0gltu0</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<!-- Google sign-in's iOS client: CLIENT_ID of GoogleService-Info.plist (RFC-011 §5.2) -->
+	<key>GIDClientID</key>
+	<string>785930119954-hhfjlgptdm404siatsras7p4gk0gltu0.apps.googleusercontent.com</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

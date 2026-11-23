@@ -54,7 +54,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify that we navigate to auth method selection screen
-    expect(find.text('How would you like to\nsign up?'), findsOneWidget);
+    expect(find.text('How would you like to\ncontinue?'), findsOneWidget);
+    expect(find.text('Continue with Google'), findsOneWidget);
     expect(find.text('Continue with Email'), findsOneWidget);
   });
 }

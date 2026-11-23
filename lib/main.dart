@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'core/auth/google_sign_in_config.dart';
 import 'core/navigation/app_navigator.dart';
 import 'core/notifications/push_host.dart';
 import 'core/theme/app_theme.dart';
@@ -67,6 +69,9 @@ void main() async {
   // Initialize Firebase
   await Firebase.initializeApp();
 
+  // Google sign-in must be initialised once before any sign-in (RFC-011 §5.2)
+  await initializeGoogleSignIn(GoogleSignIn.instance);
+
   // Initialize SharedPreferences
   final sharedPreferences = await SharedPreferences.getInstance();
 
@@ -120,6 +125,7 @@ class ErosApp extends StatelessWidget {
       routes: {
         // Auth routes
         '/welcome': (context) => const WelcomeScreen(),
+        AuthLoadingScreen.routeName: (context) => const AuthLoadingScreen(),
         // Profile creation routes - Basic Info Section
         '/profile-creation/name': (context) => const NameInputScreen(),
         '/profile-creation/location': (context) => const LocationInputScreen(),

@@ -63,6 +63,18 @@ class ProfileCreationNotifier extends StateNotifier<ProfileCreationDraft> {
     await _service.saveDraft(state);
   }
 
+  /// Starts the name step from a sign-in provider's name (RFC-011 D-7), only while the draft has
+  /// no name: a name the user typed is never replaced. Empty parts are left unset.
+  Future<void> prefillName({required String firstName, required String lastName}) async {
+    final hasName =
+        (state.firstName?.isNotEmpty ?? false) || (state.lastName?.isNotEmpty ?? false);
+    if (hasName) return;
+    await updateFields(
+      firstName: firstName.isEmpty ? null : firstName,
+      lastName: lastName.isEmpty ? null : lastName,
+    );
+  }
+
   /// Remove the phone number: the user skipped the step (RFC-010 D-3).
   Future<void> clearPhoneNumber() async {
     state = state.copyWith(clearPhoneNumber: true);
