@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/constants/profile_creation.dart';
+import 'package:eros_app/features/legal/domain/models/legal_document.dart';
+import 'package:eros_app/features/legal/presentation/providers/legal_documents_provider.dart';
+import 'package:eros_app/features/legal/presentation/providers/signup_consents_provider.dart';
+import 'package:eros_app/features/legal/presentation/widgets/legal_copy.dart';
+import 'package:eros_app/features/legal/presentation/widgets/legal_document_tile.dart';
+import 'package:eros_app/features/legal/presentation/legal_routes.dart';
 import 'package:eros_app/features/profile/presentation/widgets/profile_progress_bar.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
-import 'package:eros_app/features/auth/presentation/providers/marketing_consent_provider.dart';
 
-/// Terms & Conditions acceptance screen
-/// Matches screenshot: @screenshots/login/create-user/2B2A66BB-FECA-4ECA-B133-53CC77A34D91.png
+/// The last basic-info step (RFC-009 §5.11, CF-F1). Shows the documents for the region of the
+/// user's city, each with a link: one tick for the terms and the privacy notice, an
+/// acknowledgement for the safety notice and, in New York, one for the Dating Bill of Rights.
+/// Marketing is a separate, unticked choice.
+///
+/// Nothing is sent here: [signupConsentsProvider] keeps each version shown, and `POST /users`
+/// sends them with the profile.
 class TermsScreen extends ConsumerStatefulWidget {
   const TermsScreen({super.key});
 
@@ -18,19 +27,50 @@ class TermsScreen extends ConsumerStatefulWidget {
 }
 
 class _TermsScreenState extends ConsumerState<TermsScreen> {
-  bool _acceptedTerms = false;
-  bool _acceptsMarketing = false;
+  late bool _acceptedTerms;
+  late bool _acknowledgedSafety;
+  late bool _acknowledgedBillOfRights;
+  late bool _acceptsMarketing;
 
-  Future<void> _continue() async {
-    if (!_acceptedTerms) return;
+  @override
+  void initState() {
+    super.initState();
+    final agreed = ref.read(signupConsentsProvider);
+    _acceptedTerms =
+        agreed.has(DocumentKind.terms) && agreed.has(DocumentKind.privacyNotice);
+    _acknowledgedSafety = agreed.has(DocumentKind.safetyNotice);
+    _acknowledgedBillOfRights = agreed.has(DocumentKind.datingBillOfRights);
+    _acceptsMarketing = agreed.has(DocumentKind.marketing);
+  }
 
-    // Store marketing consent locally
-    await ref
-        .read(marketingConsentProvider.notifier)
-        .setMarketingConsent(_acceptsMarketing);
+  bool _canContinue(List<LegalDocument> documents) {
+    final billOfRightsShown = documentOf(documents, DocumentKind.datingBillOfRights) != null;
+    return _acceptedTerms &&
+        _acknowledgedSafety &&
+        (!billOfRightsShown || _acknowledgedBillOfRights);
+  }
 
-    // Basic info collection is complete!
-    // Navigate to profile preferences/interests section, or for now, to a completion screen
+  Future<void> _continue(List<LegalDocument> documents) async {
+    if (!_canContinue(documents)) return;
+    String? versionOf(DocumentKind kind) => documentOf(documents, kind)?.version;
+
+    final consents = ref.read(signupConsentsProvider.notifier);
+    final billOfRights = versionOf(DocumentKind.datingBillOfRights);
+    await consents.agree({
+      DocumentKind.terms: versionOf(DocumentKind.terms),
+      DocumentKind.privacyNotice: versionOf(DocumentKind.privacyNotice),
+      DocumentKind.safetyNotice: versionOf(DocumentKind.safetyNotice),
+      DocumentKind.datingBillOfRights: ?billOfRights,
+      if (_acceptsMarketing) DocumentKind.marketing: versionOf(DocumentKind.marketing),
+    });
+    await consents.forget([
+      // A city outside New York since the last visit: nothing to acknowledge any more.
+      if (billOfRights == null) DocumentKind.datingBillOfRights,
+      if (!_acceptsMarketing) DocumentKind.marketing,
+    ]);
+    final review = ref.read(consentsToReviewProvider.notifier);
+    review.state = review.state.difference(LegalRoutes.termsStepKinds);
+
     if (mounted) {
       Navigator.pushNamed(context, '/profile-creation/complete-basic');
     }
@@ -40,6 +80,10 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
   Widget build(BuildContext context) {
     final draft = ref.watch(profileCreationProvider);
     final firstName = draft.firstName ?? 'there';
+    final documents = ref.watch(legalDocumentsForCityProvider(draft.city));
+    final loaded = documents.valueOrNull;
+    final sentBack =
+        ref.watch(consentsToReviewProvider).any(LegalRoutes.termsStepKinds.contains);
 
     return Scaffold(
       appBar: AppBar(
@@ -60,125 +104,140 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
               ),
               const SizedBox(height: 32),
               Text(
-                'Welcome, $firstName!',
+                LegalCopy.termsWelcome(firstName),
                 style: Theme.of(context).textTheme.displaySmall,
               ),
               const SizedBox(height: 8),
               Text(
-                'Before we begin, please review our terms',
+                LegalCopy.termsSubtitle,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: AppColors.textSecondary,
                     ),
               ),
-              const SizedBox(height: 32),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceMuted,
-                    borderRadius: BorderRadius.circular(AppRadius.input),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Terms & Conditions',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _termsText,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
-                                height: 1.5,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
               const SizedBox(height: 24),
-              InkWell(
-                onTap: () {
-                  // TODO: Show full guidelines page
+              Expanded(
+                child: switch (documents) {
+                  AsyncData(:final value) => _Documents(
+                      documents: value,
+                      sentBack: sentBack,
+                      acceptedTerms: _acceptedTerms,
+                      acknowledgedSafety: _acknowledgedSafety,
+                      acknowledgedBillOfRights: _acknowledgedBillOfRights,
+                      acceptsMarketing: _acceptsMarketing,
+                      onTerms: (v) => setState(() => _acceptedTerms = v),
+                      onSafety: (v) => setState(() => _acknowledgedSafety = v),
+                      onBillOfRights: (v) => setState(() => _acknowledgedBillOfRights = v),
+                      onMarketing: (v) => setState(() => _acceptsMarketing = v),
+                    ),
+                  AsyncError() => _LoadError(
+                      onRetry: () => ref.invalidate(legalDocumentsForCityProvider(draft.city)),
+                    ),
+                  _ => const Center(child: CircularProgressIndicator()),
                 },
-                child: Text(
-                  'See our community guidelines',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.primaryDeep,
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.underline,
-                      ),
-                ),
               ),
               const SizedBox(height: 16),
-              CheckboxListTile(
-                value: _acceptedTerms,
-                onChanged: (value) => setState(() => _acceptedTerms = value ?? false),
-                title: RichText(
-                  text: TextSpan(
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    children: [
-                      const TextSpan(text: 'I agree to the '),
-                      TextSpan(
-                        text: 'Terms & Conditions',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: AppColors.primaryDeep,
-                            ),
-                      ),
-                      const TextSpan(text: ' and '),
-                      TextSpan(
-                        text: 'Privacy Policy',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: AppColors.primaryDeep,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-                controlAffinity: ListTileControlAffinity.leading,
-                contentPadding: EdgeInsets.zero,
+              AppButton(
+                label: LegalCopy.acceptAndContinue,
+                onPressed:
+                    loaded != null && _canContinue(loaded) ? () => _continue(loaded) : null,
               ),
-              const SizedBox(height: 12),
-              CheckboxListTile(
-                value: _acceptsMarketing,
-                onChanged: (value) => setState(() => _acceptsMarketing = value ?? false),
-                title: Text(
-                  'I consent to receive promotional emails and updates from Muse',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                controlAffinity: ListTileControlAffinity.leading,
-                contentPadding: EdgeInsets.zero,
-              ),
-              const SizedBox(height: 16),
-              AppButton(label: 'Accept and Continue', onPressed: _acceptedTerms ? _continue : null),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  static const String _termsText = '''
-By creating an account on Muse, you agree to the following terms and conditions:
+class _Documents extends StatelessWidget {
+  final List<LegalDocument> documents;
+  final bool sentBack;
+  final bool acceptedTerms;
+  final bool acknowledgedSafety;
+  final bool acknowledgedBillOfRights;
+  final bool acceptsMarketing;
+  final ValueChanged<bool> onTerms;
+  final ValueChanged<bool> onSafety;
+  final ValueChanged<bool> onBillOfRights;
+  final ValueChanged<bool> onMarketing;
 
-1. You are at least 18 years of age
-2. You will provide accurate and truthful information
-3. You will not use the service for illegal purposes
-4. You understand that dates require a deposit commitment
-5. You agree to our cancellation and refund policies
-6. You will treat all users with respect
-7. You will not share inappropriate content
-8. You understand your data will be processed according to our Privacy Policy
+  const _Documents({
+    required this.documents,
+    required this.sentBack,
+    required this.acceptedTerms,
+    required this.acknowledgedSafety,
+    required this.acknowledgedBillOfRights,
+    required this.acceptsMarketing,
+    required this.onTerms,
+    required this.onSafety,
+    required this.onBillOfRights,
+    required this.onMarketing,
+  });
 
-These terms are subject to change. Continued use of the service constitutes acceptance of any modifications.
+  Widget _tile(DocumentKind kind) =>
+      LegalDocumentTile(kind: kind, document: documentOf(documents, kind));
 
-For full terms, visit: https://muse.app/terms
-For privacy policy, visit: https://muse.app/privacy
-''';
+  @override
+  Widget build(BuildContext context) {
+    final billOfRights = documentOf(documents, DocumentKind.datingBillOfRights);
+    return ListView(
+      children: [
+        if (sentBack) ...[const ReviewAgainBanner(), const SizedBox(height: 16)],
+        _tile(DocumentKind.terms),
+        const SizedBox(height: 8),
+        _tile(DocumentKind.privacyNotice),
+        ConsentCheckbox(
+          key: const Key('consent-terms'),
+          label: LegalCopy.agreeTermsAndPrivacy,
+          value: acceptedTerms,
+          onChanged: onTerms,
+        ),
+        const SizedBox(height: 8),
+        _tile(DocumentKind.safetyNotice),
+        ConsentCheckbox(
+          key: const Key('consent-safety'),
+          label: LegalCopy.acknowledgeSafety,
+          value: acknowledgedSafety,
+          onChanged: onSafety,
+        ),
+        if (billOfRights != null) ...[
+          const SizedBox(height: 8),
+          LegalDocumentTile(kind: DocumentKind.datingBillOfRights, document: billOfRights),
+          ConsentCheckbox(
+            key: const Key('consent-bill-of-rights'),
+            label: LegalCopy.acknowledgeBillOfRights,
+            value: acknowledgedBillOfRights,
+            onChanged: onBillOfRights,
+          ),
+        ],
+        const SizedBox(height: 16),
+        ConsentCheckbox(
+          key: const Key('consent-marketing'),
+          label: LegalCopy.marketingOptIn,
+          value: acceptsMarketing,
+          onChanged: onMarketing,
+        ),
+      ],
+    );
+  }
+}
+
+class _LoadError extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _LoadError({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(LegalCopy.loadFailed, textAlign: TextAlign.center),
+          const SizedBox(height: 8),
+          TextButton(onPressed: onRetry, child: const Text(LegalCopy.retry)),
+        ],
+      ),
+    );
+  }
 }

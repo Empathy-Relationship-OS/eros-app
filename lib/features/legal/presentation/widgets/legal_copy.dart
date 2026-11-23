@@ -110,3 +110,88 @@ class PrivacySettingsCopy {
   static const String signOutFailed =
       'Your account is closed, but we could not sign you out. Please sign out.';
 }
+
+/// Short UI copy for the consents at sign-up, the re-consent screen and the starting pin
+/// (CF-F1). The legal wording itself is on the website, opened from each document's URL (primer
+/// rule 18). No em dashes.
+class LegalCopy {
+  LegalCopy._();
+
+  /// The title the app shows for a document of [kind].
+  static String documentTitle(DocumentKind kind) => switch (kind) {
+        DocumentKind.terms => 'Terms of use',
+        DocumentKind.privacyNotice => 'Privacy notice',
+        DocumentKind.safetyNotice => 'Safety notice',
+        DocumentKind.datingBillOfRights => 'New York Dating Bill of Rights',
+        DocumentKind.sensitiveData => 'Sensitive data',
+        DocumentKind.locationPin => 'Starting pin location',
+        DocumentKind.marketing => 'Marketing messages',
+        DocumentKind.fraudNotice => 'Fraud notice',
+      };
+
+  static const String read = 'Read';
+  static String readHint(DocumentKind kind) => 'Read the ${documentTitle(kind)}';
+  static const String linkFailed = "We couldn't open that page.";
+  static const String loadFailed = "We couldn't load our documents. Check your connection.";
+  static const String retry = 'Try again';
+
+  // Auth screen
+  static const String authAgreePrefix = 'By continuing, you agree to our';
+  static const String authTerms = 'Terms of use';
+  static const String authAnd = 'and';
+  static const String authPrivacy = 'Privacy notice';
+
+  // Final sign-up step
+  static String termsWelcome(String firstName) => 'Welcome, $firstName!';
+  static const String termsSubtitle = 'Before we begin, please read these and tell us you agree.';
+  static const String agreeTermsAndPrivacy = 'I agree to the Terms of use and the Privacy notice';
+  static const String acknowledgeSafety = 'I have read the Safety notice';
+  static const String acknowledgeBillOfRights = 'I have read the New York Dating Bill of Rights';
+  static const String marketingOptIn = 'Send me news and offers from Muse. You can stop any time.';
+  static const String acceptAndContinue = 'Accept and continue';
+
+  /// Shown on a sign-up step the server sent the user back to.
+  /// The server wants a consent this build can't show.
+  static const String updateToSignUp = 'Please update Muse to finish signing up.';
+
+  static const String reviewAgain =
+      'Something changed since you agreed. Please read it again and tick to carry on.';
+
+  // Sensitive data
+  static const String sensitiveTitle = 'About your more personal answers';
+  static const String sensitiveWhat =
+      'Next we ask about your sexual orientation, your ethnicity and your religion.';
+  static const String sensitiveUse =
+      'We use these answers to build your profile and to find your matches. Matching uses them '
+      'even if you choose to hide an answer from your profile.';
+  static const String sensitiveLink = 'How we handle sensitive data';
+  static const String sensitiveAgree =
+      'I agree that Muse can use my orientation, ethnicity and religion for my profile and '
+      'for matching';
+  static const String sensitiveRequired =
+      "Matching can't work without these, so you need to agree to carry on with sign-up.";
+  static const String continueLabel = 'Continue';
+
+  // Re-consent
+  static const String reconsentTitle = 'We have updated our documents';
+  static const String reconsentBody = 'Please read what changed and accept to keep using Muse.';
+  static const String reconsentUnknown = 'Something else changed too. Update Muse to read it.';
+  static const String reconsentStale = 'One of these changed again just now. Please look again.';
+  static const String reconsentFailed = "We couldn't save that. Please try again.";
+  static const String signOut = 'Sign out';
+  static const String signOutMessage =
+      'You can sign back in later. You will be asked to accept these then.';
+
+  // Starting pin
+  static const String pinTitle = 'Keep your starting pin?';
+  static const String pinBody =
+      'We keep this pin to pick venues near you. Only you can see it.';
+  static const String pinAlternative =
+      'Rather not? Use the city centre instead. That needs no permission.';
+  static const String pinLink = 'How we use your starting pin';
+  static const String pinAllow = 'Allow';
+  static const String pinNotNow = 'Not now';
+  static const String pinNotSaved =
+      'To keep a starting pin, allow us to store it. Or use the city centre instead.';
+  static const String pinFailed = "We couldn't save your choice. Please try again.";
+}

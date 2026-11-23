@@ -4,6 +4,7 @@ import 'package:eros_app/features/profile/domain/enums/preferences.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/core/constants/languages.dart';
 import 'package:eros_app/features/profile/domain/models/profile_field_limits.dart';
+import 'package:eros_app/features/legal/domain/models/signup_consent.dart';
 
 /// Request model for creating a new user profile
 /// Matches backend CreateUserRequest structure
@@ -33,6 +34,10 @@ class CreateUserRequest {
   /// The user's phone number in E.164, or null when they skipped it (RFC-010). Optional, kept
   /// so they can share it with a date if they choose; nobody else sees it. Never log it.
   final String? phoneNumber;
+
+  /// What the user agreed to at sign-up, each with the version shown (RFC-009 §5.2, CF-B2).
+  /// Left out of the JSON when empty, for a backend that predates CF-B2.
+  final List<SignupConsent> consents;
 
   // Displayable fields - client controls both value and visibility
   final DisplayableField<List<Language>> spokenLanguages;
@@ -86,6 +91,7 @@ class CreateUserRequest {
     this.occupation,
     this.bio = '',
     this.phoneNumber,
+    this.consents = const [],
   }) {
     _validate();
   }
@@ -155,6 +161,7 @@ class CreateUserRequest {
       'bio': bio,
       // Left out when there's none: a backend without RFC-010 PH-B1 rejects the unknown key.
       if (phoneNumber != null) 'phoneNumber': phoneNumber,
+      if (consents.isNotEmpty) 'consents': [for (final c in consents) c.toJson()],
       'spokenLanguages': spokenLanguages.toJson(
         (langs) => langs.map((l) => l.toBackend()).toList(),
       ),
@@ -201,6 +208,7 @@ class CreateUserRequest {
     String? occupation,
     String? bio,
     String? phoneNumber,
+    List<SignupConsent>? consents,
     DisplayableField<List<Language>>? spokenLanguages,
     DisplayableField<Religion?>? religion,
     DisplayableField<AlcoholConsumption?>? alcoholConsumption,
@@ -236,6 +244,7 @@ class CreateUserRequest {
       occupation: occupation ?? this.occupation,
       bio: bio ?? this.bio,
       phoneNumber: phoneNumber ?? this.phoneNumber,
+      consents: consents ?? this.consents,
       spokenLanguages: spokenLanguages ?? this.spokenLanguages,
       religion: religion ?? this.religion,
       alcoholConsumption: alcoholConsumption ?? this.alcoholConsumption,

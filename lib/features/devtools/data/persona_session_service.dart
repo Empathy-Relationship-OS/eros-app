@@ -20,6 +20,7 @@ import 'package:eros_app/features/profile/presentation/providers/qa_provider.dar
 import 'package:eros_app/features/profile/presentation/providers/user_profile_provider.dart';
 import 'package:eros_app/features/wallet/presentation/providers/purchase_provider.dart';
 import 'package:eros_app/features/wallet/presentation/providers/wallet_provider.dart';
+import 'package:eros_app/features/legal/presentation/providers/signup_consents_provider.dart';
 import 'devtools_api.dart';
 
 /// SharedPreferences key holding the uids of the last personas signed in as,
@@ -110,6 +111,7 @@ final List<ProviderOrFamily> userScopedProviders = [
   photoUploadProvider,
   qaDraftsProvider,
   marketingConsentProvider,
+  signupConsentsProvider,
   // Matches
   matchBatchProvider,
   last24HoursProvider,

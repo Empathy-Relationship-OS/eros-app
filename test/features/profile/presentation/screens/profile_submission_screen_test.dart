@@ -4,6 +4,10 @@ import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/core/constants/languages.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/auth/data/repositories/marketing_preference_repository.dart';
+import 'package:eros_app/features/legal/domain/consent_required.dart';
+import 'package:eros_app/features/legal/domain/models/legal_document.dart';
+import 'package:eros_app/features/legal/presentation/legal_routes.dart';
+import 'package:eros_app/features/legal/presentation/providers/signup_consents_provider.dart';
 import 'package:eros_app/features/match_preferences/data/match_preferences_repository.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 import 'package:eros_app/features/profile/domain/enums/gender.dart';
@@ -117,8 +121,12 @@ Future<void> _pump(
   ProfileCreationDraft draft,
   _LoggingApi api, {
   _FakeProfileRepository? repository,
+  Map<String, String?>? consents,
 }) async {
-  SharedPreferences.setMockInitialValues({'profile_creation_draft': jsonEncode(draft.toJson())});
+  SharedPreferences.setMockInitialValues({
+    'profile_creation_draft': jsonEncode(draft.toJson()),
+    if (consents != null) SignupConsentsNotifier.storageKey: jsonEncode(consents),
+  });
   final prefs = await SharedPreferences.getInstance();
   await tester.pumpWidget(ProviderScope(
     overrides: [
@@ -135,6 +143,8 @@ Future<void> _pump(
       routes: {
         '/profile-creation/qa': (_) => const Text('Q&A'),
         '/profile-creation/phone': (_) => const Text('Phone step'),
+        LegalRoutes.terms: (_) => const Text('Terms step'),
+        LegalRoutes.sensitiveData: (_) => const Text('Sensitive data step'),
       },
     ),
   ));
@@ -230,6 +240,68 @@ void main() {
 
       expect(find.text('Oops! Something went wrong'), findsOneWidget);
       expect(find.text('Phone step'), findsNothing);
+    });
+  });
+
+  group('ProfileSubmissionScreen and consents (RFC-009 CF-F1)', () {
+    testWidgets('sends every consent kept at sign-up with its version, then forgets them',
+        (tester) async {
+      final api = _LoggingApi(<String>[]);
+      final repository = _FakeProfileRepository(api.log);
+
+      await _pump(tester, _draft(), api, repository: repository, consents: {
+        'TERMS': 'uk-3',
+        'PRIVACY_NOTICE': 'uk-2',
+        'SAFETY_NOTICE': 'uk-1',
+        'SENSITIVE_DATA': 'uk-4',
+        'MARKETING': null,
+      });
+
+      expect(repository.sent!.toJson()['consents'], [
+        {'kind': 'TERMS', 'version': 'uk-3'},
+        {'kind': 'PRIVACY_NOTICE', 'version': 'uk-2'},
+        {'kind': 'SAFETY_NOTICE', 'version': 'uk-1'},
+        {'kind': 'SENSITIVE_DATA', 'version': 'uk-4'},
+      ]);
+      expect(find.text('Q&A'), findsOneWidget);
+      final container = ProviderScope.containerOf(tester.element(find.text('Q&A')));
+      expect(container.read(signupConsentsProvider).agreed, isEmpty);
+    });
+
+    testWidgets('a 400 for sensitive data goes back to that step, forgetting it',
+        (tester) async {
+      final api = _LoggingApi(<String>[]);
+      final repository = _FakeProfileRepository(
+        api.log,
+        error: const ConsentRequiredException([DocumentKind.sensitiveData], statusCode: 400),
+      );
+
+      await _pump(tester, _draft(), api, repository: repository, consents: {
+        'TERMS': 'uk-3',
+        'SENSITIVE_DATA': 'uk-old',
+      });
+
+      expect(find.text('Sensitive data step'), findsOneWidget);
+      final container = ProviderScope.containerOf(tester.element(find.text('Sensitive data step')));
+      expect(container.read(consentsToReviewProvider), {DocumentKind.sensitiveData});
+      expect(container.read(signupConsentsProvider).agreed, {DocumentKind.terms: 'uk-3'});
+    });
+
+    testWidgets('a 400 for the terms and sensitive data goes to the terms step first',
+        (tester) async {
+      final api = _LoggingApi(<String>[]);
+      final repository = _FakeProfileRepository(
+        api.log,
+        error: const ConsentRequiredException(
+          [DocumentKind.sensitiveData, DocumentKind.datingBillOfRights],
+          statusCode: 400,
+        ),
+      );
+
+      await _pump(tester, _draft(), api, repository: repository);
+
+      expect(find.text('Terms step'), findsOneWidget);
+      expect(find.text('Oops! Something went wrong'), findsNothing);
     });
   });
 }

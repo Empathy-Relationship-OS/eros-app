@@ -13,6 +13,10 @@ import 'package:eros_app/features/date_preferences/presentation/providers/date_p
 import 'package:eros_app/features/date_preferences/presentation/screens/start_point_map_screen.dart';
 import 'package:eros_app/features/date_preferences/presentation/widgets/dating_city_picker.dart';
 import 'package:eros_app/features/date_preferences/presentation/widgets/nearest_district.dart';
+import 'package:eros_app/features/legal/domain/consent_required.dart';
+import 'package:eros_app/features/legal/domain/models/legal_document.dart';
+import 'package:eros_app/features/legal/presentation/widgets/legal_copy.dart';
+import 'package:eros_app/features/legal/presentation/widgets/location_pin_consent_sheet.dart';
 import 'package:eros_app/features/date_preferences/presentation/widgets/travel_distance_slider.dart';
 import 'package:eros_app/features/profile/presentation/screens/edit/edit_section_scaffold.dart';
 
@@ -129,6 +133,12 @@ class _EditWhereScreenState extends ConsumerState<EditWhereScreen> {
       );
       if (!mounted || choice == null) return;
 
+      // A new pin needs the user's leave to keep it (LOCATION_PIN, RFC-009 §5.4). Not now keeps
+      // what the city had.
+      if (choice case StartPointPinned(:final point) when point != city.start?.point) {
+        if (!await ensureLocationPinConsent(context, ref) || !mounted) return;
+      }
+
       final updated = switch (choice) {
         StartPointCityCentre() => city.copyWith(clearStart: true),
         // The same pin again keeps the server's district for it.
@@ -182,7 +192,16 @@ class _EditWhereScreenState extends ConsumerState<EditWhereScreen> {
       ],
       maxTravelMeters: TravelDistanceSlider.snap(stops, _maxTravelMeters),
     );
-    await ref.read(datePreferencesProvider.notifier).saveSection(patch);
+    try {
+      await ref.read(datePreferencesProvider.notifier).saveSection(patch);
+    } on ConsentRequiredException catch (e) {
+      // The server has no LOCATION_PIN for a pin it was sent: ask, then save again.
+      if (!e.missing.contains(DocumentKind.locationPin) || !mounted) rethrow;
+      if (!await askForLocationPin(context, ref)) {
+        throw DatePreferencesRepositoryException(LegalCopy.pinNotSaved);
+      }
+      await ref.read(datePreferencesProvider.notifier).saveSection(patch);
+    }
   }
 
   @override
