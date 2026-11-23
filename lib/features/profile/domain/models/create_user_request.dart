@@ -5,6 +5,7 @@ import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
 import 'package:eros_app/core/constants/languages.dart';
 import 'package:eros_app/features/profile/domain/models/profile_field_limits.dart';
 import 'package:eros_app/features/legal/domain/models/signup_consent.dart';
+import 'package:eros_app/features/legal/domain/models/store_age_signal.dart';
 
 /// Request model for creating a new user profile
 /// Matches backend CreateUserRequest structure
@@ -38,6 +39,9 @@ class CreateUserRequest {
   /// What the user agreed to at sign-up, each with the version shown (RFC-009 §5.2, CF-B2).
   /// Left out of the JSON when empty, for a backend that predates CF-B2.
   final List<SignupConsent> consents;
+  /// The app-store age signal read before the date of birth step, or null when there was none
+  /// (RFC-009 §5.3.1, CF-F6). Left out of the JSON when null: no signal never blocks anyone.
+  final StoreAgeSignal? ageSignal;
 
   // Displayable fields - client controls both value and visibility
   final DisplayableField<List<Language>> spokenLanguages;
@@ -92,6 +96,7 @@ class CreateUserRequest {
     this.bio = '',
     this.phoneNumber,
     this.consents = const [],
+    this.ageSignal,
   }) {
     _validate();
   }
@@ -162,6 +167,7 @@ class CreateUserRequest {
       // Left out when there's none: a backend without RFC-010 PH-B1 rejects the unknown key.
       if (phoneNumber != null) 'phoneNumber': phoneNumber,
       if (consents.isNotEmpty) 'consents': [for (final c in consents) c.toJson()],
+      if (ageSignal != null) 'ageSignal': ageSignal!.toJson(),
       'spokenLanguages': spokenLanguages.toJson(
         (langs) => langs.map((l) => l.toBackend()).toList(),
       ),
@@ -209,6 +215,7 @@ class CreateUserRequest {
     String? bio,
     String? phoneNumber,
     List<SignupConsent>? consents,
+    StoreAgeSignal? ageSignal,
     DisplayableField<List<Language>>? spokenLanguages,
     DisplayableField<Religion?>? religion,
     DisplayableField<AlcoholConsumption?>? alcoholConsumption,
@@ -245,6 +252,7 @@ class CreateUserRequest {
       bio: bio ?? this.bio,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       consents: consents ?? this.consents,
+      ageSignal: ageSignal ?? this.ageSignal,
       spokenLanguages: spokenLanguages ?? this.spokenLanguages,
       religion: religion ?? this.religion,
       alcoholConsumption: alcoholConsumption ?? this.alcoholConsumption,

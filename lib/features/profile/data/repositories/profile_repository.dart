@@ -10,6 +10,7 @@ import 'package:eros_app/features/profile/domain/models/create_user_request.dart
 import 'package:eros_app/features/profile/domain/models/my_profile.dart';
 import 'package:eros_app/features/profile/domain/models/update_user_request.dart';
 import 'package:eros_app/features/profile/domain/models/public_profile.dart';
+import 'package:eros_app/features/legal/data/repositories/age_signal_repository.dart';
 
 /// Repository for profile-related API calls
 class ProfileRepository {
@@ -76,7 +77,12 @@ class ProfileRepository {
       throw ProfileRepositoryException(
         'There was a problem verifying your identity. Please try signing in again.',
       );
-    } on ForbiddenException {
+    } on ForbiddenException catch (e) {
+      // The age signal sent with it was under 18 (RFC-009 CF-B12): nothing was created.
+      if (isUnderageRefusal(e)) {
+        _logger.w('🚫 Sign-up refused: under 18');
+        throw const UnderageSignUpException();
+      }
       _logger.e('🚫 Forbidden (403) - Server rejected the request');
       throw ProfileRepositoryException(
         'We couldn\'t process your request at this time. Please try again later.',

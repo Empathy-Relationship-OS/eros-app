@@ -18,12 +18,13 @@ class LoggingInterceptor extends Interceptor {
   LoggingInterceptor({Logger? logger}) : _logger = logger ?? Logger();
 
   /// True for paths whose bodies are private: anything containing `/chat`, `/report`,
-  /// `/match-preferences` or `/verification`.
+  /// `/match-preferences`, `/verification` or `/age-signal` (an age band, RFC-009 primer rule 3).
   static bool isPrivatePath(String path) =>
       path.contains('/chat') ||
       path.contains('/report') ||
       path.contains('/match-preferences') ||
-      path.contains('/verification');
+      path.contains('/verification') ||
+      path.contains('/age-signal');
 
   /// True when only the method, path and status may be logged.
   static bool _bodyless(RequestOptions options) =>
@@ -90,7 +91,8 @@ Response: ${redactPhoneNumbers(err.response?.data)}
     body = redactPhoneNumbers(body);
     if (body is Map) {
       final sanitized = Map.from(body);
-      const sensitiveFields = ['password', 'token', 'secret'];
+      // `ageSignal` rides on POST /users and holds an age band (RFC-009 primer rule 3).
+      const sensitiveFields = ['password', 'token', 'secret', 'ageSignal'];
 
       for (final field in sensitiveFields) {
         if (sanitized.containsKey(field)) {

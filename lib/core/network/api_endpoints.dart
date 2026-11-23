@@ -43,6 +43,9 @@ class _UsersEndpoints {
   /// PUT /users/me/phone - Set, replace or remove the current user's phone number (RFC-010)
   String updatePhoneNumber() => '/users/me/phone';
 
+  /// POST /users/me/age-signal - Send an existing user's app-store age signal (RFC-009 CF-B12)
+  String sendAgeSignal() => '/users/me/age-signal';
+
   /// GET /users/id/{userId}/public - Get public profile by ID
   String getPublicProfile(String userId) => '/users/id/$userId/public';
 

@@ -47,6 +47,10 @@ dependencies:
   http: ^1.2.2
   dio: ^5.7.0
 
+  # App-store age signals (RFC-009 CF-F6). 0.5.1 is the newest that resolves on Flutter 3.41;
+  # 0.11.0 needs Flutter 3.47.
+  age_range_signals: 0.5.1
+
   # Local Storage
   shared_preferences: ^2.3.4
 
@@ -103,6 +107,9 @@ dev_dependencies:
 
   # App Icon Generator
   flutter_launcher_icons: ^0.14.2
+
+  # Stands in for age_range_signals' platform in tests (MockPlatformInterfaceMixin)
+  plugin_platform_interface: ^2.1.8
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
