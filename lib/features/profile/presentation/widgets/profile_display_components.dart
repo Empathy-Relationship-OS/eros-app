@@ -60,18 +60,42 @@ class ThumbnailPhoto extends StatelessWidget {
   final String photoPath;
   final bool isLocal;
 
+  /// Someone else's profile: a long-press offers "Report this photo" (CF-F4).
+  final VoidCallback? onLongPress;
+
   const ThumbnailPhoto({
     super.key,
     required this.photoPath,
     required this.isLocal,
+    this.onLongPress,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 500,
-      width: double.infinity,
-      child: _ProfileImage(path: photoPath, isLocal: isLocal, placeholderIconSize: 64),
+    return _LongPressable(
+      onLongPress: onLongPress,
+      child: SizedBox(
+        height: 500,
+        width: double.infinity,
+        child: _ProfileImage(path: photoPath, isLocal: isLocal, placeholderIconSize: 64),
+      ),
+    );
+  }
+}
+
+/// A photo that offers its actions on a long-press, or just the photo without [onLongPress].
+class _LongPressable extends StatelessWidget {
+  final VoidCallback? onLongPress;
+  final Widget child;
+
+  const _LongPressable({required this.onLongPress, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    if (onLongPress == null) return child;
+    return Semantics(
+      onLongPressHint: 'Report this photo',
+      child: GestureDetector(onLongPress: onLongPress, child: child),
     );
   }
 }
@@ -423,9 +447,13 @@ class ProfilePhoto {
   final String path;
   final bool isLocal;
 
+  /// Someone else's profile: a long-press offers "Report this photo" (CF-F4).
+  final VoidCallback? onLongPress;
+
   ProfilePhoto({
     required this.path,
     required this.isLocal,
+    this.onLongPress,
   });
 }
 
@@ -465,6 +493,7 @@ class OrderedInterspersedContent extends StatelessWidget {
         orderedWidgets.add(StackedPhoto(
           photoPath: photo.path,
           isLocal: photo.isLocal,
+          onLongPress: photo.onLongPress,
         ));
         orderedWidgets.add(const SizedBox(height: 16));
         photoIndex++;
@@ -587,22 +616,29 @@ class StackedPhoto extends StatelessWidget {
   final String photoPath;
   final bool isLocal;
 
+  /// Someone else's profile: a long-press offers "Report this photo" (CF-F4).
+  final VoidCallback? onLongPress;
+
   const StackedPhoto({
     super.key,
     required this.photoPath,
     required this.isLocal,
+    this.onLongPress,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        child: SizedBox(
-          height: 400,
-          width: double.infinity,
-          child: _ProfileImage(path: photoPath, isLocal: isLocal, placeholderIconSize: 48),
+      child: _LongPressable(
+        onLongPress: onLongPress,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          child: SizedBox(
+            height: 400,
+            width: double.infinity,
+            child: _ProfileImage(path: photoPath, isLocal: isLocal, placeholderIconSize: 48),
+          ),
         ),
       ),
     );

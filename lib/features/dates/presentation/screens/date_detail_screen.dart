@@ -29,6 +29,7 @@ import 'package:eros_app/features/dates/presentation/screens/deposit_sheet.dart'
 import 'package:eros_app/features/dates/presentation/screens/venue_ranking_screen.dart';
 import 'package:eros_app/features/home/presentation/screens/home_screen.dart';
 import 'package:eros_app/features/matching/presentation/screens/public_profile_view_screen.dart';
+import 'package:eros_app/features/safety/presentation/profile_safety_flow.dart';
 import 'package:eros_app/features/safety/presentation/report_flow.dart';
 import 'package:eros_app/features/safety/presentation/widgets/safety_copy.dart';
 
@@ -228,24 +229,30 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> with RouteA
         borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.divider),
       ),
-      child: IntrinsicHeight(
+      child: Stack(
+        children: [
+          IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Large partner photo on the left (tappable)
             GestureDetector(
-              onTap: () {
+              onTap: () async {
                 // Navigate to public profile view screen
-                Navigator.of(context).push(
+                final exit = await Navigator.of(context).push<DatePartnerSafetyExit>(
                   MaterialPageRoute(
                     builder: (context) => PublicProfileViewScreen(
                       userId: partnerId,
                       matchId: dateDetail.matchId,
                       isFromLast24Hours: false,
                       hideActionButtons: true, // Already matched, viewing from date screen
+                      date: dateDetail,
                     ),
                   ),
                 );
+                if (exit != null && context.mounted) {
+                  _onPartnerSafetyExit(context, exit, dateDetail, currentUid);
+                }
               },
               child: Container(
                 width: 140,
@@ -267,10 +274,10 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> with RouteA
               ),
             ),
 
-            // Partner name and date facts on the right
+            // Partner name and date facts on the right, clear of the menu
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 40, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -318,8 +325,60 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> with RouteA
             ),
           ],
         ),
+          ),
+          // "Report" and "Block" on the partner (CF-F4). At the bottom, clear of the screen's
+          // own menu over the top corner.
+          if (showDatePartnerSafety(dateDetail))
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: ProfileSafetyMenu(
+                reportLabel: datePartnerReportLabel(dateDetail),
+                onReport: () => _partnerSafety(
+                    context, dateDetail, partnerId, currentUid, ProfileSafetyAction.report),
+                onBlock: () => _partnerSafety(
+                    context, dateDetail, partnerId, currentUid, ProfileSafetyAction.block),
+              ),
+            ),
+        ],
       ),
     );
+  }
+
+  Future<void> _partnerSafety(
+    BuildContext context,
+    DateDetail dateDetail,
+    String partnerId,
+    String currentUid,
+    ProfileSafetyAction action,
+  ) async {
+    final exit = await runDatePartnerSafety(
+      context,
+      ref,
+      date: dateDetail,
+      partnerId: partnerId,
+      action: action,
+    );
+    if (exit != null && context.mounted) {
+      _onPartnerSafetyExit(context, exit, dateDetail, currentUid);
+    }
+  }
+
+  /// After a report or block on the partner they're hidden, so the date screen closes (the
+  /// lists are already refetched). A block refused for a date in progress opens the cancel
+  /// dialog instead.
+  void _onPartnerSafetyExit(
+    BuildContext context,
+    DatePartnerSafetyExit exit,
+    DateDetail dateDetail,
+    String currentUid,
+  ) {
+    switch (exit) {
+      case DatePartnerSafetyExit.hidden:
+        Navigator.of(context).maybePop();
+      case DatePartnerSafetyExit.cancelDate:
+        _showCancelDialog(context, dateDetail, currentUid);
+    }
   }
 
   Widget _buildStatusPill(DateDetail dateDetail, String currentUid) {

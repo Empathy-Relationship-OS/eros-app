@@ -129,3 +129,67 @@ class SafetyLimits {
   /// own, and a report matters more than its images, so after this it's sent without them.
   static const Duration submitUploadWait = Duration(seconds: 20);
 }
+
+/// What a report outside a date is about (RFC-009 §5.5). The list is fixed, unlike date report
+/// reasons: the backend's `content_reports.category` and its deadlines depend on it. Labels are
+/// in `SafetyCopy.categoryLabel`.
+enum ContentReportCategory {
+  intimateImage,
+  underage,
+  scam,
+  impersonation,
+  harassment,
+  illegalContent,
+  copyright,
+  other,
+}
+
+/// Body of `POST /safety/content-reports`. The reporter comes from the token.
+class ContentReportRequest {
+  final String targetUserId;
+
+  /// The reported photo, when the report came from one.
+  final int? targetMediaId;
+  final ContentReportCategory category;
+
+  /// Already cleaned with `UserText`; null when the person wrote nothing.
+  final String? description;
+
+  const ContentReportRequest({
+    required this.targetUserId,
+    this.targetMediaId,
+    required this.category,
+    this.description,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'targetUserId': targetUserId,
+        if (targetMediaId != null) 'targetMediaId': targetMediaId,
+        'category': enumToWire(category),
+        if (description != null) 'description': description,
+      };
+}
+
+/// Response of `POST /safety/content-reports`. [alreadyReported] is true when the reporter had
+/// already reported this person: [reportId] is that first report, and nothing new was stored.
+class ContentReportResult {
+  final int reportId;
+  final bool alreadyReported;
+
+  const ContentReportResult({required this.reportId, required this.alreadyReported});
+
+  factory ContentReportResult.fromJson(Map<String, dynamic> json) => ContentReportResult(
+        reportId: json['reportId'] as int,
+        alreadyReported: json['alreadyReported'] as bool? ?? false,
+      );
+}
+
+/// How `POST /safety/blocks` went.
+enum BlockOutcome {
+  /// Blocked now, or already blocked before: either way they're hidden from each other.
+  blocked,
+
+  /// 409 `ACTIVE_DATE`: a date between them is in progress. Nothing was written; the person
+  /// cancels the date first, so money only moves through the cancel rules (RFC-009 §5.8).
+  activeDate,
+}

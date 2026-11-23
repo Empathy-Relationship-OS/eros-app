@@ -1,3 +1,4 @@
+import 'package:eros_app/features/dates/data/models/date_models.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/safety/data/models/safety_models.dart';
 import 'package:eros_app/features/safety/data/repositories/safety_repository.dart';
@@ -100,5 +101,93 @@ void main() {
       ),
       throwsA(isA<ConflictException>()),
     );
+  });
+
+  group('reports and blocks outside a date (RFC-009 §5.5, §5.8)', () {
+    test('a photo report sends the target, the media id and the category', () async {
+      final result = await repository.reportContent(
+        const ContentReportRequest(
+          targetUserId: 'user2',
+          targetMediaId: 42,
+          category: ContentReportCategory.intimateImage,
+          description: 'Not appropriate',
+        ),
+      );
+
+      expect(api.sent('POST', '/safety/content-reports').single, {
+        'targetUserId': 'user2',
+        'targetMediaId': 42,
+        'category': 'INTIMATE_IMAGE',
+        'description': 'Not appropriate',
+      });
+      expect(result.reportId, 31);
+      expect(result.alreadyReported, isFalse);
+    });
+
+    test('a profile report leaves out the media id and an empty description', () async {
+      await repository.reportContent(
+        const ContentReportRequest(
+          targetUserId: 'user2',
+          category: ContentReportCategory.illegalContent,
+        ),
+      );
+
+      expect(api.sent('POST', '/safety/content-reports').single, {
+        'targetUserId': 'user2',
+        'category': 'ILLEGAL_CONTENT',
+      });
+    });
+
+    test('every category goes on the wire as the backend names it', () {
+      expect(
+        ContentReportCategory.values.map(enumToWire),
+        [
+          'INTIMATE_IMAGE',
+          'UNDERAGE',
+          'SCAM',
+          'IMPERSONATION',
+          'HARASSMENT',
+          'ILLEGAL_CONTENT',
+          'COPYRIGHT',
+          'OTHER',
+        ],
+      );
+    });
+
+    test('a repeat report reads alreadyReported', () async {
+      api.responses['POST /safety/content-reports'] = {'reportId': 30, 'alreadyReported': true};
+
+      final result = await repository.reportContent(
+        const ContentReportRequest(targetUserId: 'user2', category: ContentReportCategory.scam),
+      );
+
+      expect(result.reportId, 30);
+      expect(result.alreadyReported, isTrue);
+    });
+
+    test('a block sends the user id', () async {
+      final outcome = await repository.block('user2');
+
+      expect(api.sent('POST', '/safety/blocks').single, {'userId': 'user2'});
+      expect(outcome, BlockOutcome.blocked);
+    });
+
+    test('a 409 ACTIVE_DATE is a date in progress, not an error', () async {
+      api.responses['POST /safety/blocks'] = ConflictException(
+        'Cancel your date first. Then you can block them.',
+        originalError: safetyFixture('block_active_date'),
+      );
+
+      expect(await repository.block('user2'), BlockOutcome.activeDate);
+    });
+
+    test('any other 409, and a 404, are thrown', () async {
+      api.responses['POST /safety/blocks'] =
+          const ConflictException('conflict', originalError: {'error': 'conflict'});
+      expect(() => repository.block('user2'), throwsA(isA<ConflictException>()));
+
+      api.responses['POST /safety/blocks'] = const NotFoundException('Match not found');
+      expect(() => repository.block('user2'), throwsA(isA<NotFoundException>()));
+    });
   });
 }

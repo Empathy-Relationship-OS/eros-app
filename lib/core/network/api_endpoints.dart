@@ -298,6 +298,13 @@ class _SafetyEndpoints {
 
   /// POST /dates/{dateId}/report - Report the partner, or cancel on safety grounds
   String report(String dateId) => '/dates/$dateId/report';
+
+  /// POST /safety/content-reports - Report a profile or one of its photos, without a date
+  /// (RFC-009 §5.5)
+  String contentReports() => '/safety/content-reports';
+
+  /// POST /safety/blocks - Block a match, without a report (RFC-009 §5.8)
+  String blocks() => '/safety/blocks';
 }
 
 // ====================

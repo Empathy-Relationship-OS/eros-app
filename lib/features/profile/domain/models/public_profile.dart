@@ -67,6 +67,11 @@ class PublicProfileDTO {
 class PublicProfileDetailsDTO {
   final String? coverPhoto;
   final List<String> photos;
+
+  /// Each photo's media id, in the same order as [photos], so a photo can be reported
+  /// (`targetMediaId`, RFC-009 §5.5). Null from a backend that doesn't send `photoIds` yet:
+  /// a photo report then reports the profile alone.
+  final List<int>? photoIds;
   final String? bio;
   final List<String> hobbies;
   final List<String> traits;
@@ -89,6 +94,7 @@ class PublicProfileDetailsDTO {
   PublicProfileDetailsDTO({
     this.coverPhoto,
     required this.photos,
+    this.photoIds,
     this.bio,
     required this.hobbies,
     required this.traits,
@@ -113,6 +119,7 @@ class PublicProfileDetailsDTO {
     return PublicProfileDetailsDTO(
       coverPhoto: json['coverPhoto'] as String?,
       photos: List<String>.from(json['photos'] as List),
+      photoIds: (json['photoIds'] as List?)?.map((id) => (id as num).toInt()).toList(),
       bio: json['bio'] as String?,
       hobbies: List<String>.from(json['hobbies'] as List),
       traits: List<String>.from(json['traits'] as List),
@@ -150,6 +157,7 @@ class PublicProfileDetailsDTO {
     return {
       if (coverPhoto != null) 'coverPhoto': coverPhoto,
       'photos': photos,
+      if (photoIds != null) 'photoIds': photoIds,
       if (bio != null) 'bio': bio,
       'hobbies': hobbies,
       'traits': traits,

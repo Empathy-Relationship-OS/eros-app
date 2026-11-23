@@ -285,6 +285,16 @@ class MatchBatchNotifier extends StateNotifier<MatchBatchState> {
     }
   }
 
+  /// Takes a reported profile off the batch, then refetches it (primer rule 20). The backend
+  /// drops anyone hidden by a report or block from the batch it serves again, and serving this
+  /// window's unacted profiles again doesn't count as a new batch (CF-B4, CF-B7).
+  void hideProfile(int matchId) {
+    final hadOthers = state.profiles.any((profile) => profile.matchId != matchId);
+    removeProfile(matchId);
+    // With none left, removeProfile has already fetched the next batch if there is one.
+    if (hadOthers) fetchDailyBatch();
+  }
+
   /// Clear error message
   void clearError() {
     state = state.copyWith(clearError: true);
@@ -422,6 +432,12 @@ class Last24HoursNotifier extends StateNotifier<Last24HoursState> {
         .toList();
 
     state = state.copyWith(profiles: updatedProfiles);
+  }
+
+  /// Takes a reported profile off the list, then refetches it (primer rule 20).
+  void hideProfile(int matchId) {
+    removeProfile(matchId);
+    fetchLast24HourPasses();
   }
 
   /// Take action on a match from last 24 hours (only like is allowed)

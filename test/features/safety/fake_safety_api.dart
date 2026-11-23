@@ -34,6 +34,8 @@ class FakeSafetyApi implements ApiClient {
         'GET /safety/reasons': safetyFixture('reasons'),
         'POST /dates/7/report/evidence-url': safetyFixture('evidence_url'),
         'POST /dates/7/report': safetyFixture('report_refunded'),
+        'POST /safety/content-reports': safetyFixture('content_report_created'),
+        'POST /safety/blocks': safetyFixture('block_created'),
       };
 
   /// The requests to [path] with [method].
