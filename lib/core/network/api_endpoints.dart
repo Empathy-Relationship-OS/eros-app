@@ -21,6 +21,7 @@ class ApiEndpoints {
   static final safety = _SafetyEndpoints();
   static final verification = _VerificationEndpoints();
   static final notices = _NoticesEndpoints();
+  static final legal = _LegalEndpoints();
 }
 
 // ====================
@@ -44,6 +45,9 @@ class _UsersEndpoints {
 
   /// GET /users/id/{userId}/public - Get public profile by ID
   String getPublicProfile(String userId) => '/users/id/$userId/public';
+
+  /// DELETE /users/me - Close the account (soft delete; erased 30 days later, RFC-009 §5.9)
+  String deleteCurrentUser() => '/users/me';
 }
 
 // ====================
@@ -334,4 +338,22 @@ class _NoticesEndpoints {
 
   /// POST /users/me/notices/{noticeId}/read - Mark one of them read (204)
   String markRead(int noticeId) => '/users/me/notices/$noticeId/read';
+}
+
+// ====================
+// LEGAL ENDPOINTS (RFC-009 §6)
+// ====================
+class _LegalEndpoints {
+  /// GET /legal/documents?cityId={cityId} - The current documents for the city's region
+  ///
+  /// Without [cityId], the server answers for the `ALL` region.
+  String documents({int? cityId}) {
+    if (cityId != null) {
+      return '/legal/documents?cityId=${Uri.encodeQueryComponent(cityId.toString())}';
+    }
+    return '/legal/documents';
+  }
+
+  /// GET /users/me/consents - The newest consent per kind; POST - grant or withdraw
+  String consents() => '/users/me/consents';
 }

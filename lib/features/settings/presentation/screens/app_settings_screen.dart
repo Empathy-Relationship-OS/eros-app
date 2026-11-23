@@ -5,6 +5,8 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/constants/languages.dart';
 import 'package:eros_app/features/devtools/devtools_config.dart';
 import 'package:eros_app/features/devtools/presentation/dev_menu_navigation.dart';
+import 'package:eros_app/features/legal/presentation/screens/privacy_settings_screen.dart';
+import 'package:eros_app/features/legal/presentation/widgets/legal_copy.dart';
 import 'package:eros_app/features/profile/presentation/widgets/phone_number_settings_tile.dart';
 import '../providers/app_settings_provider.dart';
 
@@ -12,6 +14,7 @@ import '../providers/app_settings_provider.dart';
 /// - Add, change or remove their phone number (RFC-010)
 /// - Toggle notifications on/off (with permission handling)
 /// - Change app language
+/// - Open "Privacy, safety and legal" (RFC-009 §5.11)
 class AppSettingsScreen extends ConsumerStatefulWidget {
   const AppSettingsScreen({super.key});
 
@@ -137,6 +140,26 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
               onLanguageSelected: (language) {
                 ref.read(appSettingsProvider.notifier).updateLanguage(language);
               },
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 24),
+
+        // Privacy, safety and legal (RFC-009 §5.11): documents, consents, data requests and
+        // account deletion.
+        _SettingsSection(
+          title: PrivacySettingsCopy.settingsSectionTitle,
+          children: [
+            ListTile(
+              key: const ValueKey('privacy-settings'),
+              leading: const Icon(Icons.shield_outlined, color: AppColors.textPrimary),
+              title: const Text(PrivacySettingsCopy.settingsRowTitle),
+              subtitle: const Text(PrivacySettingsCopy.settingsRowSubtitle),
+              trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const PrivacySettingsScreen()),
+              ),
             ),
           ],
         ),
