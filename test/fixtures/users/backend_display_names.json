@@ -24,14 +24,6 @@
         "Other",
         "Prefer not to say"
     ],
-    "politicalView": [
-        "Liberal",
-        "Moderate",
-        "Conservative",
-        "Apolitical",
-        "Other",
-        "Prefer not to say"
-    ],
     "alcoholConsumption": [
         "Never",
         "Sometimes",
@@ -199,7 +191,8 @@
         "South Asian",
         "Southeast Asian",
         "White/Caucasian",
-        "Other"
+        "Other",
+        "Prefer not to say"
     ],
     "brainAttribute": [
         "I have AD(H)D",

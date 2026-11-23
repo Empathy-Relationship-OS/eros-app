@@ -80,7 +80,6 @@ class PublicProfileDetailsDTO {
   final List<String> sharedInterests;
   final List<String>? spokenLanguages;
   final String? religion;
-  final String? politicalView;
   final String? sexualOrientation;
   final String? pronouns;
   final String? starSign;
@@ -103,7 +102,6 @@ class PublicProfileDetailsDTO {
     required this.sharedInterests,
     this.spokenLanguages,
     this.religion,
-    this.politicalView,
     this.sexualOrientation,
     this.pronouns,
     this.starSign,
@@ -132,7 +130,6 @@ class PublicProfileDetailsDTO {
           ? List<String>.from(json['spokenLanguages'] as List)
           : null,
       religion: json['religion'] as String?,
-      politicalView: json['politicalView'] as String?,
       sexualOrientation: json['sexualOrientation'] as String?,
       pronouns: json['pronouns'] as String?,
       starSign: json['starSign'] as String?,
@@ -166,7 +163,6 @@ class PublicProfileDetailsDTO {
       'sharedInterests': sharedInterests,
       if (spokenLanguages != null) 'spokenLanguages': spokenLanguages,
       if (religion != null) 'religion': religion,
-      if (politicalView != null) 'politicalView': politicalView,
       if (sexualOrientation != null) 'sexualOrientation': sexualOrientation,
       if (pronouns != null) 'pronouns': pronouns,
       if (starSign != null) 'starSign': starSign,

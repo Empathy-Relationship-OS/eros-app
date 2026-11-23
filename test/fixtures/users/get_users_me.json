@@ -40,10 +40,6 @@
         "field": "Christianity",
         "display": false
     },
-    "politicalView": {
-        "field": null,
-        "display": false
-    },
     "alcoholConsumption": {
         "field": "Never",
         "display": true

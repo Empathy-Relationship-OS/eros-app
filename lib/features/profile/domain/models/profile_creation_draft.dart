@@ -44,7 +44,6 @@ class ProfileCreationDraft {
   // Preferences (as nullable displayable fields)
   DisplayableField<List<Language>>? spokenLanguages;
   DisplayableField<Religion?>? religion;
-  DisplayableField<PoliticalView?>? politicalView;
   DisplayableField<AlcoholConsumption?>? alcoholConsumption;
   DisplayableField<SmokingStatus?>? smokingStatus;
   DisplayableField<Diet?>? diet;
@@ -84,7 +83,6 @@ class ProfileCreationDraft {
     this.traits,
     this.spokenLanguages,
     this.religion,
-    this.politicalView,
     this.alcoholConsumption,
     this.smokingStatus,
     this.diet,
@@ -123,7 +121,6 @@ class ProfileCreationDraft {
         traits!.length <= 10 &&
         spokenLanguages != null &&
         religion != null &&
-        politicalView != null &&
         alcoholConsumption != null &&
         smokingStatus != null &&
         diet != null &&
@@ -166,7 +163,6 @@ class ProfileCreationDraft {
       phoneNumber: phoneNumber,
       spokenLanguages: spokenLanguages!,
       religion: religion!,
-      politicalView: politicalView!,
       alcoholConsumption: alcoholConsumption!,
       smokingStatus: smokingStatus!,
       diet: diet!,
@@ -218,8 +214,6 @@ class ProfileCreationDraft {
         ),
       if (religion != null)
         'religion': religion!.toJson((r) => r?.toBackend()),
-      if (politicalView != null)
-        'politicalView': politicalView!.toJson((p) => p?.toBackend()),
       if (alcoholConsumption != null)
         'alcoholConsumption':
             alcoholConsumption!.toJson((a) => a?.toBackend()),
@@ -313,14 +307,6 @@ class ProfileCreationDraft {
               json['religion'] as Map<String, dynamic>,
               (field) =>
                   field != null ? Religion.fromBackend(field as String) : null,
-            )
-          : null,
-      politicalView: json['politicalView'] != null
-          ? DisplayableField.fromJson(
-              json['politicalView'] as Map<String, dynamic>,
-              (field) => field != null
-                  ? PoliticalView.fromBackend(field as String)
-                  : null,
             )
           : null,
       alcoholConsumption: json['alcoholConsumption'] != null
@@ -457,7 +443,6 @@ class ProfileCreationDraft {
     List<Trait>? traits,
     DisplayableField<List<Language>>? spokenLanguages,
     DisplayableField<Religion?>? religion,
-    DisplayableField<PoliticalView?>? politicalView,
     DisplayableField<AlcoholConsumption?>? alcoholConsumption,
     DisplayableField<SmokingStatus?>? smokingStatus,
     DisplayableField<Diet?>? diet,
@@ -495,7 +480,6 @@ class ProfileCreationDraft {
       traits: traits ?? this.traits,
       spokenLanguages: spokenLanguages ?? this.spokenLanguages,
       religion: religion ?? this.religion,
-      politicalView: politicalView ?? this.politicalView,
       alcoholConsumption: alcoholConsumption ?? this.alcoholConsumption,
       smokingStatus: smokingStatus ?? this.smokingStatus,
       diet: diet ?? this.diet,

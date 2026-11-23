@@ -37,7 +37,6 @@ class CreateUserRequest {
   // Displayable fields - client controls both value and visibility
   final DisplayableField<List<Language>> spokenLanguages;
   final DisplayableField<Religion?> religion;
-  final DisplayableField<PoliticalView?> politicalView;
   final DisplayableField<AlcoholConsumption?> alcoholConsumption;
   final DisplayableField<SmokingStatus?> smokingStatus;
   final DisplayableField<Diet?> diet;
@@ -70,7 +69,6 @@ class CreateUserRequest {
     required this.traits,
     required this.spokenLanguages,
     required this.religion,
-    required this.politicalView,
     required this.alcoholConsumption,
     required this.smokingStatus,
     required this.diet,
@@ -161,7 +159,6 @@ class CreateUserRequest {
         (langs) => langs.map((l) => l.toBackend()).toList(),
       ),
       'religion': religion.toJson((r) => r?.toBackend()),
-      'politicalView': politicalView.toJson((p) => p?.toBackend()),
       'alcoholConsumption': alcoholConsumption.toJson((a) => a?.toBackend()),
       'smokingStatus': smokingStatus.toJson((s) => s?.toBackend()),
       'diet': diet.toJson((d) => d?.toBackend()),
@@ -206,7 +203,6 @@ class CreateUserRequest {
     String? phoneNumber,
     DisplayableField<List<Language>>? spokenLanguages,
     DisplayableField<Religion?>? religion,
-    DisplayableField<PoliticalView?>? politicalView,
     DisplayableField<AlcoholConsumption?>? alcoholConsumption,
     DisplayableField<SmokingStatus?>? smokingStatus,
     DisplayableField<Diet?>? diet,
@@ -242,7 +238,6 @@ class CreateUserRequest {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       spokenLanguages: spokenLanguages ?? this.spokenLanguages,
       religion: religion ?? this.religion,
-      politicalView: politicalView ?? this.politicalView,
       alcoholConsumption: alcoholConsumption ?? this.alcoholConsumption,
       smokingStatus: smokingStatus ?? this.smokingStatus,
       diet: diet ?? this.diet,

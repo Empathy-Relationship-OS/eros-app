@@ -398,14 +398,6 @@ class DetailedInfoSection extends StatelessWidget {
             icon: Icons.church,
             label: profile.profile.religion!,
           ),
-
-        // Political View
-        if (profile.profile.politicalView != null &&
-            profile.profile.politicalView!.isNotEmpty)
-          InfoRow(
-            icon: Icons.how_to_vote,
-            label: profile.profile.politicalView!,
-          ),
       ],
     );
   }

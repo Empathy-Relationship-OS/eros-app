@@ -55,7 +55,7 @@ class _ReligionScreenState extends ConsumerState<ReligionScreen> {
     await ref.read(profileCreationProvider.notifier).updateDraft(updatedDraft);
 
     if (mounted) {
-      Navigator.pushNamed(context, '/profile-creation/preferences/political-view');
+      Navigator.pushNamed(context, '/profile-creation/preferences/diet');
     }
   }
 

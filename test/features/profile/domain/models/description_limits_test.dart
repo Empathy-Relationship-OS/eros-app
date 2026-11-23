@@ -29,7 +29,6 @@ CreateUserRequest _createRequest({String? brainDescription, String? bodyDescript
     bio: '',
     spokenLanguages: DisplayableField(field: [english], visible: true),
     religion: DisplayableField(field: null, visible: false),
-    politicalView: DisplayableField(field: null, visible: false),
     alcoholConsumption: DisplayableField(field: null, visible: false),
     smokingStatus: DisplayableField(field: null, visible: false),
     diet: DisplayableField(field: null, visible: false),

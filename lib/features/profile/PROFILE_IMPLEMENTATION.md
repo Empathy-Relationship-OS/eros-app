@@ -13,7 +13,7 @@ All backend enums and models have been created with full parity to the Kotlin ba
 - `preferences.dart` - All preference enums:
   - DateIntentions, KidsPreference, AlcoholConsumption, SmokingStatus
   - EducationLevel, RelationshipType, SexualOrientation, Pronouns
-  - Religion, PoliticalView, Diet, Ethnicity
+  - Religion, Diet, Ethnicity
   - BrainAttribute, BodyAttribute
 - `interests.dart` - Hobby/interest categories:
   - Sport (50+ options), FoodAndDrink (28 options)

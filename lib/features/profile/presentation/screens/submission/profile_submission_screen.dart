@@ -91,7 +91,6 @@ class _ProfileSubmissionScreenState
 
       // Optional DisplayableFields with defaults
       religion: draft.religion ?? DisplayableField(field: null, visible: false),
-      politicalView: draft.politicalView ?? DisplayableField(field: null, visible: false),
       diet: draft.diet ?? DisplayableField(field: null, visible: false),
       pronouns: draft.pronouns ?? DisplayableField(field: null, visible: false),
       starSign: draft.starSign ?? DisplayableField(field: null, visible: false),

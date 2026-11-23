@@ -14,6 +14,10 @@ import 'package:eros_app/features/profile/presentation/widgets/editors/multi_cho
 /// For a `DisplayableField` list, pass [initialVisible] to show a "Show on my profile" checkbox;
 /// [buildRequest] then receives the visibility too, and [usedForMatching] adds [HiddenAnswersNote]
 /// under it for a field match preferences filter on. Save needs [min]–[max] choices and a change.
+///
+/// [preferNotToSay] is an answer that can't be combined with another: ticking it clears the rest,
+/// and ticking anything else clears it. While it's chosen the checkbox is hidden and the field is
+/// saved hidden, as in [DisplayableChoiceEditor].
 class EditMultiChoiceScreen<T> extends ConsumerStatefulWidget {
   final String title;
   final String question;
@@ -28,6 +32,7 @@ class EditMultiChoiceScreen<T> extends ConsumerStatefulWidget {
   final String? searchHint;
   final String emptyText;
   final MultiChoiceTileBuilder<T>? listTileBuilder;
+  final T? preferNotToSay;
   final UpdateUserRequest Function(List<T> selected, bool visible) buildRequest;
 
   const EditMultiChoiceScreen({
@@ -46,6 +51,7 @@ class EditMultiChoiceScreen<T> extends ConsumerStatefulWidget {
     this.searchHint,
     this.emptyText = 'Nothing found',
     this.listTileBuilder,
+    this.preferNotToSay,
   });
 
   @override
@@ -75,6 +81,16 @@ class _EditMultiChoiceScreenState<T> extends ConsumerState<EditMultiChoiceScreen
       !listEquals(_selected, widget.initial) ||
       (widget.initialVisible != null && _visible != widget.initialVisible);
 
+  bool get _isPreferNotToSay =>
+      widget.preferNotToSay != null && _selected.contains(widget.preferNotToSay);
+
+  /// Keeps [preferNotToSay] on its own: whichever was ticked last wins.
+  List<T> _exclusive(List<T> next) {
+    final only = widget.preferNotToSay;
+    if (only == null || next.length < 2 || !next.contains(only)) return next;
+    return _selected.contains(only) ? ([...next]..remove(only)) : [only];
+  }
+
   @override
   Widget build(BuildContext context) {
     final groups = widget.groups;
@@ -84,7 +100,9 @@ class _EditMultiChoiceScreenState<T> extends ConsumerState<EditMultiChoiceScreen
       title: widget.title,
       isDirty: _isDirty,
       canSave: _isDirty && isValid,
-      onSave: () => ref.read(myProfileProvider.notifier).saveSection(widget.buildRequest(_selected, _visible)),
+      onSave: () => ref
+          .read(myProfileProvider.notifier)
+          .saveSection(widget.buildRequest(_selected, _isPreferNotToSay ? false : _visible)),
       appBarBottom: groups == null
           ? null
           : multiChoiceTabBar(
@@ -105,7 +123,7 @@ class _EditMultiChoiceScreenState<T> extends ConsumerState<EditMultiChoiceScreen
             labelOf: widget.labelOf,
             min: widget.min,
             max: widget.max,
-            onChanged: (selected) => setState(() => _selected = selected),
+            onChanged: (selected) => setState(() => _selected = _exclusive(selected)),
             header: Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: EditQuestion(widget.question),
@@ -135,7 +153,7 @@ class _EditMultiChoiceScreenState<T> extends ConsumerState<EditMultiChoiceScreen
                 onRemove: (option) => setState(() => _selected = [..._selected]..remove(option)),
               ),
             ),
-          if (widget.initialVisible != null)
+          if (widget.initialVisible != null && !_isPreferNotToSay)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: CheckboxListTile(
@@ -145,7 +163,7 @@ class _EditMultiChoiceScreenState<T> extends ConsumerState<EditMultiChoiceScreen
                 controlAffinity: ListTileControlAffinity.leading,
               ),
             ),
-          if (widget.initialVisible != null && widget.usedForMatching)
+          if (widget.initialVisible != null && widget.usedForMatching && !_isPreferNotToSay)
             const Padding(
               padding: EdgeInsets.fromLTRB(32, 0, 32, 12),
               child: Align(alignment: Alignment.centerLeft, child: HiddenAnswersNote()),

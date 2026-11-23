@@ -67,8 +67,6 @@ void main() {
       expect(profile.spokenLanguages.visible, isTrue);
       expect(profile.religion.field, isNotNull);
       expect(profile.religion.visible, isFalse);
-      expect(profile.politicalView.field, isNull);
-      expect(profile.politicalView.visible, isFalse);
       expect(profile.dateIntentions.field, DateIntentions.seriousDating);
       expect(profile.relationshipType.field, RelationshipType.monogamous);
       expect(profile.kidsPreference.field, KidsPreference.openToKids);
@@ -140,7 +138,6 @@ void main() {
       'gender': Gender.fromBackend,
       'educationLevel': EducationLevel.fromBackend,
       'religion': Religion.fromBackend,
-      'politicalView': PoliticalView.fromBackend,
       'alcoholConsumption': AlcoholConsumption.fromBackend,
       'smokingStatus': SmokingStatus.fromBackend,
       'diet': Diet.fromBackend,

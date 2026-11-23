@@ -28,7 +28,6 @@ class UpdateUserRequest {
   // Optional displayable fields
   final DisplayableField<List<Language>>? spokenLanguages;
   final DisplayableField<Religion?>? religion;
-  final DisplayableField<PoliticalView?>? politicalView;
   final DisplayableField<AlcoholConsumption?>? alcoholConsumption;
   final DisplayableField<SmokingStatus?>? smokingStatus;
   final DisplayableField<Diet?>? diet;
@@ -63,7 +62,6 @@ class UpdateUserRequest {
     this.traits,
     this.spokenLanguages,
     this.religion,
-    this.politicalView,
     this.alcoholConsumption,
     this.smokingStatus,
     this.diet,
@@ -128,8 +126,12 @@ class UpdateUserRequest {
       throw ArgumentError(
           'Body description must not exceed ${ProfileFieldLimits.maxDescriptionLength} characters');
     }
-    if (ethnicity?.field != null && ethnicity!.field.isEmpty) {
-      throw ArgumentError('Ethnicity must not be empty if provided');
+    // Ethnicity is optional (RFC-009 D-12): an empty list is no answer, but "Prefer not to say"
+    // can't be combined with another value.
+    if (ethnicity != null &&
+        ethnicity!.field.length > 1 &&
+        ethnicity!.field.contains(Ethnicity.preferNotToSay)) {
+      throw ArgumentError('"Prefer not to say" can\'t be combined with another ethnicity');
     }
   }
 
@@ -169,9 +171,6 @@ class UpdateUserRequest {
     }
     if (religion != null) {
       json['religion'] = religion!.toJson((r) => r?.toBackend());
-    }
-    if (politicalView != null) {
-      json['politicalView'] = politicalView!.toJson((p) => p?.toBackend());
     }
     if (alcoholConsumption != null) {
       json['alcoholConsumption'] =
