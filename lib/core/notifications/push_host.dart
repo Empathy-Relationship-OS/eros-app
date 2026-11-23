@@ -9,6 +9,7 @@ import 'package:eros_app/core/notifications/notification_router.dart';
 import 'package:eros_app/core/notifications/push_banner.dart';
 import 'package:eros_app/core/notifications/push_service.dart';
 import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
+import 'package:eros_app/features/legal/presentation/providers/safety_notice_controller.dart';
 import 'package:eros_app/features/verification/presentation/providers/verification_provider.dart';
 
 /// Uid of the signed-in user, or null.
@@ -30,6 +31,8 @@ final notificationRouterProvider = Provider<NotificationRouter>((ref) {
 /// - refetches the user's verification status on a foreground `VERIFICATION_DECIDED` push and
 ///   whenever the app resumes, since pushes are best-effort (RFC-008 VF-F3). An open date's wall
 ///   refetches its date when that status turns verified.
+/// - checks for an unread safety notice on launch, on resume and on a `SAFETY_NOTICE` push, in the
+///   foreground or tapped, and shows it in a sheet instead of the banner (RFC-009 §5.7, CF-F5).
 class PushHost extends ConsumerStatefulWidget {
   const PushHost({super.key, required this.child});
 
@@ -54,9 +57,14 @@ class _PushHostState extends ConsumerState<PushHost> {
   @override
   void initState() {
     super.initState();
-    // A verification decision may have landed while the app was in the background, push or no
-    // push. Outside the push setup, so it still runs if that fails.
-    _lifecycle = AppLifecycleListener(onResume: _refreshVerification);
+    // A verification decision or a safety notice may have landed while the app was in the
+    // background, push or no push. Outside the push setup, so it still runs if that fails.
+    _lifecycle = AppLifecycleListener(onResume: _onResume);
+    try {
+      _startNotices();
+    } catch (e, stackTrace) {
+      _logger.e('❌ Safety notice setup failed', error: e, stackTrace: stackTrace);
+    }
     // Push must never take the app down with it: if Firebase Messaging can't start, the app
     // carries on without push.
     try {
@@ -64,6 +72,36 @@ class _PushHostState extends ConsumerState<PushHost> {
     } catch (e, stackTrace) {
       _logger.e('❌ Push setup failed, carrying on without push', error: e, stackTrace: stackTrace);
     }
+  }
+
+  void _onResume() {
+    _refreshVerification();
+    _checkNotices();
+  }
+
+  /// Safety notices don't need push: they show on launch (once the user reaches home) and on
+  /// resume whatever happens to Firebase Messaging.
+  void _startNotices() {
+    final notices = ref.read(safetyNoticeControllerProvider);
+    notices.userChanged(ref.read(signedInUidProvider));
+    ref.listenManual<String?>(signedInUidProvider, (previous, uid) => notices.userChanged(uid));
+  }
+
+  void _checkNotices() {
+    if (!mounted) return;
+    try {
+      if (ref.read(signedInUidProvider) == null) return;
+      unawaited(ref.read(safetyNoticeControllerProvider).check());
+    } catch (e) {
+      _logger.w('⚠️  Could not check safety notices', error: e);
+    }
+  }
+
+  /// A tapped push, from killed or background: opens its screen, or for a safety notice, the
+  /// notice's sheet.
+  void _onTapped(PushMessage message) {
+    ref.read(notificationRouterProvider).open(message);
+    if (message.type == PushType.safetyNotice) _checkNotices();
   }
 
   void _start() {
@@ -82,15 +120,15 @@ class _PushHostState extends ConsumerState<PushHost> {
     });
 
     _subscriptions
-      ..add(messaging.onMessageOpenedApp.listen(router.open, onError: _logError))
+      ..add(messaging.onMessageOpenedApp.listen(_onTapped, onError: _logError))
       ..add(messaging.onMessage.listen(_onForegroundMessage, onError: _logError));
-    _openInitialMessage(messaging, router);
+    _openInitialMessage(messaging);
   }
 
-  Future<void> _openInitialMessage(MessagingClient messaging, NotificationRouter router) async {
+  Future<void> _openInitialMessage(MessagingClient messaging) async {
     try {
       final message = await messaging.getInitialMessage();
-      if (message != null) router.open(message);
+      if (message != null && mounted) _onTapped(message);
     } catch (e) {
       _logError(e);
     }
@@ -103,6 +141,11 @@ class _PushHostState extends ConsumerState<PushHost> {
     _logger.d('🔔 Push in foreground: type=${message.type} dateId=${message.dateId}');
     if (ref.read(signedInUidProvider) == null) return;
     if (message.type == PushType.verificationDecided) _refreshVerification();
+    // The sheet is the notice's UI; a banner over it would say the same thing twice.
+    if (message.type == PushType.safetyNotice) {
+      _checkNotices();
+      return;
+    }
     final activeChat = ref.read(activeChatDateIdProvider);
     if (PushType.isChat(message.type) && activeChat != null && activeChat == message.dateId) return;
     if ((message.title ?? '').isEmpty && (message.body ?? '').isEmpty) return;
