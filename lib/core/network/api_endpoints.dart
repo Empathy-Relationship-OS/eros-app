@@ -20,6 +20,7 @@ class ApiEndpoints {
   static final matchPreferences = _MatchPreferencesEndpoints();
   static final safety = _SafetyEndpoints();
   static final verification = _VerificationEndpoints();
+  static final notices = _NoticesEndpoints();
 }
 
 // ====================
@@ -322,4 +323,15 @@ class _VerificationEndpoints {
 
   /// POST /users/me/verification/age-check - Start Didit's ID check and get its link
   String ageCheck() => '/users/me/verification/age-check';
+}
+
+// ====================
+// NOTICES ENDPOINTS (RFC-009 §5.7, §6)
+// ====================
+class _NoticesEndpoints {
+  /// GET /users/me/notices - The signed-in user's notices, newest first
+  String list() => '/users/me/notices';
+
+  /// POST /users/me/notices/{noticeId}/read - Mark one of them read (204)
+  String markRead(int noticeId) => '/users/me/notices/$noticeId/read';
 }

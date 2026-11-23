@@ -28,6 +28,10 @@ abstract final class PushType {
   /// the app refetches the status rather than reading it from the push (primer rule 22).
   static const verificationDecided = 'VERIFICATION_DECIDED';
 
+  /// Someone the user spoke to was banned for fraud (RFC-009 §5.7, CF-B6). Opens no route: the
+  /// app refetches its notices and shows the unread one in a sheet (CF-F5).
+  static const safetyNotice = 'SAFETY_NOTICE';
+
   static bool isChat(String? type) => type == chatOpened || type == chatMessage;
 }
 
