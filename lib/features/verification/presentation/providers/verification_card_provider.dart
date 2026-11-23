@@ -33,16 +33,24 @@ class VerificationCardDismissalNotifier extends AutoDisposeNotifier<Verification
   }
 }
 
+/// States where the card comes back after a dismissal made in another state: each asks the
+/// user for something new (another selfie, or the age check).
+const Set<VerificationState> verificationCardReturnsIn = {
+  VerificationState.retry,
+  VerificationState.ageCheck,
+};
+
 /// Whether the Matches card shows for someone in [state] who dismissed it in [dismissedIn].
 ///
-/// Only where there's something to do: not verified (an unknown state counts) or retry. Not in
-/// review or locked, where a "verify" prompt has nothing to start, and never once verified. A
-/// dismissal holds until the user lands in retry from another state.
+/// Only where there's something to do: not verified (an unknown state counts), retry or the age
+/// check. Not in review or locked, where a "verify" prompt has nothing to start, and never once
+/// verified. A dismissal holds until the user lands in one of [verificationCardReturnsIn] from
+/// another state.
 bool shouldShowVerificationCard(VerificationState state, VerificationState? dismissedIn) {
   final actionable = state == VerificationState.notVerified ||
       state == VerificationState.unknown ||
-      state == VerificationState.retry;
+      verificationCardReturnsIn.contains(state);
   if (!actionable) return false;
   if (dismissedIn == null) return true;
-  return state == VerificationState.retry && dismissedIn != VerificationState.retry;
+  return verificationCardReturnsIn.contains(state) && dismissedIn != state;
 }

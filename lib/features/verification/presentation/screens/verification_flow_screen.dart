@@ -11,13 +11,14 @@ import 'package:eros_app/features/verification/presentation/screens/selfie_camer
 import 'package:eros_app/features/verification/presentation/screens/selfie_review_screen.dart';
 import 'package:eros_app/features/verification/presentation/screens/verification_consent_screen.dart';
 import 'package:eros_app/features/verification/presentation/verification_links.dart';
+import 'package:eros_app/features/verification/presentation/widgets/age_check_step.dart';
 import 'package:eros_app/features/verification/presentation/widgets/verification_copy.dart';
 import 'package:eros_app/features/verification/presentation/widgets/verification_message_view.dart';
 
 enum _Step { consent, camera, review, message }
 
 /// How the flow ended, or why it stopped.
-enum _Outcome { submitted, verified, inReview, photosRequired, limit, locked, error }
+enum _Outcome { submitted, verified, inReview, ageCheck, photosRequired, limit, locked, error }
 
 /// Consent → camera → review → result (RFC-008 §5.4, VF-F2). Open it with `startVerification`.
 ///
@@ -195,7 +196,14 @@ class _VerificationFlowScreenState extends ConsumerState<VerificationFlowScreen>
       await _refreshStatus();
       final verified =
           submitted == VerificationState.verified || (_status?.isVerified ?? false);
-      _show(verified ? _Outcome.verified : _Outcome.submitted);
+      // The age check comes before staff look (RFC-009 §5.3.2): straight to it, not "in review".
+      final ageCheck = submitted == VerificationState.ageCheck ||
+          _status?.state == VerificationState.ageCheck;
+      _show(verified
+          ? _Outcome.verified
+          : ageCheck
+              ? _Outcome.ageCheck
+              : _Outcome.submitted);
     } on SelfieUnusableFailure catch (f) {
       final problem = VerificationCopy.selfieProblem(f.problem);
       final upload = f.upload;
@@ -287,6 +295,8 @@ class _VerificationFlowScreenState extends ConsumerState<VerificationFlowScreen>
         return _outcomeView(_Outcome.inReview);
       case VerificationState.locked:
         return _outcomeView(_Outcome.locked);
+      case VerificationState.ageCheck:
+        return _outcomeView(_Outcome.ageCheck);
       case VerificationState.notVerified:
       case VerificationState.retry:
       case VerificationState.unknown:
@@ -304,6 +314,7 @@ class _VerificationFlowScreenState extends ConsumerState<VerificationFlowScreen>
   }
 
   Widget _outcomeView(_Outcome outcome) {
+    if (outcome == _Outcome.ageCheck) return _ageCheckView();
     VerificationMessageView done(IconData icon, String message) => VerificationMessageView(
           icon: icon,
           message: message,
@@ -313,7 +324,8 @@ class _VerificationFlowScreenState extends ConsumerState<VerificationFlowScreen>
     return _MessagePage(
       child: switch (outcome) {
         _Outcome.submitted => done(Icons.hourglass_top, VerificationCopy.submitted),
-        _Outcome.verified => done(Icons.verified_outlined, VerificationCopy.verified),
+        _Outcome.verified || _Outcome.ageCheck =>
+          done(Icons.verified_outlined, VerificationCopy.verified),
         _Outcome.inReview => done(Icons.hourglass_top, VerificationCopy.inReview),
         _Outcome.limit => done(Icons.schedule, VerificationCopy.limitReached(_retryAfter)),
         _Outcome.locked => done(Icons.support_agent, VerificationCopy.locked),
@@ -335,6 +347,40 @@ class _VerificationFlowScreenState extends ConsumerState<VerificationFlowScreen>
             onSecondary: _close,
           ),
       },
+    );
+  }
+
+  /// The age step, kept current: the state is refetched when the user comes back from Didit's
+  /// page, and once the age check is done this shows where they are now.
+  Widget _ageCheckView() {
+    final current = _status;
+    switch (current?.state) {
+      case VerificationState.verified:
+        return _outcomeView(_Outcome.verified);
+      case VerificationState.ageCheck:
+      case null:
+        break;
+      default:
+        // Passed: staff look at the selfie next. Anything else, the status screen says.
+        return _outcomeView(_Outcome.submitted);
+    }
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          tooltip: VerificationCopy.closeLabel,
+          onPressed: _close,
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: AgeCheckStep(
+            status: current ?? const VerificationStatus(state: VerificationState.ageCheck),
+          ),
+        ),
+      ),
     );
   }
 }

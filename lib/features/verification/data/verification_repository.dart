@@ -74,7 +74,7 @@ class VerificationRepository {
 
   /// POST /users/me/verification/attempts/{id}/submit
   ///
-  /// Returns the new state, `inReview` or `verified`. Refetch [getStatus] afterwards rather
+  /// Returns the new state: `inReview`, `ageCheck` or `verified`. Refetch [getStatus] afterwards rather
   /// than keeping it (primer rule 22). Throws [SelfieUnusableFailure] for a retake.
   Future<VerificationState> submit(String attemptId) async {
     try {
@@ -89,6 +89,43 @@ class VerificationRepository {
       _logger.e('🚨 Failed to submit verification attempt $attemptId (status ${e.statusCode})');
       throw _mapFailure(e);
     }
+  }
+
+  /// POST /users/me/verification/age-check
+  ///
+  /// Starts an ID document check in Didit's page and returns its link, to open straight away
+  /// and then refetch [getStatus] (RFC-009 §5.3.2). The link is never logged. Throws
+  /// [AgeCheckLimitFailure], [AgeCheckUnavailableFailure], [AgeCheckByStaffFailure] and
+  /// [AgeCheckNotNeededFailure].
+  Future<AgeCheckLink> startAgeCheck() async {
+    try {
+      _logger.d('🪪 Starting an ID age check');
+      final response = await _apiClient.post<Map<String, dynamic>>(
+        ApiEndpoints.verification.ageCheck(),
+      );
+      final link = AgeCheckLink.fromJson(response);
+      if (link == null) {
+        _logger.e('🚨 The age check came back with no usable link');
+        throw const AgeCheckUnavailableFailure(
+          UnknownApiException('No age check link', statusCode: 200),
+        );
+      }
+      _logger.d('✅ ID age check started');
+      return link;
+    } on ApiException catch (e) {
+      _logger.e('🚨 Failed to start an ID age check (status ${e.statusCode})');
+      throw _mapAgeCheckFailure(e);
+    }
+  }
+
+  static Object _mapAgeCheckFailure(ApiException e) {
+    final body = e.originalError;
+    final code = body is Map<String, dynamic> ? body['error'] : null;
+    if (code == 'AGE_CHECK_BY_STAFF') return AgeCheckByStaffFailure(e);
+    if (code == 'AGE_CHECK_NOT_NEEDED') return AgeCheckNotNeededFailure(e);
+    if (e is RateLimitException) return AgeCheckLimitFailure(e, retryAfter: e.retryAfter);
+    if (e.statusCode == 503) return AgeCheckUnavailableFailure(e);
+    return e;
   }
 
   /// The [VerificationFailure] for a coded refusal, or [e] itself.

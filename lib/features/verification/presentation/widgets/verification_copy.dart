@@ -90,7 +90,10 @@ class VerificationCopy {
   static String profileHint(VerificationState state) => switch (state) {
         VerificationState.notVerified || VerificationState.unknown => 'Not started',
         VerificationState.inReview => 'In review',
-        VerificationState.retry || VerificationState.locked => 'Action needed',
+        VerificationState.retry ||
+        VerificationState.locked ||
+        VerificationState.ageCheck =>
+          'Action needed',
         VerificationState.verified => 'Verified',
       };
 
@@ -107,6 +110,7 @@ class VerificationCopy {
       'person in your photos.';
   static const List<String> consentPoints = [
     'Software compares your selfie with your profile photos, then someone on our team checks it.',
+    'Our partner Didit estimates your age from your selfie and keeps nothing.',
     'Only our team sees your selfie. It\'s never shown to anyone you match with.',
     'We delete it when it\'s no longer needed.',
   ];
@@ -114,12 +118,59 @@ class VerificationCopy {
   static const String consentAgree = 'I agree';
   static const String consentPersonInstead = 'Have a person check it instead';
   static const String consentPersonInsteadHint =
-      'No software comparison. Someone on our team compares your selfie with your photos.';
+      'No software comparison or age estimate. Someone on our team compares your selfie with your '
+      'photos, and you\'ll be asked to confirm your age with ID.';
 
   static const String photosRequiredTitle = 'Add more photos first';
   static const String photosRequiredBody =
       'You need at least 3 photos on your profile. We compare your selfie with them.';
   static const String photosRequiredAction = 'Add photos';
+
+  // The age check (RFC-009 §5.3.2, CF-F2): an ID document in Didit's page, or the operator's
+  // call. The status screen, the flow after a submit and the wall on a date all show it.
+
+  static const String ageCheckTitle = 'One more step: confirm your age';
+  static const String ageCheckBody =
+      'We need to check you\'re 18 or over. You\'ll take a photo of your ID in a secure page run '
+      'by our partner, Didit. We don\'t keep a copy.';
+  static const String ageCheckComeBack = 'When you\'re done, come back to Muse.';
+  static const String confirmMyAge = 'Confirm my age';
+
+  /// No ID check to open: the operator will call.
+  static const String ageCheckByStaff =
+      'Our team will be in touch to check your age. This usually takes a day.';
+
+  /// The Matches card's line in the age check.
+  static const String ageCheckCard = 'Action needed: confirm your age';
+
+  static const String emailSupport = 'Email support';
+  static const String ageCheckEmailSubject = 'Age check';
+
+  /// No mail app on the phone: the address, to write to from somewhere else.
+  static String noMailApp(String address) => 'Email us at $address.';
+
+  /// 503: the ID check is off or Didit failed.
+  static const String ageCheckUnavailable =
+      'The age check isn\'t available right now. Try again later, or email us and we\'ll help.';
+
+  /// 429: today's ID check sessions are used. [retryAfter] from the server says when.
+  static String ageCheckLimit(Duration? retryAfter) {
+    const lead = 'You\'ve started today\'s age checks.';
+    const tail = 'or email us and we\'ll help.';
+    if (retryAfter == null || retryAfter.inHours >= 12) return '$lead Try again tomorrow, $tail';
+    if (retryAfter.inMinutes < 60) return '$lead Try again in under an hour, $tail';
+    final hours = (retryAfter.inMinutes / 60).ceil();
+    final when = hours == 1 ? 'about an hour' : 'about $hours hours';
+    return '$lead Try again in $when, $tail';
+  }
+
+  /// The link came back but the browser didn't open it.
+  static const String ageCheckCouldNotOpen =
+      'We couldn\'t open the age check page. Try again, or email us and we\'ll help.';
+
+  /// Any other failure to start it (no connection, a server error).
+  static const String ageCheckFailed =
+      'Something went wrong. Try again, or email us and we\'ll help.';
 
   // Camera and review (VF-F2).
 

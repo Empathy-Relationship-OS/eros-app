@@ -80,6 +80,26 @@ class FakeVerificationLinks implements VerificationLinks {
   int settings = 0;
   int photoEditor = 0;
 
+  /// Didit's ID check links opened, and whether the browser opens them.
+  final List<Uri> ageChecks = [];
+  bool ageCheckOpens = true;
+
+  /// Support emails opened, by subject, and whether there's a mail app.
+  final List<String> supportEmails = [];
+  bool mailAppOpens = true;
+
+  @override
+  Future<bool> openAgeCheck(Uri url) async {
+    ageChecks.add(url);
+    return ageCheckOpens;
+  }
+
+  @override
+  Future<bool> emailSupport({required String subject}) async {
+    supportEmails.add(subject);
+    return mailAppOpens;
+  }
+
   @override
   Future<void> openPrivacyPolicy() async => privacyPolicy++;
 

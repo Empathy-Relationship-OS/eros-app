@@ -52,3 +52,29 @@ class VerificationLimitFailure extends VerificationFailure {
 class VerificationUnavailableFailure extends VerificationFailure {
   const VerificationUnavailableFailure(super.cause);
 }
+
+// The age check's ID document step (RFC-009 §5.3.2, CF-F2): refusals of `startAgeCheck`.
+
+/// 429 `AGE_CHECK_LIMIT`: today's ID check sessions are used.
+class AgeCheckLimitFailure extends VerificationFailure {
+  /// From `Retry-After`, when the server sent one.
+  final Duration? retryAfter;
+
+  const AgeCheckLimitFailure(super.cause, {this.retryAfter});
+}
+
+/// 503 `AGE_CHECK_UNAVAILABLE` (the ID check is off or Didit failed), or verification is off.
+/// Also a 200 with no usable link.
+class AgeCheckUnavailableFailure extends VerificationFailure {
+  const AgeCheckUnavailableFailure(super.cause);
+}
+
+/// 409 `AGE_CHECK_BY_STAFF`: the operator will check the age on a call instead.
+class AgeCheckByStaffFailure extends VerificationFailure {
+  const AgeCheckByStaffFailure(super.cause);
+}
+
+/// 409 `AGE_CHECK_NOT_NEEDED`: no age check is waiting any more. Refetch the status.
+class AgeCheckNotNeededFailure extends VerificationFailure {
+  const AgeCheckNotNeededFailure(super.cause);
+}

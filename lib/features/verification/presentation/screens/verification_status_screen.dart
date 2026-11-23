@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/notifications/notification_router.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
@@ -9,7 +8,9 @@ import 'package:eros_app/features/verification/domain/models/verification_models
 import 'package:eros_app/features/verification/presentation/providers/verification_provider.dart';
 import 'package:eros_app/features/verification/presentation/start_verification.dart';
 import 'package:eros_app/features/verification/presentation/verification_links.dart';
+import 'package:eros_app/features/verification/presentation/widgets/age_check_step.dart';
 import 'package:eros_app/features/verification/presentation/widgets/verification_copy.dart';
+import 'package:eros_app/features/verification/presentation/widgets/verification_state_layout.dart';
 
 /// Opens [VerificationStatusScreen] on [context]'s navigator, named so that a decision push
 /// tapped while it's already on top doesn't open it twice.
@@ -21,7 +22,8 @@ Future<void> openVerificationStatus(BuildContext context) => Navigator.of(contex
     );
 
 /// Where the signed-in user stands with selfie verification, one layout per state (RFC-008 §7,
-/// VF-F3). Opened from the Profile row, the Matches card and a decision push.
+/// VF-F3). Opened from the Profile row, the Matches card, a decision push and, in the age check
+/// (CF-F2), the wall on a date.
 ///
 /// It's the user's own state only, never anything about anyone else (D-7), and it shows a
 /// reason, never a score (primer rule 21). The state comes from [verificationStatusProvider]:
@@ -105,7 +107,7 @@ class _VerificationStatusScreenState extends ConsumerState<VerificationStatusScr
     final value = status.valueOrNull;
     if (value == null) {
       if (status.hasError) {
-        return _Layout(icon: Icons.cloud_off_outlined, lines: const [VerificationCopy.statusFailed]);
+        return VerificationStateLayout(icon: Icons.cloud_off_outlined, lines: const [VerificationCopy.statusFailed]);
       }
       return const Center(child: CircularProgressIndicator());
     }
@@ -113,7 +115,7 @@ class _VerificationStatusScreenState extends ConsumerState<VerificationStatusScr
     switch (value.state) {
       case VerificationState.notVerified:
       case VerificationState.unknown:
-        return _Layout(
+        return VerificationStateLayout(
           icon: Icons.verified_user_outlined,
           title: VerificationCopy.verifyYourProfile,
           lines: [
@@ -125,7 +127,7 @@ class _VerificationStatusScreenState extends ConsumerState<VerificationStatusScr
           onAction: _startVerification,
         );
       case VerificationState.inReview:
-        return _Layout(
+        return VerificationStateLayout(
           icon: Icons.hourglass_top_outlined,
           title: VerificationCopy.inReview,
           lines: const [VerificationCopy.inReviewDetail],
@@ -133,7 +135,7 @@ class _VerificationStatusScreenState extends ConsumerState<VerificationStatusScr
       case VerificationState.retry:
         final photosLink = value.reason == RetryReason.notSamePerson ||
             value.reason == RetryReason.profilePhotosUnsuitable;
-        return _Layout(
+        return VerificationStateLayout(
           icon: Icons.refresh,
           title: VerificationCopy.retryTitle,
           lines: [VerificationCopy.retryReason(value.reason), ?_attemptsLine(value)],
@@ -142,11 +144,13 @@ class _VerificationStatusScreenState extends ConsumerState<VerificationStatusScr
           secondaryLabel: photosLink ? VerificationCopy.updatePhotos : null,
           onSecondary: _openPhotoEditor,
         );
+      case VerificationState.ageCheck:
+        return AgeCheckStep(status: value);
       case VerificationState.verified:
-        return _Layout(icon: Icons.verified_outlined, title: VerificationCopy.verified);
+        return VerificationStateLayout(icon: Icons.verified_outlined, title: VerificationCopy.verified);
       case VerificationState.locked:
         // No support link: the app has no support channel yet (see the PR).
-        return _Layout(icon: Icons.support_agent, lines: const [VerificationCopy.locked]);
+        return VerificationStateLayout(icon: Icons.support_agent, lines: const [VerificationCopy.locked]);
     }
   }
 
@@ -156,72 +160,4 @@ class _VerificationStatusScreenState extends ConsumerState<VerificationStatusScr
 
   /// No button that can only lead to "you've used your attempts".
   bool _canTry(VerificationStatus status) => status.canStart || status.attemptsLeftToday > 0;
-}
-
-/// One state's layout: an icon that only decorates, a heading, lines of text and up to two
-/// actions.
-class _Layout extends StatelessWidget {
-  final IconData icon;
-  final String? title;
-  final List<String> lines;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-  final String? secondaryLabel;
-  final VoidCallback? onSecondary;
-
-  const _Layout({
-    required this.icon,
-    this.title,
-    this.lines = const [],
-    this.actionLabel,
-    this.onAction,
-    this.secondaryLabel,
-    this.onSecondary,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final title = this.title;
-    final actionLabel = this.actionLabel;
-    final secondaryLabel = this.secondaryLabel;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ExcludeSemantics(child: Icon(icon, size: 56, color: AppColors.primaryDeep)),
-        const SizedBox(height: 24),
-        if (title != null) ...[
-          Semantics(
-            header: true,
-            child: Text(
-              title,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.displaySmall,
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-        for (final line in lines) ...[
-          Text(
-            line,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.5),
-          ),
-          const SizedBox(height: 8),
-        ],
-        if (actionLabel != null) ...[
-          const SizedBox(height: 24),
-          AppButton(label: actionLabel, onPressed: onAction),
-        ],
-        if (secondaryLabel != null) ...[
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: onSecondary,
-            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-            child: Text(secondaryLabel),
-          ),
-        ],
-      ],
-    );
-  }
 }

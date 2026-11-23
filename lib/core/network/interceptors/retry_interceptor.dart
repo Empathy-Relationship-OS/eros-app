@@ -10,6 +10,10 @@ class RetryInterceptor extends Interceptor {
 
   RetryInterceptor(this._authService);
 
+  /// The longest `Retry-After` worth waiting for in the background. A longer one is a limit the
+  /// user has to hear about (a daily cap, say), not a blip: the 429 goes straight to the caller.
+  static const Duration maxRateLimitWait = Duration(seconds: 30);
+
   @override
   Future<void> onError(
     DioException err,
@@ -60,6 +64,10 @@ class RetryInterceptor extends Interceptor {
     // Handle 429 Rate Limit - exponential backoff
     if (statusCode == 429) {
       final retryAfter = _getRetryAfterDuration(err.response);
+      if (retryAfter > maxRateLimitWait) {
+        _logger.w('⏳ 429 Rate Limited for ${retryAfter.inSeconds}s - not retrying');
+        return handler.next(err);
+      }
       _logger.w('⏳ 429 Rate Limited - Waiting ${retryAfter.inSeconds}s before retry...');
 
       try {

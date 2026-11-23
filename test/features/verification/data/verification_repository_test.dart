@@ -284,4 +284,84 @@ void main() {
       await expectLater(repository.submit(attemptId), throwsA(isA<NotFoundException>()));
     });
   });
+
+  group('age check (CF-F2)', () {
+    test('AGE_CHECK parses with its ageCheck detail', () async {
+      http.responses['GET $statusPath'] = reply(200, ageCheckStatusJson(canStartIdCheck: true));
+      final status = await repository.getStatus();
+
+      expect(status.state, VerificationState.ageCheck);
+      expect(status.canStartIdCheck, isTrue);
+      expect(status.isVerified, isFalse);
+    });
+
+    test('AGE_CHECK with no detail can\'t open an ID check', () async {
+      http.responses['GET $statusPath'] = reply(200, statusJson('AGE_CHECK', canStart: false));
+
+      expect((await repository.getStatus()).canStartIdCheck, isFalse);
+    });
+
+    test('ageCheck is ignored outside AGE_CHECK', () async {
+      http.responses['GET $statusPath'] =
+          reply(200, statusJson('IN_REVIEW', canStart: false, canStartIdCheck: true));
+      final status = await repository.getStatus();
+
+      expect(status.ageCheck, isNull);
+      expect(status.canStartIdCheck, isFalse);
+    });
+
+    test('submit can answer AGE_CHECK', () async {
+      http.responses['POST $submitPath'] = reply(200, {'state': 'AGE_CHECK'});
+
+      expect(await repository.submit(attemptId), VerificationState.ageCheck);
+    });
+
+    test('startAgeCheck POSTs with no body and returns the link, redacted when printed',
+        () async {
+      http.responses['POST $ageCheckPath'] =
+          reply(200, {'url': diditLink, 'expiresAt': '2026-11-23T12:00:00Z'});
+
+      final link = await repository.startAgeCheck();
+
+      expect(link.url, Uri.parse(diditLink));
+      expect(link.toString(), isNot(contains('didit')));
+      expect(http.sent('POST', ageCheckPath), hasLength(1));
+    });
+
+    test('a link that isn\'t https counts as unavailable', () async {
+      for (final url in ['http://verify.didit.me/x', 'javascript:alert(1)', '', null]) {
+        http.responses['POST $ageCheckPath'] = reply(200, {'url': url});
+        await expectLater(
+          repository.startAgeCheck(),
+          throwsA(isA<AgeCheckUnavailableFailure>()),
+          reason: '$url',
+        );
+      }
+    });
+
+    test('each refusal maps to its failure', () async {
+      http.responses['POST $ageCheckPath'] =
+          reply(429, apiError('AGE_CHECK_LIMIT'), headers: {'retry-after': '3600'});
+      await expectLater(
+        repository.startAgeCheck(),
+        throwsA(isA<AgeCheckLimitFailure>()
+            .having((f) => f.retryAfter, 'retryAfter', const Duration(hours: 1))),
+      );
+
+      http.responses['POST $ageCheckPath'] = reply(503, apiError('AGE_CHECK_UNAVAILABLE'));
+      await expectLater(repository.startAgeCheck(), throwsA(isA<AgeCheckUnavailableFailure>()));
+
+      http.responses['POST $ageCheckPath'] = reply(503, apiError('VERIFICATION_UNAVAILABLE'));
+      await expectLater(repository.startAgeCheck(), throwsA(isA<AgeCheckUnavailableFailure>()));
+
+      http.responses['POST $ageCheckPath'] = reply(409, apiError('AGE_CHECK_BY_STAFF'));
+      await expectLater(repository.startAgeCheck(), throwsA(isA<AgeCheckByStaffFailure>()));
+
+      http.responses['POST $ageCheckPath'] = reply(409, apiError('AGE_CHECK_NOT_NEEDED'));
+      await expectLater(repository.startAgeCheck(), throwsA(isA<AgeCheckNotNeededFailure>()));
+
+      http.responses['POST $ageCheckPath'] = reply(500, apiError('INTERNAL'));
+      await expectLater(repository.startAgeCheck(), throwsA(isA<ServerException>()));
+    });
+  });
 }
