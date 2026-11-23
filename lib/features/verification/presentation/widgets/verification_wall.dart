@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/verification/domain/models/verification_models.dart';
 import 'package:eros_app/features/verification/presentation/providers/verification_provider.dart';
+import 'package:eros_app/features/verification/presentation/screens/verification_status_screen.dart';
 import 'package:eros_app/features/verification/presentation/start_verification.dart';
 import 'package:eros_app/features/verification/presentation/widgets/verification_copy.dart';
 
@@ -76,6 +77,14 @@ class _VerificationWallState extends ConsumerState<VerificationWall> {
     await ref.read(verificationStatusNotifierProvider).refresh();
   }
 
+  /// Confirm my age, in the age check (CF-F2): the status screen, which opens at the age step.
+  /// Read again when it closes, as for the flow.
+  Future<void> _openAgeCheck() async {
+    await openVerificationStatus(context);
+    if (!mounted) return;
+    await ref.read(verificationStatusNotifierProvider).refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
     final status = ref.watch(verificationStatusProvider);
@@ -129,6 +138,12 @@ class _VerificationWallState extends ConsumerState<VerificationWall> {
         ];
       case VerificationState.locked:
         return [_line(VerificationCopy.locked)];
+      case VerificationState.ageCheck:
+        return [
+          _line(VerificationCopy.ageCheckTitle),
+          const SizedBox(height: 12),
+          AppButton(label: VerificationCopy.confirmMyAge, onPressed: _openAgeCheck),
+        ];
       case VerificationState.verified:
         // The date is being refetched, and the wall comes down when it says so. Nothing to
         // start meanwhile.
@@ -146,11 +161,13 @@ class _VerificationWallState extends ConsumerState<VerificationWall> {
     final text = switch (state) {
       VerificationState.inReview => VerificationCopy.inReview,
       VerificationState.locked => VerificationCopy.locked,
+      VerificationState.ageCheck => VerificationCopy.ageCheckTitle,
       _ => VerificationCopy.wallTitle,
     };
     final action = switch (state) {
       VerificationState.notVerified => VerificationCopy.verifyNow,
       VerificationState.retry => VerificationCopy.tryAgain,
+      VerificationState.ageCheck => VerificationCopy.confirmMyAge,
       _ => null,
     };
 
@@ -173,7 +190,8 @@ class _VerificationWallState extends ConsumerState<VerificationWall> {
           ),
           if (action != null)
             TextButton(
-              onPressed: _startVerification,
+              onPressed:
+                  state == VerificationState.ageCheck ? _openAgeCheck : _startVerification,
               style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
               child: Text(action),
             ),

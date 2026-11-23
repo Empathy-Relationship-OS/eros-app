@@ -312,4 +312,7 @@ class _VerificationEndpoints {
 
   /// POST /users/me/verification/attempts/{attemptId}/submit - Say the selfie is uploaded
   String submit(String attemptId) => '/users/me/verification/attempts/$attemptId/submit';
+
+  /// POST /users/me/verification/age-check - Start Didit's ID check and get its link
+  String ageCheck() => '/users/me/verification/age-check';
 }

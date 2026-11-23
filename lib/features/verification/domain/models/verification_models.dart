@@ -24,6 +24,10 @@ enum VerificationState {
   verified,
   locked,
 
+  /// Waiting on an age check before staff can approve (RFC-009 §5.3.2): an ID document in
+  /// Didit's page, or the operator's call. See [VerificationStatus.ageCheck].
+  ageCheck,
+
   /// A state this build doesn't know. Treated as not verified, with no way to start.
   unknown;
 
@@ -75,13 +79,20 @@ class VerificationStatus {
   /// The consent text's current version. Sent back with `startAttempt`.
   final String consentVersion;
 
+  /// Only set in [VerificationState.ageCheck].
+  final AgeCheckStatus? ageCheck;
+
   const VerificationStatus({
     required this.state,
     this.reason,
     this.attemptsLeftToday = 0,
     this.canStart = false,
     this.consentVersion = '',
+    this.ageCheck,
   });
+
+  /// Whether `startAgeCheck` can open an ID check now. False outside [VerificationState.ageCheck].
+  bool get canStartIdCheck => ageCheck?.canStartIdCheck ?? false;
 
   bool get isVerified => state == VerificationState.verified;
 
@@ -97,8 +108,46 @@ class VerificationStatus {
       attemptsLeftToday: (json['attemptsLeftToday'] as num?)?.toInt() ?? 0,
       canStart: json['canStart'] as bool? ?? false,
       consentVersion: json['consentVersion']?.toString() ?? '',
+      // An age check with no detail reads as "the team will be in touch": never a link we
+      // weren't told we can open.
+      ageCheck: state == VerificationState.ageCheck
+          ? AgeCheckStatus.fromJson(json['ageCheck'])
+          : null,
     );
   }
+}
+
+/// `ageCheck` on `GET /users/me/verification`, in [VerificationState.ageCheck] only.
+class AgeCheckStatus {
+  /// True: the user can open an ID check in Didit's page. False: the operator will call (the
+  /// staff-only path, a staff referral, the ID check off, or today's sessions used).
+  final bool canStartIdCheck;
+
+  const AgeCheckStatus({required this.canStartIdCheck});
+
+  factory AgeCheckStatus.fromJson(Object? json) => AgeCheckStatus(
+        canStartIdCheck: json is Map<String, dynamic> && json['canStartIdCheck'] == true,
+      );
+}
+
+/// `POST /users/me/verification/age-check`: the link to Didit's ID check page.
+///
+/// The link is a credential for the user's own session: open it and let it go. Never print it,
+/// store it or keep it in a provider (CF primer rule 19).
+class AgeCheckLink {
+  final Uri url;
+
+  const AgeCheckLink(this.url);
+
+  /// Null when the server sent no usable https link.
+  static AgeCheckLink? fromJson(Map<String, dynamic> json) {
+    final url = Uri.tryParse(json['url']?.toString() ?? '');
+    if (url == null || url.scheme != 'https' || url.host.isEmpty) return null;
+    return AgeCheckLink(url);
+  }
+
+  @override
+  String toString() => 'AgeCheckLink(url: <redacted>)';
 }
 
 /// The pose the server picked for an attempt. The app bundles an illustration per [key];

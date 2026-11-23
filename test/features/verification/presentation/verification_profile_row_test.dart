@@ -34,6 +34,7 @@ void main() {
     'IN_REVIEW': 'In review',
     'RETRY': 'Action needed',
     'LOCKED': 'Action needed',
+    'AGE_CHECK': 'Action needed',
     'VERIFIED': 'Verified',
     'SOMETHING_NEW': 'Not started',
   };

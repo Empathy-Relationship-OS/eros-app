@@ -13,6 +13,8 @@ const String statusPath = '/users/me/verification';
 const String attemptsPath = '/users/me/verification/attempts';
 const String attemptId = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
 const String submitPath = '/users/me/verification/attempts/$attemptId/submit';
+const String ageCheckPath = '/users/me/verification/age-check';
+const String diditLink = 'https://verify.didit.me/session/test-session';
 
 /// `GET /users/me/verification` in [state].
 Map<String, dynamic> statusJson(
@@ -20,6 +22,7 @@ Map<String, dynamic> statusJson(
   String? reason,
   int attemptsLeftToday = 3,
   bool canStart = true,
+  bool? canStartIdCheck,
 }) =>
     {
       'state': state,
@@ -27,7 +30,16 @@ Map<String, dynamic> statusJson(
       'attemptsLeftToday': attemptsLeftToday,
       'canStart': canStart,
       'consentVersion': '1',
+      if (canStartIdCheck != null) 'ageCheck': {'canStartIdCheck': canStartIdCheck},
     };
+
+/// `GET /users/me/verification` in `AGE_CHECK`, as CF-B3 sends it.
+Map<String, dynamic> ageCheckStatusJson({required bool canStartIdCheck}) => statusJson(
+      'AGE_CHECK',
+      attemptsLeftToday: 2,
+      canStart: false,
+      canStartIdCheck: canStartIdCheck,
+    );
 
 /// The backend's `ApiError`.
 Map<String, dynamic> apiError(String code, [String message = 'Refused']) =>

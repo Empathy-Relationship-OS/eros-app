@@ -12,7 +12,7 @@ import 'package:eros_app/features/verification/presentation/widgets/verification
 /// (D-14): there's no blocking sheet, the wall on a date is the only hard stop.
 ///
 /// Shown per [shouldShowVerificationCard]. Dismissing it is remembered on this device; it comes
-/// back when the user lands in retry. Nothing here is about anyone else (D-7).
+/// back when the user lands in retry or the age check. Nothing here is about anyone else (D-7).
 class VerificationPromptCard extends ConsumerStatefulWidget {
   const VerificationPromptCard({super.key});
 
@@ -24,14 +24,16 @@ class _VerificationPromptCardState extends ConsumerState<VerificationPromptCard>
   @override
   void initState() {
     super.initState();
-    // A dismissal made in retry moves on with the state, so that the next retry (after another
-    // attempt) shows the card again.
+    // A dismissal made in retry or the age check moves on with the state, so that the next one
+    // (after another attempt) shows the card again. Not into another of those states, where the
+    // card should show.
     ref.listenManual<AsyncValue<VerificationStatus>>(
       verificationStatusProvider,
       (_, next) {
         final state = next.valueOrNull?.state;
-        if (state == null || state == VerificationState.retry) return;
-        if (ref.read(verificationCardDismissalProvider) != VerificationState.retry) return;
+        if (state == null || verificationCardReturnsIn.contains(state)) return;
+        final dismissedIn = ref.read(verificationCardDismissalProvider);
+        if (!verificationCardReturnsIn.contains(dismissedIn)) return;
         ref.read(verificationCardDismissalProvider.notifier).dismiss(state);
       },
       fireImmediately: true,
@@ -52,9 +54,11 @@ class _VerificationPromptCardState extends ConsumerState<VerificationPromptCard>
       child: AppPromptCard(
         icon: Icons.verified_user_outlined,
         title: VerificationCopy.cardTitle,
-        subtitle: state == VerificationState.retry
-            ? VerificationCopy.retryReason(status?.reason)
-            : VerificationCopy.whatItTakes,
+        subtitle: switch (state) {
+          VerificationState.retry => VerificationCopy.retryReason(status?.reason),
+          VerificationState.ageCheck => VerificationCopy.ageCheckCard,
+          _ => VerificationCopy.whatItTakes,
+        },
         onTap: () => openVerificationStatus(context),
         onDismiss: () => ref.read(verificationCardDismissalProvider.notifier).dismiss(state),
         dismissTooltip: VerificationCopy.cardDismiss,

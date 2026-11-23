@@ -138,6 +138,21 @@ void main() {
       expect(http.sent('POST', attemptsPath), isEmpty);
     });
 
+    testWidgets('says Didit estimates your age from the selfie and keeps nothing (CF-F2)',
+        (tester) async {
+      await openFlow(tester);
+
+      expect(find.textContaining('Didit estimates your age'), findsOneWidget);
+    });
+
+    testWidgets('opened in AGE_CHECK, it shows the age step instead of consent', (tester) async {
+      http.responses['GET $statusPath'] = reply(200, ageCheckStatusJson(canStartIdCheck: true));
+      await openFlow(tester);
+
+      expect(find.text(VerificationCopy.ageCheckTitle), findsOneWidget);
+      expect(find.text(VerificationCopy.consentAgree), findsNothing);
+    });
+
     testWidgets('the staff-only choice sends automatedCheck: false', (tester) async {
       await openFlow(tester);
 
@@ -365,6 +380,33 @@ void main() {
       await agreeCaptureAndSend(tester);
 
       expect(find.text(VerificationCopy.verified), findsOneWidget);
+    });
+
+    testWidgets('an AGE_CHECK answer goes straight to the age step, not "we\'re checking"',
+        (tester) async {
+      http.responses['POST $submitPath'] = reply(200, {'state': 'AGE_CHECK'});
+      await openFlow(tester);
+      http.responses['GET $statusPath'] = reply(200, ageCheckStatusJson(canStartIdCheck: true));
+
+      await agreeCaptureAndSend(tester);
+
+      expect(find.text(VerificationCopy.ageCheckTitle), findsOneWidget);
+      expect(find.text(VerificationCopy.confirmMyAge), findsOneWidget);
+      expect(find.text(VerificationCopy.submitted), findsNothing);
+
+      await tester.tap(find.byTooltip(VerificationCopy.closeLabel));
+      await settle(tester);
+      await expectFlowClosed(tester);
+    });
+
+    testWidgets('a refetched AGE_CHECK goes to the age step too', (tester) async {
+      await openFlow(tester);
+      http.responses['GET $statusPath'] = reply(200, ageCheckStatusJson(canStartIdCheck: false));
+
+      await agreeCaptureAndSend(tester);
+
+      expect(find.text(VerificationCopy.ageCheckByStaff), findsOneWidget);
+      expect(find.text(VerificationCopy.submitted), findsNothing);
     });
 
     testWidgets('retake deletes the picture and opens the camera again', (tester) async {
