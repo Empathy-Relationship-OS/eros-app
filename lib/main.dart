@@ -33,7 +33,6 @@ import 'features/profile/presentation/screens/preferences/sexual_orientation_scr
 import 'features/profile/presentation/screens/preferences/bio_screen.dart';
 import 'features/profile/presentation/screens/preferences/pronouns_screen.dart';
 import 'features/profile/presentation/screens/preferences/religion_screen.dart';
-import 'features/profile/presentation/screens/preferences/political_view_screen.dart';
 import 'features/profile/presentation/screens/preferences/diet_screen.dart';
 import 'features/profile/presentation/screens/preferences/preferences_complete_screen.dart';
 import 'features/profile/presentation/screens/interests/interests_screen.dart';
@@ -142,7 +141,6 @@ class ErosApp extends StatelessWidget {
         '/profile-creation/preferences/bio': (context) => const BioScreen(),
         '/profile-creation/preferences/pronouns': (context) => const PronounsScreen(),
         '/profile-creation/preferences/religion': (context) => const ReligionScreen(),
-        '/profile-creation/preferences/political-view': (context) => const PoliticalViewScreen(),
         '/profile-creation/preferences/diet': (context) => const DietScreen(),
         '/profile-creation/preferences/complete': (context) => const PreferencesCompleteScreen(),
 

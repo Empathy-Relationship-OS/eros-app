@@ -33,7 +33,6 @@ class MyProfile {
 
   final DisplayableField<List<Language>> spokenLanguages;
   final DisplayableField<Religion?> religion;
-  final DisplayableField<PoliticalView?> politicalView;
   final DisplayableField<AlcoholConsumption?> alcoholConsumption;
   final DisplayableField<SmokingStatus?> smokingStatus;
   final DisplayableField<Diet?> diet;
@@ -78,7 +77,6 @@ class MyProfile {
     required this.traits,
     required this.spokenLanguages,
     required this.religion,
-    required this.politicalView,
     required this.alcoholConsumption,
     required this.smokingStatus,
     required this.diet,
@@ -121,7 +119,6 @@ class MyProfile {
       traits: _strings(json['traits']).map(Trait.fromBackend).toList(),
       spokenLanguages: _field(json, 'spokenLanguages', (v) => _list(v, _language)),
       religion: _field(json, 'religion', (v) => _nullable(v, Religion.fromBackend)),
-      politicalView: _field(json, 'politicalView', (v) => _nullable(v, PoliticalView.fromBackend)),
       alcoholConsumption:
           _field(json, 'alcoholConsumption', (v) => _nullable(v, AlcoholConsumption.fromBackend)),
       smokingStatus: _field(json, 'smokingStatus', (v) => _nullable(v, SmokingStatus.fromBackend)),
@@ -166,7 +163,6 @@ class MyProfile {
     List<Trait>? traits,
     DisplayableField<List<Language>>? spokenLanguages,
     DisplayableField<Religion?>? religion,
-    DisplayableField<PoliticalView?>? politicalView,
     DisplayableField<AlcoholConsumption?>? alcoholConsumption,
     DisplayableField<SmokingStatus?>? smokingStatus,
     DisplayableField<Diet?>? diet,
@@ -207,7 +203,6 @@ class MyProfile {
       traits: traits ?? this.traits,
       spokenLanguages: spokenLanguages ?? this.spokenLanguages,
       religion: religion ?? this.religion,
-      politicalView: politicalView ?? this.politicalView,
       alcoholConsumption: alcoholConsumption ?? this.alcoholConsumption,
       smokingStatus: smokingStatus ?? this.smokingStatus,
       diet: diet ?? this.diet,

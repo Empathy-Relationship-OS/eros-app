@@ -111,8 +111,8 @@ void main() {
       ]) {
         expect(find.text(text), findsWidgets, reason: text);
       }
-      // Politics, body attributes and body description are empty.
-      expect(find.text('Add'), findsNWidgets(3));
+      // Body attributes and body description are empty.
+      expect(find.text('Add'), findsNWidgets(2));
     });
 
     testWidgets('Preview opens the user\'s own profile in preview mode', (tester) async {
@@ -173,7 +173,6 @@ void main() {
     testWidgets('no eye where there is nothing to show', (tester) async {
       await _pumpHub(tester);
 
-      expect(_eyeIn('Politics'), findsNothing); // no value
       expect(_eyeIn('Body'), findsNothing); // no attributes
       expect(_eyeIn('Bio'), findsNothing); // not a show/hide field
       expect(_eyeIn('Religion'), findsOneWidget);
@@ -208,7 +207,7 @@ void main() {
     const labels = [
       'Bio', 'Occupation', 'Height', 'Education', 'Location', 'Languages', 'Interests', 'Traits',
       'Star sign', 'Drinking', 'Smoking', 'Diet', 'Dating intentions', 'Relationship type', 'Kids',
-      'Sexual orientation', 'Pronouns', 'Religion', 'Politics', 'Ethnicity', 'Brain', 'Body',
+      'Sexual orientation', 'Pronouns', 'Religion', 'Ethnicity', 'Brain', 'Body',
     ];
     for (final label in labels) {
       final row = find.text(label).last; // 'Interests' is also a section title
@@ -232,7 +231,7 @@ void main() {
       'Ethnicity',
     ];
     // Languages uses the same screen as Ethnicity, so it is the likeliest to get the note by mistake.
-    const others = ['Star sign', 'Diet', 'Sexual orientation', 'Pronouns', 'Politics', 'Languages'];
+    const others = ['Star sign', 'Diet', 'Sexual orientation', 'Pronouns', 'Languages'];
     for (final label in [...filtered, ...others]) {
       await tester.tap(find.text(label).last);
       await tester.pumpAndSettle();
@@ -427,15 +426,51 @@ void main() {
       });
     });
 
-    testWidgets('ethnicity can\'t be saved empty', (tester) async {
-      await _pumpHub(tester);
+    testWidgets('ethnicity can be skipped: no answer saves an empty list and shows "Not given" '
+        '(RFC-009 D-12)', (tester) async {
+      final repository = await _pumpHub(tester);
       await _openRow(tester, 'Black/African Descent');
 
       await tester.tap(find.text('Clear all'));
       await tester.pump();
+      expect(find.textContaining('Choose at least'), findsNothing);
+      expect(_saveButton(tester).onPressed, isNotNull);
 
-      expect(_saveButton(tester).onPressed, isNull);
-      expect(find.text('Choose at least 1'), findsOneWidget);
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(repository.requests.single, {
+        'ethnicity': {'field': <String>[], 'display': false},
+      });
+      expect(find.text('Not given'), findsOneWidget);
+      expect(_eyeIn('Not given'), findsNothing);
+    });
+
+    testWidgets('ethnicity\'s "Prefer not to say" can\'t be combined and saves hidden',
+        (tester) async {
+      final repository = await _pumpHub(tester);
+      await _openRow(tester, 'Black/African Descent');
+
+      // Ticking it clears the other answer and hides the checkbox.
+      await tester.tap(find.text('Prefer not to say').first);
+      await tester.pump();
+      expect(find.text('1 selected'), findsOneWidget);
+      expect(find.text('Show on my profile'), findsNothing);
+
+      // Ticking another answer clears it.
+      await tester.tap(find.text('East Asian').first);
+      await tester.pump();
+      expect(find.text('1 selected'), findsOneWidget);
+      expect(find.text('Show on my profile'), findsOneWidget);
+
+      await tester.tap(find.text('Prefer not to say').first);
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(repository.requests.single, {
+        'ethnicity': {'field': ['Prefer not to say'], 'display': false},
+      });
     });
 
     testWidgets('interests must stay between 5 and 10', (tester) async {

@@ -349,46 +349,6 @@ enum Religion {
   }
 }
 
-/// Political view
-enum PoliticalView {
-  liberal,
-  moderate,
-  conservative,
-  apolitical,
-  other,
-  preferNotToSay;
-
-  String get displayName {
-    switch (this) {
-      case PoliticalView.liberal:
-        return 'Liberal';
-      case PoliticalView.moderate:
-        return 'Moderate';
-      case PoliticalView.conservative:
-        return 'Conservative';
-      case PoliticalView.apolitical:
-        return 'Apolitical';
-      case PoliticalView.other:
-        return 'Other';
-      case PoliticalView.preferNotToSay:
-        return 'Prefer not to say';
-    }
-  }
-
-  /// Convert to backend format (display name)
-  String toBackend() => displayName;
-
-  /// Parse from backend format (display name)
-  static PoliticalView fromBackend(String value) {
-    return PoliticalView.values.firstWhere(
-      (e) => e.displayName == value,
-      orElse: () => throw ArgumentError(
-        'Invalid PoliticalView value: $value. Expected one of: ${PoliticalView.values.map((e) => e.displayName).join(", ")}',
-      ),
-    );
-  }
-}
-
 /// Diet preference
 enum Diet {
   omnivore,
@@ -449,7 +409,8 @@ enum Ethnicity {
   southAsian,
   southeastAsian,
   whiteCaucasian,
-  other;
+  other,
+  preferNotToSay;
 
   String get displayName {
     switch (this) {
@@ -473,6 +434,8 @@ enum Ethnicity {
         return 'White/Caucasian';
       case Ethnicity.other:
         return 'Other';
+      case Ethnicity.preferNotToSay:
+        return 'Prefer not to say';
     }
   }
 

@@ -8,7 +8,6 @@ import 'package:eros_app/features/profile/presentation/screens/preferences/date_
 import 'package:eros_app/features/profile/presentation/screens/preferences/diet_screen.dart';
 import 'package:eros_app/features/profile/presentation/screens/preferences/kids_preference_screen.dart';
 import 'package:eros_app/features/profile/presentation/screens/preferences/occupation_screen.dart';
-import 'package:eros_app/features/profile/presentation/screens/preferences/political_view_screen.dart';
 import 'package:eros_app/features/profile/presentation/screens/preferences/pronouns_screen.dart';
 import 'package:eros_app/features/profile/presentation/screens/preferences/relationship_type_screen.dart';
 import 'package:eros_app/features/profile/presentation/screens/preferences/religion_screen.dart';
@@ -100,14 +99,11 @@ void main() {
     _ChoiceScreen<KidsPreference>('KidsPreferenceScreen', () => const KidsPreferenceScreen(),
         KidsPreference.values, (v) => v.displayName, (d) => d.kidsPreference, '$route/alcohol',
         preferNotToSay: KidsPreference.preferNotToSay),
-    _ChoiceScreen<PoliticalView>('PoliticalViewScreen', () => const PoliticalViewScreen(),
-        PoliticalView.values, (v) => v.displayName, (d) => d.politicalView, '$route/diet',
-        preferNotToSay: PoliticalView.preferNotToSay),
     _ChoiceScreen<Pronouns>('PronounsScreen', () => const PronounsScreen(), Pronouns.values,
         (v) => v.displayName, (d) => d.pronouns, '$route/religion',
         preferNotToSay: Pronouns.preferNotToSay),
     _ChoiceScreen<Religion>('ReligionScreen', () => const ReligionScreen(), Religion.values,
-        (v) => v.displayName, (d) => d.religion, '$route/political-view',
+        (v) => v.displayName, (d) => d.religion, '$route/diet',
         preferNotToSay: Religion.preferNotToSay),
     _ChoiceScreen<SexualOrientation>('SexualOrientationScreen', () => const SexualOrientationScreen(),
         SexualOrientation.values, (v) => v.displayName, (d) => d.sexualOrientation, '$route/bio',
@@ -124,6 +120,13 @@ void main() {
   for (final screen in choiceScreens) {
     screen.define();
   }
+
+  testWidgets('religion is followed by diet, the last preferences step', (tester) async {
+    final harness = OnboardingHarness();
+    await harness.pump(tester, const DietScreen());
+
+    expect(find.text('Preferences 11 of 11'), findsOneWidget);
+  });
 
   group('EducationScreen', () {
     testWidgets('saves the choice and moves on', (tester) async {

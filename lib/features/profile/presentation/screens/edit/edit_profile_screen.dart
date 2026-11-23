@@ -372,19 +372,14 @@ class _Hub extends ConsumerWidget {
               usedForMatching: true,
               preferNotToSay: Religion.preferNotToSay,
               buildRequest: (f) => UpdateUserRequest(religion: f)),
-          _choiceRow<PoliticalView>(context, ref,
-              label: 'Politics',
-              question: 'What are your political views?',
-              values: PoliticalView.values,
-              labelOf: (v) => v.displayName,
-              field: p.politicalView,
-              preferNotToSay: PoliticalView.preferNotToSay,
-              buildRequest: (f) => UpdateUserRequest(politicalView: f)),
           _EditRow(
             label: 'Ethnicity',
-            value: ethnicity.map((e) => e.displayName).join(', '),
+            // Optional (RFC-009 D-12): an empty list is no answer.
+            value: ethnicity.isEmpty
+                ? 'Not given'
+                : ethnicity.map((e) => e.displayName).join(', '),
             visibility: _eye(context, ref, p.ethnicity, (f) => UpdateUserRequest(ethnicity: f),
-                hasValue: ethnicity.isNotEmpty),
+                hasValue: ethnicity.isNotEmpty && !ethnicity.contains(Ethnicity.preferNotToSay)),
             onTap: () => _open(
               context,
               EditMultiChoiceScreen<Ethnicity>(
@@ -392,10 +387,10 @@ class _Hub extends ConsumerWidget {
                 question: 'What is your ethnicity?',
                 options: Ethnicity.values,
                 labelOf: (e) => e.displayName,
-                min: 1, // the backend rejects an empty list
                 initial: ethnicity,
                 initialVisible: p.ethnicity.visible,
                 usedForMatching: true,
+                preferNotToSay: Ethnicity.preferNotToSay,
                 buildRequest: (selected, visible) =>
                     UpdateUserRequest(ethnicity: DisplayableField(field: selected, visible: visible)),
               ),
