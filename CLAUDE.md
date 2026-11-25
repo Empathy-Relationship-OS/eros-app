@@ -98,7 +98,7 @@ lib/
 │   ├── utils/              # Validators, formatters, helpers
 │   └── network/            # API client, interceptors
 ├── features/
-│   ├── auth/               # Firebase authentication, OTP verification
+│   ├── auth/               # Firebase auth: Apple (iOS), Google, email (see "Authentication")
 │   │   ├── data/          # Repositories, data sources
 │   │   ├── domain/        # Entities, use cases
 │   │   └── presentation/  # Screens, widgets, state management
@@ -403,7 +403,8 @@ Reference `screenshots/Screenshot_Catalogue.md` lines 141-619 for complete enum 
 - **Phone Validation**: OTP verification flow
 
 ### Data Privacy (GDPR-Conscious)
-- Soft delete for user accounts (`PATCH /users/me` with status DELETED)
+- Soft delete for user accounts: Delete account calls `DELETE /users/me` (see "Delete account"
+  under Authentication)
 - User consent checkboxes for marketing emails
 - Profile visibility controls (ACTIVE vs SLEEP_MODE status)
 
@@ -423,6 +424,109 @@ Reference `screenshots/Screenshot_Catalogue.md` lines 141-619 for complete enum 
 - Test theme consistency across screens
 
 ## Key Implementation Notes
+
+### Authentication and social sign-in (RFC-011)
+
+The spec is [RFC-011](https://github.com/Empathy-Relationship-OS/eros-backend/blob/develop/docs/RFC-011-social-sign-in.md)
+in the backend repo; its §9 decisions (D-1 to D-14) are settled. Every method ends in an ordinary
+Firebase user, so the backend checks the same Firebase ID token whichever was used, and doesn't
+know or store which one it was (D-8). How to test it by hand is in
+[README.md](README.md#testing-sign-in-by-hand).
+
+**Three sign-in methods** (D-2). One button does both sign-up and sign-in; `AuthLoadingScreen`
+then sends the user to the app or to profile creation (D-3).
+
+| Method | Platforms | Code |
+|---|---|---|
+| Continue with Apple | **iOS only.** Never shown or called on Android | `lib/core/auth/apple_sign_in.dart`, `AuthRepository.signInWithApple` |
+| Continue with Google | iOS and Android | `lib/core/auth/google_sign_in_config.dart`, `AuthRepository.signInWithGoogle` |
+| Continue with Email (email and password) | iOS and Android | `AuthRepository.signUpWithEmail` / `signInWithEmail` |
+
+- Button order on `AuthMethodSelectionScreen`: iOS Apple, Google, Email; Android Google, Email.
+  "Continue with Email" stays a full button (D-4). The Apple button is `AppleProviderButton`
+  (Apple's `SignInWithAppleButton`), Google's is `AuthProviderButton` with the G mark; both are
+  `AppButton.minHeight` tall.
+- The Apple check is `appleSignInSupported()` (`defaultTargetPlatform == iOS`, so widget tests
+  can set the platform with `TargetPlatformVariant`). Every Apple call and the button sit behind
+  it; don't use `Platform.isIOS`.
+- `google_sign_in` 7 is a singleton: `initializeGoogleSignIn` runs once in `main()` after
+  Firebase, with `GoogleSignInConfig.serverClientId` (a public client id; Android needs it for an
+  ID token). `SignOutService` also signs out of Google, so the next sign-in shows the picker.
+
+**All auth calls go through `AuthRepository`** (`lib/features/auth/data/repositories/auth_repository.dart`)
+and come back as `AuthResult`, through `AuthStateNotifier` for screens. Screens never call
+`FirebaseAuth`, `GoogleSignIn` or `SignInWithApple` themselves. The plugins come in through
+`googleSignInProvider` and `appleSignInClientProvider` (`AppleSignInClient`), and tests pass
+fakes of them to the `AuthRepository` constructor. The exceptions are start-up
+(`initializeGoogleSignIn`), `SignOutService`, and the devtools persona sign-in (custom tokens,
+local and develop builds only).
+
+- `signInWithGoogle()` and `signInWithApple()` return `null` when the user closes the sheet.
+  Cancelling isn't an error: the method screen shows nothing.
+- Never log ID tokens, access tokens, authorization codes, nonces, emails or names, in the
+  `Logger`, `debugPrint` or crash reports. Log the uid and error codes. `AppleAuthorization` holds
+  secrets and its `toString` is redacted.
+- An Apple relay email (Hide My Email) is an ordinary email: never parse or special-case its
+  domain.
+
+**Apple's name arrives only once**, on the user's first authorisation of Muse (D-7).
+`signInWithApple` writes it into the onboarding draft (`updateFields`, replacing what's there)
+before `signInWithCredential`, and onto the Firebase user with `updateDisplayName` as the first
+await after it. Later sign-ins get no name from Apple and only prefill an empty draft from
+`user.displayName`. Google's name prefills an empty draft (`prefillName`); a typed name is
+never replaced. On launch, `AuthLoadingScreen` asks Apple whether an Apple user still lets Muse
+in (`hasRevokedAppleCredential`, 5 s timeout) and signs them out if not; a failed check lets
+them in.
+
+**One account per email** (§5.4, D-5, D-10). Firebase's "Link accounts that use the same email"
+and email enumeration protection stay on.
+- Never call `fetchSignInMethodsForEmail`, and never tell the user which provider an email uses.
+  Messages name the options the platform offers, never the account's method: "Sign in, or try
+  Continue with Google or Apple" (Apple only where `appleSignInSupported()`).
+- Apple, or Google with a non-Gmail address, for an email that has a password account:
+  Firebase throws `account-exists-with-different-credential`. `AuthRepository` returns
+  `AuthResult.needsLink` with a `PendingAccountLink`; the password screen opens with the email
+  filled in and `AccountLinkBanner`, and after the password sign-in `linkPendingCredential` adds
+  the provider. A failed link leaves the user signed in.
+- Google with a Gmail address takes over the same uid, and Firebase drops the unverified
+  password. A later password sign-in fails with `incorrectEmailOrPasswordMessage`, which
+  mentions the provider buttons without saying which one the account uses.
+
+**Delete account** (§5.6, SI-F4). `DeleteAccountScreen`
+(`lib/features/settings/presentation/screens/`) is the one deletion flow; Settings and "Privacy,
+safety and legal" both open it (D-11).
+- It's blocked during an active date (D-14): if `GET /dates?filter=active` returns any, the
+  screen says to cancel the date first and links to the dates list. If the check fails, it
+  offers Try again, not Delete.
+- After the confirmation, `AuthRepository.deleteAccount()` runs, in this order:
+  1. Apple user (`apple.com` in `providerData`): Apple's sheet again with no scopes for a fresh
+     authorization code, then `FirebaseAuth.revokeTokenWithAuthorizationCode`. Cancelling, a
+     failure, or Android (no Apple there) doesn't stop the deletion (D-9); `appleRevoked: false`
+     makes the screen ask the user to remove Muse in their Apple ID settings, with Apple's help
+     link.
+  2. Google user (`google.com`): `GoogleSignIn.disconnect()`, best-effort, 3 s timeout.
+  3. `DELETE /users/me` (`AccountRepository.closeAccount`): the step that must succeed. If it
+     fails, nothing else happens and the user stays signed in.
+  4. Sign-out through `SignOutService`, then the welcome screen.
+- **It never deletes the Firebase user.** The backend's account erasure (RFC-009, CF-B8) deletes
+  it after the 30-day grace period. Until then the same Apple, Google or email sign-in reaches the
+  same uid.
+
+**The deleted-account screen** (D-12). `AccountDeletedScreen`
+(`lib/features/auth/presentation/screens/account_deleted_screen.dart`) is where a deleted user
+lands on signing in again: when `GET /users/exists` says `deleted: true` (in `AuthLoadingScreen`
+and the password sign-in screen) or `POST /users` answers 409 `ACCOUNT_DELETED`
+(`AccountDeletedFailure`, at profile submission). It replaces the whole stack, so Back can't
+reach sign-up, and offers Contact support (an email with the uid only) and Sign out. There's no
+self-service restore; support restores an account by hand.
+
+**Support address:** `SupportConfig.supportEmail` (`lib/core/config/support_config.dart`). It is
+a placeholder until the address is decided; release builds must pass
+`--dart-define=SUPPORT_EMAIL=...`. Don't type an address into a screen.
+
+**Before an App Store submission:** Apple and Google ship together, with Delete account (RFC-011
+§7; App Review guidelines 4.8 and 5.1.1(v)). The code for all of it is merged, but real Apple and
+Google sign-in also need the console setup in SI-C1, which isn't done yet (see the README).
 
 ### Photo Upload Flow (S3 Direct Upload)
 1. Request presigned URL: `POST /users/me/photos/presigned-url` with fileName and contentType
