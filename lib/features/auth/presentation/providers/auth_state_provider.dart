@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../domain/models/account_link.dart';
+import '../../domain/models/delete_account_result.dart';
 
 /// Auth state class
 class AuthState {
@@ -129,6 +130,14 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   Future<void> signOut() async {
     await _authRepository.signOut();
     state = const AuthState();
+  }
+
+  /// Delete account (RFC-011 §5.6): see [AuthRepository.deleteAccount]. Once the account is
+  /// deleted and signed out, the state is signed out too.
+  Future<DeleteAccountResult> deleteAccount() async {
+    final result = await _authRepository.deleteAccount();
+    if (result.isSuccess && result.signedOut) state = const AuthState();
+    return result;
   }
 
   /// Get Firebase ID token

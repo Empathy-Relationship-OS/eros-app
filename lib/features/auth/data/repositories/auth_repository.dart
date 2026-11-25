@@ -9,7 +9,9 @@ import 'package:eros_app/core/auth/google_sign_in_config.dart';
 import 'package:eros_app/core/auth/sign_out_service.dart';
 import 'package:eros_app/core/notifications/push_service.dart';
 import 'package:eros_app/features/auth/domain/models/account_link.dart';
+import 'package:eros_app/features/auth/domain/models/delete_account_result.dart';
 import 'package:eros_app/features/auth/domain/models/provider_name.dart';
+import 'package:eros_app/features/legal/data/account_repository.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 
 /// Provider for FirebaseAuth instance
@@ -28,7 +30,8 @@ final signOutServiceProvider = Provider<SignOutService>((ref) {
 });
 
 /// Provider for AuthRepository
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
+/// Typed, not inferred: through the API client it depends on itself (via the auth state).
+final Provider<AuthRepository> authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
     ref.read(firebaseAuthProvider),
     ref.read(authServiceProvider),
@@ -36,6 +39,8 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
     googleSignIn: ref.read(googleSignInProvider),
     appleSignIn: ref.read(appleSignInClientProvider),
     profileDraft: () => ref.read(profileCreationProvider.notifier),
+    // Read when used: the API client watches the auth state, which reads this provider.
+    accountRepository: () => ref.read(accountRepositoryProvider),
   );
 });
 
@@ -115,6 +120,9 @@ class AuthRepository {
   /// The onboarding draft, which a provider's name prefills (RFC-011 D-7).
   final ProfileCreationNotifier Function() _profileDraft;
 
+  /// `DELETE /users/me` for [deleteAccount]. The provider always passes it.
+  final AccountRepository Function()? _accountRepository;
+
   /// Logs error codes and uids only: never a token, an email or a name (RFC-011 primer rule 10).
   final Logger _logger;
 
@@ -126,11 +134,13 @@ class AuthRepository {
     required AppleSignInClient appleSignIn,
     required ProfileCreationNotifier Function() profileDraft,
     bool Function() appleSupported = appleSignInSupported,
+    AccountRepository Function()? accountRepository,
     Logger? logger,
   })  : _googleSignIn = googleSignIn,
         _appleSignIn = appleSignIn,
         _appleSupported = appleSupported,
         _profileDraft = profileDraft,
+        _accountRepository = accountRepository,
         _logger = logger ?? Logger(printer: PrettyPrinter(methodCount: 0));
 
   /// Get current user
@@ -572,17 +582,81 @@ class AuthRepository {
     await _authService.reloadUser();
   }
 
-  /// Delete current user account
-  Future<AuthResult> deleteAccount() async {
+  /// How long Delete account waits for Google's disconnect before going ahead.
+  static const googleDisconnectTimeout = Duration(seconds: 3);
+
+  /// Delete account (RFC-011 §5.6, SI-F4), in this order:
+  /// 1. An Apple user: Apple's sheet again with no scopes for a fresh authorization code, then
+  ///    `revokeTokenWithAuthorizationCode`. Cancelling or a failure doesn't stop the deletion
+  ///    (D-9); the result's `appleRevoked` says so.
+  /// 2. A Google user: `GoogleSignIn.disconnect`, best-effort.
+  /// 3. `DELETE /users/me`, the step that must succeed. On failure nothing else happens and the
+  ///    user stays signed in.
+  /// 4. Sign-out through [SignOutService].
+  ///
+  /// The Firebase user is never deleted here: RFC-009's erasure deletes it after the grace
+  /// period, and until then the same Apple or Google account can't open a fresh account.
+  /// The screen checks for active dates first (D-14). Logs the uid and error codes only.
+  Future<DeleteAccountResult> deleteAccount() async {
+    final user = currentUser;
+    final accountRepository = _accountRepository;
+    if (user == null || accountRepository == null) {
+      return const DeleteAccountResult.failure(deleteAccountFailedMessage);
+    }
+    final providers = {for (final info in user.providerData) info.providerId};
+    _logger.i('Deleting account ${user.uid}');
+
+    var appleRevoked = true;
+    if (providers.contains(appleProviderId)) {
+      appleRevoked = _appleSupported() && await _revokeApple();
+    }
+    if (providers.contains(GoogleAuthProvider.PROVIDER_ID)) await _disconnectGoogle();
+
     try {
-      await currentUser?.delete();
-      return AuthResult(isSuccess: true);
-    } on FirebaseAuthException catch (e) {
-      return AuthResult.failure(_handleFirebaseAuthError(e));
+      await accountRepository().closeAccount();
     } catch (e) {
-      return AuthResult.failure(
-        'An unexpected error occurred. Please try again.',
-      );
+      _logger.w('Account deletion failed for ${user.uid} (${e.runtimeType})');
+      return const DeleteAccountResult.failure(deleteAccountFailedMessage);
+    }
+
+    var signedOut = true;
+    try {
+      await _signOutService.signOut();
+    } catch (e) {
+      _logger.w('Sign-out after deleting ${user.uid} failed (${e.runtimeType})');
+      signedOut = false;
+    }
+    return DeleteAccountResult.deleted(appleRevoked: appleRevoked, signedOut: signedOut);
+  }
+
+  /// Revokes Muse's Apple tokens with a fresh authorization code. False when the user closed
+  /// Apple's sheet or anything failed. Logs codes only: never the authorization code.
+  Future<bool> _revokeApple() async {
+    try {
+      final apple = await requestAppleAuthorization(scopes: const []);
+      if (apple == null) {
+        _logger.i('Apple revocation skipped: the user closed the sheet');
+        return false;
+      }
+      await _firebaseAuth.revokeTokenWithAuthorizationCode(apple.authorizationCode);
+      _logger.i('Apple tokens revoked');
+      return true;
+    } on SignInWithAppleAuthorizationException catch (e) {
+      _logger.w('Apple revocation failed (${e.code.name})');
+    } on FirebaseAuthException catch (e) {
+      _logger.w('Apple revocation failed (${e.code})');
+    } catch (e) {
+      _logger.w('Apple revocation failed (${e.runtimeType})');
+    }
+    return false;
+  }
+
+  /// Removes Muse's access to the Google account, best-effort.
+  Future<void> _disconnectGoogle() async {
+    try {
+      await _googleSignIn.disconnect().timeout(googleDisconnectTimeout);
+    } catch (e) {
+      _logger.w('Google disconnect did not finish, deleting anyway (${e.runtimeType})');
     }
   }
 

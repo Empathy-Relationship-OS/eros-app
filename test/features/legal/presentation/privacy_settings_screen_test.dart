@@ -2,10 +2,12 @@ import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/core/network/api_client_provider.dart';
 import 'package:eros_app/core/theme/app_theme.dart';
 import 'package:eros_app/features/auth/data/repositories/auth_repository.dart';
+import 'package:eros_app/features/auth/domain/models/delete_account_result.dart';
 import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
 import 'package:eros_app/features/legal/data/support_email.dart';
 import 'package:eros_app/features/legal/presentation/screens/privacy_settings_screen.dart';
 import 'package:eros_app/features/legal/presentation/widgets/legal_copy.dart';
+import 'package:eros_app/features/settings/presentation/screens/delete_account_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,9 +24,18 @@ class _FakeUser implements User {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-/// Signed in; records sign-outs and never touches Firebase.
+/// Signed in; records sign-outs and deletions and never touches Firebase.
 class _FakeAuthRepository implements AuthRepository {
   int signOuts = 0;
+  int deletions = 0;
+  DeleteAccountResult deleteResult =
+      const DeleteAccountResult.deleted(appleRevoked: true, signedOut: true);
+
+  @override
+  Future<DeleteAccountResult> deleteAccount() async {
+    deletions++;
+    return deleteResult;
+  }
 
   @override
   User? get currentUser => _FakeUser();
@@ -76,6 +87,8 @@ class _Harness {
           authServiceProvider.overrideWithValue(FakeAuthService()),
           authStateProvider.overrideWith((ref) => AuthStateNotifier(auth)),
           legalLinksProvider.overrideWithValue(links),
+          // Delete account's active-date check (SI-F4) has its own tests.
+          deleteAccountHasActiveDateProvider.overrideWith((ref) async => false),
         ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
@@ -240,8 +253,9 @@ void main() {
       await tester.tap(find.text(PrivacySettingsCopy.deleteAccountLink));
       await settle(tester);
 
+      expect(find.byType(DeleteAccountScreen), findsOneWidget);
       expect(find.text(PrivacySettingsCopy.deleteAccountConfirmBody), findsOneWidget);
-      expect(h.server.sent('DELETE', usersMePath), isEmpty, reason: 'delete still asks first');
+      expect(h.auth.deletions, 0, reason: 'delete still asks first');
     });
 
     testWidgets('closing the retained message leaves sensitive data off', (tester) async {
@@ -307,48 +321,51 @@ void main() {
   });
 
   group('delete account', () {
-    testWidgets('asks first, and cancelling deletes nothing', (tester) async {
+    testWidgets('opens the Delete account screen, and cancelling deletes nothing',
+        (tester) async {
       final h = _Harness();
       await h.pump(tester);
 
       await tester.tap(find.byKey(const ValueKey('delete-account')));
       await settle(tester);
 
+      expect(find.byType(DeleteAccountScreen), findsOneWidget);
       expect(find.text(PrivacySettingsCopy.deleteAccountConfirmBody), findsOneWidget);
 
       await tester.tap(find.text(PrivacySettingsCopy.cancel));
       await settle(tester);
 
-      expect(h.server.sent('DELETE', usersMePath), isEmpty);
-      expect(h.auth.signOuts, 0);
+      expect(find.byType(DeleteAccountScreen), findsNothing);
+      expect(h.auth.deletions, 0);
     });
 
-    testWidgets('on confirm closes the account, then signs out', (tester) async {
+    testWidgets('on confirm deletes through SI-F4\'s flow and ends on the welcome screen',
+        (tester) async {
       final h = _Harness();
       await h.pump(tester);
 
       await tester.tap(find.byKey(const ValueKey('delete-account')));
       await settle(tester);
-      await tester.tap(find.text(PrivacySettingsCopy.deleteAccountConfirm).last);
+      await tester.tap(find.byKey(const ValueKey('delete-account-confirm')));
       await settle(tester);
 
-      expect(h.server.sent('DELETE', usersMePath), hasLength(1));
-      expect(h.auth.signOuts, 1);
+      expect(h.auth.deletions, 1);
+      expect(h.server.sent('DELETE', usersMePath), isEmpty, reason: 'the flow sends it, not this');
       expect(find.text(_welcomeMarker), findsOneWidget);
     });
 
-    testWidgets('a failed delete stays signed in and says so', (tester) async {
+    testWidgets('a failed delete stays on the screen and says so', (tester) async {
       final h = _Harness();
-      h.server.deleteStatus = 404;
+      h.auth.deleteResult = const DeleteAccountResult.failure(deleteAccountFailedMessage);
       await h.pump(tester);
 
       await tester.tap(find.byKey(const ValueKey('delete-account')));
       await settle(tester);
-      await tester.tap(find.text(PrivacySettingsCopy.deleteAccountConfirm).last);
+      await tester.tap(find.byKey(const ValueKey('delete-account-confirm')));
       await settle(tester);
 
-      expect(h.auth.signOuts, 0);
-      expect(find.text(PrivacySettingsCopy.deleteAccountFailed), findsOneWidget);
+      expect(find.text(deleteAccountFailedMessage), findsOneWidget);
+      expect(find.byType(DeleteAccountScreen), findsOneWidget);
       expect(find.text(_welcomeMarker), findsNothing);
     });
   });

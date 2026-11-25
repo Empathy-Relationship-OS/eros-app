@@ -100,6 +100,25 @@ class ConflictException extends ApiException {
   });
 }
 
+/// 409 `ACCOUNT_DELETED`: `POST /users` for a uid whose account was deleted (RFC-011 §5.6,
+/// D-12). Signing up again doesn't restore it; the app shows the "account deleted" screen.
+///
+/// It is a [ConflictException], so code that already handles a 409 keeps working.
+class AccountDeletedFailure extends ConflictException {
+  /// The `error` code of the 409 body.
+  static const String code = 'ACCOUNT_DELETED';
+
+  const AccountDeletedFailure(
+    super.message, {
+    super.statusCode = 409,
+    super.originalError,
+    super.stackTrace,
+  });
+
+  @override
+  String toString() => 'AccountDeletedFailure: $message';
+}
+
 /// 429 Too Many Requests - Rate limiting
 class RateLimitException extends ApiException {
   final Duration? retryAfter;

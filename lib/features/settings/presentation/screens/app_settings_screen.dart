@@ -8,6 +8,7 @@ import 'package:eros_app/features/devtools/presentation/dev_menu_navigation.dart
 import 'package:eros_app/features/legal/presentation/screens/privacy_settings_screen.dart';
 import 'package:eros_app/features/legal/presentation/widgets/legal_copy.dart';
 import 'package:eros_app/features/profile/presentation/widgets/phone_number_settings_tile.dart';
+import 'package:eros_app/features/settings/presentation/screens/delete_account_screen.dart';
 import '../providers/app_settings_provider.dart';
 
 /// App Settings Screen - Allows users to configure app-level settings
@@ -160,6 +161,26 @@ class _AppSettingsScreenState extends ConsumerState<AppSettingsScreen> {
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(builder: (_) => const PrivacySettingsScreen()),
               ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 24),
+
+        // Delete account (RFC-011 §5.6, Apple guideline 5.1.1(v)), last among the user's own
+        // settings. The same screen opens from "Privacy, safety and legal".
+        _SettingsSection(
+          title: PrivacySettingsCopy.accountTitle,
+          children: [
+            ListTile(
+              key: const ValueKey('settings-delete-account'),
+              leading: const Icon(Icons.delete_outline, color: AppColors.error),
+              title: Text(
+                PrivacySettingsCopy.deleteAccountTitle,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.error),
+              ),
+              trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+              onTap: () => DeleteAccountScreen.open(context),
             ),
           ],
         ),

@@ -403,6 +403,15 @@ class ApiClient {
         );
 
       case 409:
+        // A deleted account signing up again (RFC-011 D-12). Told apart by its code, so every
+        // other 409 stays a plain ConflictException.
+        if (_extractErrorCode(responseData) == AccountDeletedFailure.code) {
+          return AccountDeletedFailure(
+            message ?? 'Account deleted',
+            statusCode: statusCode,
+            originalError: responseData,
+          );
+        }
         return ConflictException(
           message ?? 'Resource conflict',
           statusCode: statusCode,
