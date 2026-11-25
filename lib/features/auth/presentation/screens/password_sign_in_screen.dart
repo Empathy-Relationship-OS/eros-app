@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/validators.dart';
 import '../providers/auth_state_provider.dart';
+import '../../data/repositories/auth_repository.dart';
+import '../../domain/models/account_link.dart';
+import '../widgets/account_link_banner.dart';
+import 'package:eros_app/core/widgets/fill_or_scroll.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 import '../../../profile/domain/models/public_profile.dart';
 
@@ -11,7 +15,11 @@ import '../../../profile/domain/models/public_profile.dart';
 class PasswordSignInScreen extends ConsumerStatefulWidget {
   final String email;
 
-  const PasswordSignInScreen({super.key, required this.email});
+  /// Set when Google or Apple met this email's existing account: after the password sign-in, that
+  /// sign-in is added to the account (RFC-011 §5.4). In memory only.
+  final PendingAccountLink? accountLink;
+
+  const PasswordSignInScreen({super.key, required this.email, this.accountLink});
 
   @override
   ConsumerState<PasswordSignInScreen> createState() =>
@@ -52,6 +60,10 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
       if (!mounted) return;
 
       if (success) {
+        final accountLink = widget.accountLink;
+        if (accountLink != null) await _addPendingSignIn(accountLink);
+        if (!mounted) return;
+
         // Fetch user profile from backend to check completion status
         await _checkProfileAndNavigate();
       } else {
@@ -81,6 +93,16 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
         });
       }
     }
+  }
+
+  /// Adds the Google or Apple sign-in to the account. If it fails, the user is still signed in with
+  /// their password: say so, and carry on.
+  Future<void> _addPendingSignIn(PendingAccountLink link) async {
+    final result = await ref.read(authStateProvider.notifier).linkPendingCredential(link);
+    if (!mounted || result.isSuccess) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result.errorMessage ?? accountLinkFailedMessage(link.provider))),
+    );
   }
 
   /// Check user profile status and navigate accordingly
@@ -276,7 +298,8 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SafeArea(
+      // Scrolls when the keyboard and the account-link banner leave too little room.
+      body: FillOrScroll(child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Form(
@@ -301,6 +324,12 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
                     color: AppColors.textSecondary,
                   ),
                 ),
+
+                // Why the password is needed after Google or Apple (RFC-011 §5.4)
+                if (widget.accountLink != null) ...[
+                  const SizedBox(height: 24),
+                  AccountLinkBanner(provider: widget.accountLink!.provider),
+                ],
 
                 const SizedBox(height: 32),
 
@@ -382,7 +411,7 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
             ),
           ),
         ),
-      ),
+      )),
     );
   }
 }

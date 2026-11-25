@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/auth_repository.dart';
+import '../../domain/models/account_link.dart';
 
 /// Auth state class
 class AuthState {
@@ -104,13 +105,23 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
 
     final result = await signIn();
 
-    if (result == null) {
+    if (result == null || result.needsLink) {
+      // Closed the sheet, or the email has an account: the password screen comes next.
       state = state.copyWith(isLoading: false);
     } else if (result.isSuccess) {
       state = AuthState(user: result.user, isLoading: false);
     } else {
       state = state.copyWith(isLoading: false, errorMessage: result.errorMessage);
     }
+    return result;
+  }
+
+  /// After a password sign-in, adds the Google or Apple sign-in that met the same email
+  /// (RFC-011 §5.4). The user stays signed in either way; on a failure the result's message says
+  /// so, and [AuthState.errorMessage] is left alone.
+  Future<AuthResult> linkPendingCredential(PendingAccountLink link) async {
+    final result = await _authRepository.linkPendingCredential(link);
+    if (result.isSuccess) state = AuthState(user: result.user);
     return result;
   }
 

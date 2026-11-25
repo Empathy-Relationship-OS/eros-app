@@ -8,6 +8,7 @@ import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/core/auth/google_sign_in_config.dart';
 import 'package:eros_app/core/auth/sign_out_service.dart';
 import 'package:eros_app/core/notifications/push_service.dart';
+import 'package:eros_app/features/auth/domain/models/account_link.dart';
 import 'package:eros_app/features/auth/domain/models/provider_name.dart';
 import 'package:eros_app/features/profile/presentation/providers/profile_creation_provider.dart';
 
@@ -44,7 +45,14 @@ class AuthResult {
   final String? errorMessage;
   final bool isSuccess;
 
-  AuthResult({this.user, this.errorMessage, required this.isSuccess});
+  /// Set when the email already has an account: the user signs in with their password, then the
+  /// app adds this sign-in to it (RFC-011 §5.4). Not a success, and carries no message.
+  final PendingAccountLink? pendingLink;
+
+  AuthResult({this.user, this.errorMessage, required this.isSuccess, this.pendingLink});
+
+  /// True when the screen should ask for the password and then link [pendingLink].
+  bool get needsLink => pendingLink != null;
 
   factory AuthResult.success(User user) {
     return AuthResult(user: user, isSuccess: true);
@@ -52,6 +60,10 @@ class AuthResult {
 
   factory AuthResult.failure(String errorMessage) {
     return AuthResult(errorMessage: errorMessage, isSuccess: false);
+  }
+
+  factory AuthResult.needsLink(PendingAccountLink link) {
+    return AuthResult(pendingLink: link, isSuccess: false);
   }
 }
 
@@ -66,6 +78,25 @@ const appleUnavailableMessage = "Apple sign-in isn't available right now. Try ag
 
 /// Any other Apple sign-in failure. It never says which way an email signs in (RFC-011 D-10).
 const appleFailedMessage = "We couldn't sign you in with Apple. Try again or use email.";
+
+/// The user signed in with their password, but adding Google or Apple to the account failed.
+String accountLinkFailedMessage(LinkingProvider provider) =>
+    "Signed in. We couldn't add ${provider.label} this time.";
+
+/// Email sign-up with an address that already has an account, of any kind. It never says which
+/// (D-10). Apple is named only where the app offers it (D-2).
+String emailAlreadyRegisteredMessage({required bool appleOffered}) => appleOffered
+    ? 'This email is already registered. Sign in, or try Continue with Google or Apple.'
+    : 'This email is already registered. Sign in, or try Continue with Google.';
+
+/// A failed email sign-in. Also covers an account whose password Google removed when it took
+/// over the Gmail address (RFC-011 §5.4), which the app can't tell apart without a lookup.
+String incorrectEmailOrPasswordMessage({required bool appleOffered}) => appleOffered
+    ? 'Incorrect email or password. If you signed up with Google or Apple, use that button instead.'
+    : 'Incorrect email or password. If you signed up with Google, use that button instead.';
+
+/// Firebase's code when the email already has an account that signs in another way.
+const _accountExistsCode = 'account-exists-with-different-credential';
 
 /// Repository for Firebase Authentication
 ///
@@ -121,6 +152,9 @@ class AuthRepository {
 
       return AuthResult.success(userCredential.user!);
     } on FirebaseAuthException catch (e) {
+      if (e.code == 'email-already-in-use') {
+        return AuthResult.failure(emailAlreadyRegisteredMessage(appleOffered: _appleSupported()));
+      }
       return AuthResult.failure(_handleFirebaseAuthError(e));
     } catch (e) {
       return AuthResult.failure(
@@ -142,6 +176,9 @@ class AuthRepository {
 
       return AuthResult.success(userCredential.user!);
     } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        return AuthResult.failure(incorrectEmailOrPasswordMessage(appleOffered: _appleSupported()));
+      }
       return AuthResult.failure(_handleFirebaseAuthError(e));
     } catch (e) {
       return AuthResult.failure(
@@ -178,15 +215,23 @@ class AuthRepository {
       return AuthResult.failure(googleUnavailableMessage);
     }
 
+    final googleCredential = GoogleAuthProvider.credential(idToken: idToken);
     final UserCredential userCredential;
     try {
-      userCredential = await _firebaseAuth.signInWithCredential(
-        GoogleAuthProvider.credential(idToken: idToken),
-      );
+      userCredential = await _firebaseAuth.signInWithCredential(googleCredential);
     } on FirebaseAuthException catch (e) {
       _logger.w('Firebase rejected the Google credential (${e.code})');
       // So that trying again shows Google's account picker rather than the same account.
       await _signOutOfGoogle();
+      if (e.code == _accountExistsCode) {
+        final link = _pendingLink(
+          e,
+          LinkingProvider.google,
+          fallbackEmail: () => account.email,
+          fallbackCredential: googleCredential,
+        );
+        if (link != null) return AuthResult.needsLink(link);
+      }
       return AuthResult.failure(_handleProviderFirebaseAuthError(
         e,
         unavailable: googleUnavailableMessage,
@@ -250,6 +295,10 @@ class AuthRepository {
       userCredential = await _firebaseAuth.signInWithCredential(credential);
     } on FirebaseAuthException catch (e) {
       _logger.w('Firebase rejected the Apple credential (${e.code})');
+      if (e.code == _accountExistsCode) {
+        final link = _pendingLink(e, LinkingProvider.apple, fallbackCredential: credential);
+        if (link != null) return AuthResult.needsLink(link);
+      }
       return AuthResult.failure(_handleProviderFirebaseAuthError(
         e,
         unavailable: appleUnavailableMessage,
@@ -272,6 +321,55 @@ class AuthRepository {
     }
     _logger.i('Signed in with Apple: ${user.uid}');
     return AuthResult.success(user);
+  }
+
+  /// Adds a Google or Apple sign-in to the account the user has just signed in to with their
+  /// password (RFC-011 §5.4). A failure leaves them signed in: the screen says so and carries on.
+  Future<AuthResult> linkPendingCredential(PendingAccountLink link) async {
+    final user = currentUser;
+    if (user == null) {
+      _logger.w('Nobody signed in to add ${link.provider.name} to');
+      return AuthResult.failure(accountLinkFailedMessage(link.provider));
+    }
+    try {
+      final userCredential = await user.linkWithCredential(link.credential);
+      final linked = userCredential.user ?? user;
+      _logger.i('Added ${link.provider.name} sign-in to ${linked.uid}');
+      return AuthResult.success(linked);
+    } on FirebaseAuthException catch (e) {
+      _logger.w('Could not add ${link.provider.name} sign-in to ${user.uid} (${e.code})');
+      return AuthResult.failure(accountLinkFailedMessage(link.provider));
+    } catch (e) {
+      _logger.w('Could not add ${link.provider.name} sign-in to ${user.uid} (${e.runtimeType})');
+      return AuthResult.failure(accountLinkFailedMessage(link.provider));
+    }
+  }
+
+  /// What `account-exists-with-different-credential` needs for the password-then-link flow: the
+  /// email and pending credential Firebase reports, else the ones this sign-in had. Null when
+  /// either is missing; the caller then shows its generic message. Never looks the email up
+  /// (primer rule 11) and never logs it or the credential (rule 10).
+  PendingAccountLink? _pendingLink(
+    FirebaseAuthException e,
+    LinkingProvider provider, {
+    String? Function()? fallbackEmail,
+    AuthCredential? fallbackCredential,
+  }) {
+    String? email = e.email;
+    if (email == null || email.trim().isEmpty) {
+      try {
+        email = fallbackEmail?.call();
+      } catch (_) {
+        email = null;
+      }
+    }
+    final credential = e.credential ?? fallbackCredential;
+    if (email == null || email.trim().isEmpty || credential == null) {
+      _logger.w('The email has an account, but there is nothing to link (${provider.name})');
+      return null;
+    }
+    _logger.i('The email has an account: asking for its password to add ${provider.name}');
+    return PendingAccountLink(email: email.trim(), credential: credential, provider: provider);
   }
 
   /// Runs Sign in with Apple once with a fresh nonce: Apple's sheet, then everything Firebase
@@ -425,8 +523,8 @@ class AuthRepository {
       case 'invalid-credential':
       case 'app-not-authorized':
         return unavailable;
-      // Another sign-in method already has this email. SI-F3 adds the flow that links them; until
-      // then a message that doesn't say how that email signs in (D-10).
+      // Another sign-in method already has this email, and Firebase gave nothing to link (the
+      // sign-in methods handle the usual case). A message that doesn't say how it signs in (D-10).
       case 'account-exists-with-different-credential':
         return failed;
       case 'user-disabled':

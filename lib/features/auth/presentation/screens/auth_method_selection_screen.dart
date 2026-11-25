@@ -12,6 +12,7 @@ import 'package:eros_app/features/legal/presentation/widgets/legal_copy.dart';
 import 'package:eros_app/features/legal/presentation/widgets/legal_document_tile.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'email_entry_screen.dart';
+import 'password_sign_in_screen.dart';
 
 /// How the user gets in: one screen for sign-up and sign-in (RFC-011 D-3).
 ///
@@ -51,6 +52,19 @@ class _AuthMethodSelectionScreenState extends ConsumerState<AuthMethodSelectionS
     setState(() => _signingInWith = null);
     // Null: the user closed the provider's sheet. Back to this screen with no message.
     if (result == null) return;
+
+    // The email already has an account: sign in with its password, then add this sign-in to it
+    // (RFC-011 §5.4). The screen never says how that account signs in (D-10).
+    final link = result.pendingLink;
+    if (link != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => PasswordSignInScreen(email: link.email, accountLink: link),
+        ),
+      );
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(result.errorMessage ?? 'Sign in failed'),
