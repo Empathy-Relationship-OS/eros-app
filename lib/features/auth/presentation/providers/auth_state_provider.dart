@@ -90,10 +90,19 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   ///
   /// Null when the user closed Google's sheet: nothing changes and nothing is shown. On a
   /// failure, [AuthState.errorMessage] holds the message too.
-  Future<AuthResult?> signInWithGoogle() async {
+  Future<AuthResult?> signInWithGoogle() => _signInWithProvider(_authRepository.signInWithGoogle);
+
+  /// Continue with Apple, iOS only (RFC-011 §5.3). Same results as [signInWithGoogle].
+  Future<AuthResult?> signInWithApple() => _signInWithProvider(_authRepository.signInWithApple);
+
+  /// True when the signed-in user's Apple ID no longer lets Muse in, so they should be signed out
+  /// (RFC-011 §5.3). False when the check can't tell.
+  Future<bool> hasRevokedAppleCredential() => _authRepository.hasRevokedAppleCredential();
+
+  Future<AuthResult?> _signInWithProvider(Future<AuthResult?> Function() signIn) async {
     state = state.copyWith(isLoading: true).clearError();
 
-    final result = await _authRepository.signInWithGoogle();
+    final result = await signIn();
 
     if (result == null) {
       state = state.copyWith(isLoading: false);

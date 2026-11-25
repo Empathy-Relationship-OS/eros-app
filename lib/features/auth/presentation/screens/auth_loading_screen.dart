@@ -23,8 +23,8 @@ import 'package:logger/logger.dart';
 class AuthLoadingScreen extends ConsumerStatefulWidget {
   const AuthLoadingScreen({super.key});
 
-  /// Where a sign-in that doesn't know whether the user has a profile goes next (Google,
-  /// RFC-011 D-3). The app's home is this screen too.
+  /// Where a sign-in that doesn't know whether the user has a profile goes next (Google and
+  /// Apple, RFC-011 D-3). The app's home is this screen too.
   static const routeName = '/auth-loading';
 
   @override
@@ -80,6 +80,16 @@ class _AuthLoadingScreenState extends ConsumerState<AuthLoadingScreen> {
         return;
       }
 
+      // An Apple user who removed Muse in their Apple ID settings is signed out (RFC-011 §5.3)
+      if (await _appleCredentialRevoked()) {
+        _logger.i('➡️  Apple sign-in revoked - signing out to the welcome screen');
+        await ref.read(authStateProvider.notifier).signOut();
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/welcome');
+        }
+        return;
+      }
+
       // User is authenticated - check if they have a backend profile
       _logger.i('👤 Checking backend profile...');
       final profileRepository = ref.read(profileRepositoryProvider);
@@ -119,6 +129,18 @@ class _AuthLoadingScreenState extends ConsumerState<AuthLoadingScreen> {
           _errorMessage = errorMsg;
         });
       }
+    }
+  }
+
+  /// Whether the signed-in user's Apple ID no longer lets Muse in. Always false on Android and for
+  /// users without Apple. Any failure counts as not revoked: nobody is signed out because Apple
+  /// couldn't be reached.
+  Future<bool> _appleCredentialRevoked() async {
+    try {
+      return await ref.read(authStateProvider.notifier).hasRevokedAppleCredential();
+    } catch (e) {
+      _logger.w('Apple credential check skipped (${e.runtimeType})');
+      return false;
     }
   }
 

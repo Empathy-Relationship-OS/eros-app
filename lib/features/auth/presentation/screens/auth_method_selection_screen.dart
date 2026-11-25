@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:eros_app/core/auth/apple_sign_in.dart';
 import 'package:eros_app/core/notifications/push_host.dart';
 import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
 import 'package:eros_app/features/auth/presentation/screens/auth_loading_screen.dart';
@@ -14,7 +15,7 @@ import 'email_entry_screen.dart';
 
 /// How the user gets in: one screen for sign-up and sign-in (RFC-011 D-3).
 ///
-/// Order (D-2): Google, then Email, on both platforms. SI-F2 adds Apple above Google on iOS only.
+/// Order (D-2): Apple, Google, Email on iOS; Google, Email on Android, which never shows Apple.
 /// "Continue with Email" stays a full button (D-4).
 class AuthMethodSelectionScreen extends ConsumerStatefulWidget {
   const AuthMethodSelectionScreen({super.key});
@@ -23,15 +24,22 @@ class AuthMethodSelectionScreen extends ConsumerStatefulWidget {
   ConsumerState<AuthMethodSelectionScreen> createState() => _AuthMethodSelectionScreenState();
 }
 
+/// A provider with its own sheet, then a Firebase sign-in.
+enum _Provider { apple, google }
+
 class _AuthMethodSelectionScreenState extends ConsumerState<AuthMethodSelectionScreen> {
-  /// True while Google's sheet is up and Firebase is signing in. Every option ignores taps.
-  bool _signingInWithGoogle = false;
+  /// Set while that provider's sheet is up and Firebase is signing in. Every option ignores taps.
+  _Provider? _signingInWith;
 
-  Future<void> _continueWithGoogle() async {
-    if (_signingInWithGoogle) return;
-    setState(() => _signingInWithGoogle = true);
+  Future<void> _continueWith(_Provider provider) async {
+    if (_signingInWith != null) return;
+    setState(() => _signingInWith = provider);
 
-    final result = await ref.read(authStateProvider.notifier).signInWithGoogle();
+    final auth = ref.read(authStateProvider.notifier);
+    final result = switch (provider) {
+      _Provider.apple => await auth.signInWithApple(),
+      _Provider.google => await auth.signInWithGoogle(),
+    };
     if (!mounted) return;
 
     if (result != null && result.isSuccess) {
@@ -40,8 +48,8 @@ class _AuthMethodSelectionScreenState extends ConsumerState<AuthMethodSelectionS
       return;
     }
 
-    setState(() => _signingInWithGoogle = false);
-    // Null: the user closed Google's sheet. Back to this screen with no message.
+    setState(() => _signingInWith = null);
+    // Null: the user closed the provider's sheet. Back to this screen with no message.
     if (result == null) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -60,7 +68,7 @@ class _AuthMethodSelectionScreenState extends ConsumerState<AuthMethodSelectionS
 
   @override
   Widget build(BuildContext context) {
-    final busy = _signingInWithGoogle;
+    final busy = _signingInWith != null;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -96,12 +104,22 @@ class _AuthMethodSelectionScreenState extends ConsumerState<AuthMethodSelectionS
 
               // Phone sign-in stays off (RFC-011 §8).
 
+              // Apple first, and only on iOS (D-2).
+              if (appleSignInSupported()) ...[
+                AppleProviderButton(
+                  key: const Key('auth-apple'),
+                  loading: _signingInWith == _Provider.apple,
+                  onPressed: busy ? null : () => _continueWith(_Provider.apple),
+                ),
+                const SizedBox(height: 16),
+              ],
+
               AuthProviderButton(
                 key: const Key('auth-google'),
                 leading: AuthProviderButton.googleMark(),
                 label: 'Continue with Google',
-                loading: _signingInWithGoogle,
-                onPressed: busy ? null : _continueWithGoogle,
+                loading: _signingInWith == _Provider.google,
+                onPressed: busy ? null : () => _continueWith(_Provider.google),
               ),
 
               const SizedBox(height: 16),

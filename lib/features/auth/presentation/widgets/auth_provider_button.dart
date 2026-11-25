@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
+import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/core/widgets/app_button.dart';
 
 /// One way in on the method screen ("Continue with Google", "Continue with Email"). Every option
@@ -65,6 +67,52 @@ class AuthProviderButton extends StatelessWidget {
                 ],
               ),
             ),
+    );
+  }
+}
+
+/// "Continue with Apple" in Apple's own black style (`SignInWithAppleButton`, RFC-011 primer
+/// rule 15), the same height and corners as [AuthProviderButton]. iOS only: the screen shows it
+/// only where `appleSignInSupported()` (D-2).
+class AppleProviderButton extends StatelessWidget {
+  static const label = 'Continue with Apple';
+
+  /// Null turns the button off (Apple's grey disabled style).
+  final VoidCallback? onPressed;
+
+  /// Shows a spinner on Apple's black in place of the label.
+  final bool loading;
+
+  const AppleProviderButton({super.key, required this.onPressed, this.loading = false});
+
+  static const _radius = BorderRadius.all(Radius.circular(AppRadius.button));
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      // Apple's black and white, as SignInWithAppleButton draws them, not the Muse palette.
+      return Semantics(
+        label: '$label, signing in',
+        child: const SizedBox(
+          height: AppButton.minHeight,
+          child: DecoratedBox(
+            decoration: BoxDecoration(color: AppColors.black, borderRadius: _radius),
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return SignInWithAppleButton(
+      text: label,
+      height: AppButton.minHeight,
+      borderRadius: _radius,
+      onPressed: onPressed,
     );
   }
 }

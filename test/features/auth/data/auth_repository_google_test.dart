@@ -1,3 +1,4 @@
+import 'package:eros_app/core/auth/apple_sign_in.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/core/auth/sign_out_service.dart';
 import 'package:eros_app/features/auth/data/repositories/auth_repository.dart';
@@ -126,6 +127,7 @@ void main() {
       _Unused(),
       _Unused(),
       googleSignIn: googleSignIn,
+      appleSignIn: const AppleSignInClient(),
       profileDraft: () => draft,
       logger: Logger(filter: _EverythingFilter(), printer: SimplePrinter(), output: logs),
     );

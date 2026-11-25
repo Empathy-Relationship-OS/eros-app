@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:logger/logger.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:eros_app/core/auth/apple_sign_in.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/core/auth/google_sign_in_config.dart';
 import 'package:eros_app/core/auth/sign_out_service.dart';
@@ -31,6 +33,7 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
     ref.read(authServiceProvider),
     ref.read(signOutServiceProvider),
     googleSignIn: ref.read(googleSignInProvider),
+    appleSignIn: ref.read(appleSignInClientProvider),
     profileDraft: () => ref.read(profileCreationProvider.notifier),
   );
 });
@@ -58,6 +61,12 @@ const googleUnavailableMessage = "Google sign-in isn't available right now. Try 
 /// Any other Google sign-in failure. It never says which way an email signs in (RFC-011 D-10).
 const googleFailedMessage = "We couldn't sign you in with Google. Try again or use email.";
 
+/// What the user sees when Sign in with Apple is unavailable or not set up on the device.
+const appleUnavailableMessage = "Apple sign-in isn't available right now. Try again or use email.";
+
+/// Any other Apple sign-in failure. It never says which way an email signs in (RFC-011 D-10).
+const appleFailedMessage = "We couldn't sign you in with Apple. Try again or use email.";
+
 /// Repository for Firebase Authentication
 ///
 /// Handles authentication operations (sign up, sign in, sign out, password reset).
@@ -67,6 +76,10 @@ class AuthRepository {
   final AuthService _authService;
   final SignOutService _signOutService;
   final GoogleSignIn _googleSignIn;
+  final AppleSignInClient _appleSignIn;
+
+  /// True where Apple is offered: iOS only (D-2). Every Apple call checks it first.
+  final bool Function() _appleSupported;
 
   /// The onboarding draft, which a provider's name prefills (RFC-011 D-7).
   final ProfileCreationNotifier Function() _profileDraft;
@@ -79,9 +92,13 @@ class AuthRepository {
     this._authService,
     this._signOutService, {
     required GoogleSignIn googleSignIn,
+    required AppleSignInClient appleSignIn,
     required ProfileCreationNotifier Function() profileDraft,
+    bool Function() appleSupported = appleSignInSupported,
     Logger? logger,
   })  : _googleSignIn = googleSignIn,
+        _appleSignIn = appleSignIn,
+        _appleSupported = appleSupported,
         _profileDraft = profileDraft,
         _logger = logger ?? Logger(printer: PrettyPrinter(methodCount: 0));
 
@@ -170,7 +187,11 @@ class AuthRepository {
       _logger.w('Firebase rejected the Google credential (${e.code})');
       // So that trying again shows Google's account picker rather than the same account.
       await _signOutOfGoogle();
-      return AuthResult.failure(_handleGoogleFirebaseAuthError(e));
+      return AuthResult.failure(_handleProviderFirebaseAuthError(
+        e,
+        unavailable: googleUnavailableMessage,
+        failed: googleFailedMessage,
+      ));
     } catch (e) {
       _logger.w('Firebase rejected the Google credential (${e.runtimeType})');
       await _signOutOfGoogle();
@@ -190,6 +211,171 @@ class AuthRepository {
     return AuthResult.success(user);
   }
 
+  /// Continue with Apple (RFC-011 §5.3), iOS only (D-2): one call for both sign-up and sign-in,
+  /// like [signInWithGoogle].
+  ///
+  /// Returns null when the user closes Apple's sheet (primer rule 12). Apple sends the user's name
+  /// only on their first authorisation of Muse, so it goes into the onboarding draft before the
+  /// Firebase call and onto the Firebase user straight after it, before anything else (rule 13).
+  /// The email may be an Apple relay address; it's used like any other (rule 14).
+  Future<AuthResult?> signInWithApple() async {
+    if (!_appleSupported()) return AuthResult.failure(appleUnavailableMessage);
+
+    final AppleAuthorization? apple;
+    try {
+      apple = await requestAppleAuthorization();
+    } on SignInWithAppleAuthorizationException catch (e) {
+      // The code only: the message is Apple's and isn't ours to log.
+      _logger.w('Apple sign-in failed (${e.code.name})');
+      return AuthResult.failure(_appleErrorMessage(e.code));
+    } catch (e) {
+      // Not supported on this device, or the plugin isn't set up.
+      _logger.w('Apple sign-in failed (${e.runtimeType})');
+      return AuthResult.failure(appleUnavailableMessage);
+    }
+    if (apple == null) return null;
+
+    // Kept before anything else can fail: Apple won't send it again (D-7).
+    final appleName = ProviderName.from(givenName: apple.givenName, familyName: apple.familyName);
+    if (appleName != null) await _saveAppleNameToDraft(appleName);
+
+    final credential = apple.firebaseCredential;
+    if (credential == null) {
+      _logger.w('Apple sign-in returned no identity token');
+      return AuthResult.failure(appleUnavailableMessage);
+    }
+
+    final UserCredential userCredential;
+    try {
+      userCredential = await _firebaseAuth.signInWithCredential(credential);
+    } on FirebaseAuthException catch (e) {
+      _logger.w('Firebase rejected the Apple credential (${e.code})');
+      return AuthResult.failure(_handleProviderFirebaseAuthError(
+        e,
+        unavailable: appleUnavailableMessage,
+        failed: appleFailedMessage,
+      ));
+    } catch (e) {
+      _logger.w('Firebase rejected the Apple credential (${e.runtimeType})');
+      return AuthResult.failure(appleFailedMessage);
+    }
+
+    final user = userCredential.user;
+    if (user == null) return AuthResult.failure(appleFailedMessage);
+
+    if (appleName != null) {
+      // The first await after signing in, so the name is on the account before anything else.
+      await _saveDisplayName(user, appleName);
+    } else {
+      // A later sign-in: no name from Apple. Keep the draft's, else use the account's.
+      await _prefillDraftName(ProviderName.from(displayName: user.displayName));
+    }
+    _logger.i('Signed in with Apple: ${user.uid}');
+    return AuthResult.success(user);
+  }
+
+  /// Runs Sign in with Apple once with a fresh nonce: Apple's sheet, then everything Firebase
+  /// needs. [signInWithApple] uses it, and so does Delete account (SI-F4, RFC-011 §5.6), which
+  /// needs a fresh authorization code to revoke Muse's Apple tokens; that flow can pass no
+  /// [scopes].
+  ///
+  /// Returns null when the user closes the sheet. Throws the plugin's
+  /// [SignInWithAppleException]s for anything else. iOS only: callers check the platform first.
+  /// Logs nothing: the result holds secrets (primer rule 10).
+  Future<AppleAuthorization?> requestAppleAuthorization({
+    List<AppleIDAuthorizationScopes> scopes = const [
+      AppleIDAuthorizationScopes.email,
+      AppleIDAuthorizationScopes.fullName,
+    ],
+  }) async {
+    final rawNonce = generateAppleNonce();
+    final AuthorizationCredentialAppleID credential;
+    try {
+      credential = await _appleSignIn.getAppleIDCredential(
+        scopes: scopes,
+        nonce: sha256OfNonce(rawNonce),
+      );
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) return null;
+      rethrow;
+    }
+    return AppleAuthorization(
+      rawNonce: rawNonce,
+      identityToken: credential.identityToken,
+      authorizationCode: credential.authorizationCode,
+      givenName: credential.givenName,
+      familyName: credential.familyName,
+    );
+  }
+
+  /// How long the launch check waits for Apple before letting the user in.
+  static const appleCredentialCheckTimeout = Duration(seconds: 5);
+
+  /// True when the signed-in user signed in with Apple and their Apple ID no longer lets Muse in:
+  /// they removed Muse in their Apple ID settings (`revoked`), or Apple doesn't know the user
+  /// (`notFound`). The caller signs them out (RFC-011 §5.3).
+  ///
+  /// False on Android, for users without Apple, and whenever the check fails or takes longer than
+  /// [appleCredentialCheckTimeout]: nobody is signed out because Apple couldn't be reached.
+  Future<bool> hasRevokedAppleCredential() async {
+    if (!_appleSupported()) return false;
+    final user = currentUser;
+    if (user == null) return false;
+
+    String? appleUserId;
+    for (final info in user.providerData) {
+      if (info.providerId == appleProviderId) appleUserId = info.uid;
+    }
+    if (appleUserId == null || appleUserId.isEmpty) return false;
+
+    try {
+      final state =
+          await _appleSignIn.getCredentialState(appleUserId).timeout(appleCredentialCheckTimeout);
+      final revoked = state == CredentialState.revoked || state == CredentialState.notFound;
+      if (revoked) _logger.i('Apple no longer authorises ${user.uid} (${state.name})');
+      return revoked;
+    } catch (e) {
+      _logger.w('Apple credential check skipped (${e.runtimeType})');
+      return false;
+    }
+  }
+
+  /// Apple's first-time name into the onboarding draft, replacing what's there: this is the only
+  /// time Apple sends it. A failure doesn't stop the sign-in.
+  Future<void> _saveAppleNameToDraft(ProviderName name) async {
+    try {
+      await _profileDraft().updateFields(
+        firstName: name.firstName.isEmpty ? null : name.firstName,
+        lastName: name.lastName.isEmpty ? null : name.lastName,
+      );
+    } catch (e) {
+      _logger.w('Could not save the name from Apple to the draft (${e.runtimeType})');
+    }
+  }
+
+  /// Apple's first-time name onto the Firebase user, so it outlives the draft (D-7).
+  Future<void> _saveDisplayName(User user, ProviderName name) async {
+    final displayName =
+        [name.firstName, name.lastName].where((part) => part.isNotEmpty).join(' ');
+    try {
+      await user.updateDisplayName(displayName);
+    } catch (e) {
+      _logger.w('Could not save the name from Apple to the account (${e.runtimeType})');
+    }
+  }
+
+  String _appleErrorMessage(AuthorizationErrorCode code) {
+    switch (code) {
+      // `unknown` is what iOS reports when the app lacks the Sign in with Apple capability, or
+      // the device has no Apple ID.
+      case AuthorizationErrorCode.unknown:
+      case AuthorizationErrorCode.notHandled:
+        return appleUnavailableMessage;
+      default:
+        return appleFailedMessage;
+    }
+  }
+
   /// Puts a provider's name in the onboarding draft when the draft has no name yet, so
   /// `NameInputScreen` starts from it. A name the user typed is never replaced. A failure here
   /// doesn't fail the sign-in: the user can still type a name.
@@ -198,7 +384,7 @@ class AuthRepository {
     try {
       await _profileDraft().prefillName(firstName: name.firstName, lastName: name.lastName);
     } catch (e) {
-      _logger.w('Could not prefill the name from Google (${e.runtimeType})');
+      _logger.w('Could not prefill the name from the provider (${e.runtimeType})');
     }
   }
 
@@ -225,25 +411,30 @@ class AuthRepository {
     }
   }
 
-  /// Firebase's errors for a Google credential. The email and password wording of
-  /// [_handleFirebaseAuthError] doesn't fit some of them.
-  String _handleGoogleFirebaseAuthError(FirebaseAuthException e) {
+  /// Firebase's errors for a Google or Apple credential, with that provider's [unavailable] and
+  /// [failed] messages. The email and password wording of [_handleFirebaseAuthError] doesn't fit
+  /// some of them.
+  String _handleProviderFirebaseAuthError(
+    FirebaseAuthException e, {
+    required String unavailable,
+    required String failed,
+  }) {
     switch (e.code) {
-      // The Google provider is off in the Firebase project, or the client is wrong (SI-C1).
+      // The provider is off in the Firebase project, or its client is wrong (SI-C1).
       case 'operation-not-allowed':
       case 'invalid-credential':
       case 'app-not-authorized':
-        return googleUnavailableMessage;
-      // An Apple or password account already has this email. SI-F3 adds the flow that links them;
-      // until then a message that doesn't say how that email signs in (D-10).
+        return unavailable;
+      // Another sign-in method already has this email. SI-F3 adds the flow that links them; until
+      // then a message that doesn't say how that email signs in (D-10).
       case 'account-exists-with-different-credential':
-        return googleFailedMessage;
+        return failed;
       case 'user-disabled':
       case 'too-many-requests':
       case 'network-request-failed':
         return _handleFirebaseAuthError(e);
       default:
-        return googleFailedMessage;
+        return failed;
     }
   }
 
