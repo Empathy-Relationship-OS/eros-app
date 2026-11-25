@@ -86,6 +86,25 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Continue with Google: sign-up and sign-in are the same call (RFC-011 D-3).
+  ///
+  /// Null when the user closed Google's sheet: nothing changes and nothing is shown. On a
+  /// failure, [AuthState.errorMessage] holds the message too.
+  Future<AuthResult?> signInWithGoogle() async {
+    state = state.copyWith(isLoading: true).clearError();
+
+    final result = await _authRepository.signInWithGoogle();
+
+    if (result == null) {
+      state = state.copyWith(isLoading: false);
+    } else if (result.isSuccess) {
+      state = AuthState(user: result.user, isLoading: false);
+    } else {
+      state = state.copyWith(isLoading: false, errorMessage: result.errorMessage);
+    }
+    return result;
+  }
+
   /// Sign out
   Future<void> signOut() async {
     await _authRepository.signOut();

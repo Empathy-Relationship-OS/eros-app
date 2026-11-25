@@ -23,6 +23,10 @@ import 'package:logger/logger.dart';
 class AuthLoadingScreen extends ConsumerStatefulWidget {
   const AuthLoadingScreen({super.key});
 
+  /// Where a sign-in that doesn't know whether the user has a profile goes next (Google,
+  /// RFC-011 D-3). The app's home is this screen too.
+  static const routeName = '/auth-loading';
+
   @override
   ConsumerState<AuthLoadingScreen> createState() => _AuthLoadingScreenState();
 }

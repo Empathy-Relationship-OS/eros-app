@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:eros_app/core/notifications/push_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
@@ -7,6 +8,7 @@ import 'package:logger/logger.dart';
 ///
 /// This service ensures complete cleanup when a user signs out:
 /// - This device's push token on the account (RFC-006 §6.4)
+/// - The Google sign-in session, so the next sign-in shows the account picker (RFC-011 §5.2)
 /// - Firebase authentication session
 /// - All SharedPreferences data (except app-level settings if needed)
 /// - Cached tokens and user-specific state
@@ -20,19 +22,25 @@ class SignOutService {
   final FirebaseAuth _firebaseAuth;
   final SharedPreferences _sharedPrefs;
   final PushService? _pushService;
+  final GoogleSignIn? _googleSignIn;
   final Logger _logger;
 
   /// How long sign-out waits for the push token to come off the account before going ahead.
   static const pushRemovalTimeout = Duration(seconds: 5);
 
+  /// How long sign-out waits for Google's own sign-out before going ahead.
+  static const googleSignOutTimeout = Duration(seconds: 3);
+
   SignOutService({
     required FirebaseAuth firebaseAuth,
     required SharedPreferences sharedPrefs,
     PushService? pushService,
+    GoogleSignIn? googleSignIn,
     Logger? logger,
   })  : _firebaseAuth = firebaseAuth,
         _sharedPrefs = sharedPrefs,
         _pushService = pushService,
+        _googleSignIn = googleSignIn,
         _logger = logger ??
             Logger(
               printer: PrettyPrinter(
@@ -64,10 +72,12 @@ class SignOutService {
   /// 1. Takes this device's push token off the account (best-effort). It needs
   ///    a valid session, so it runs first.
   /// 2. Attempts to clear all user-specific SharedPreferences data (best-effort)
-  /// 3. Always signs out from Firebase Authentication
-  /// 4. Logs the cleanup process for debugging
+  /// 3. Signs out of Google sign-in (best-effort), so the next Google sign-in
+  ///    shows the account picker instead of signing straight back in
+  /// 4. Always signs out from Firebase Authentication
+  /// 5. Logs the cleanup process for debugging
   ///
-  /// Push and local cleanup failures are logged but do not prevent Firebase
+  /// Push, local cleanup and Google failures are logged but do not prevent Firebase
   /// sign-out. Only Firebase sign-out failures will throw exceptions.
   ///
   /// Note: Riverpod providers will automatically reset when Firebase auth state changes
@@ -88,7 +98,10 @@ class SignOutService {
       }
     }
 
-    // Step 2: Sign out from Firebase (always attempted, failure throws)
+    // Step 2: Best-effort Google sign-out. Harmless for a user who never used Google.
+    await _signOutOfGoogle();
+
+    // Step 3: Sign out from Firebase (always attempted, failure throws)
     try {
       await _firebaseAuth.signOut();
       _logger.i('✅ Firebase sign-out successful');
@@ -111,6 +124,16 @@ class SignOutService {
       await pushService.removeToken().timeout(pushRemovalTimeout);
     } catch (e) {
       _logger.w('⚠️  Push token removal did not finish, signing out anyway', error: e);
+    }
+  }
+
+  Future<void> _signOutOfGoogle() async {
+    final googleSignIn = _googleSignIn;
+    if (googleSignIn == null) return;
+    try {
+      await googleSignIn.signOut().timeout(googleSignOutTimeout);
+    } catch (e) {
+      _logger.w('⚠️  Google sign-out did not finish, signing out anyway (${e.runtimeType})');
     }
   }
 

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/notifications/push_host.dart';
-import 'package:eros_app/core/theme/app_radius.dart';
+import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
+import 'package:eros_app/features/auth/presentation/screens/auth_loading_screen.dart';
+import 'package:eros_app/features/auth/presentation/widgets/auth_provider_button.dart';
 import 'package:eros_app/features/legal/domain/models/legal_document.dart';
 import 'package:eros_app/features/legal/presentation/legal_links.dart';
 import 'package:eros_app/features/legal/presentation/providers/legal_documents_provider.dart';
@@ -10,14 +12,55 @@ import 'package:eros_app/features/legal/presentation/widgets/legal_document_tile
 import '../../../../core/theme/app_colors.dart';
 import 'email_entry_screen.dart';
 
-/// Auth Method Selection Screen
-/// Allows user to choose between phone or email authentication
-/// Reference: screenshots/login/create-user/C66338AB-087A-4FD1-8A50-1B183B02E8A5_1_105_c.jpeg
-class AuthMethodSelectionScreen extends StatelessWidget {
+/// How the user gets in: one screen for sign-up and sign-in (RFC-011 D-3).
+///
+/// Order (D-2): Google, then Email, on both platforms. SI-F2 adds Apple above Google on iOS only.
+/// "Continue with Email" stays a full button (D-4).
+class AuthMethodSelectionScreen extends ConsumerStatefulWidget {
   const AuthMethodSelectionScreen({super.key});
 
   @override
+  ConsumerState<AuthMethodSelectionScreen> createState() => _AuthMethodSelectionScreenState();
+}
+
+class _AuthMethodSelectionScreenState extends ConsumerState<AuthMethodSelectionScreen> {
+  /// True while Google's sheet is up and Firebase is signing in. Every option ignores taps.
+  bool _signingInWithGoogle = false;
+
+  Future<void> _continueWithGoogle() async {
+    if (_signingInWithGoogle) return;
+    setState(() => _signingInWithGoogle = true);
+
+    final result = await ref.read(authStateProvider.notifier).signInWithGoogle();
+    if (!mounted) return;
+
+    if (result != null && result.isSuccess) {
+      // AuthLoadingScreen picks the app or profile creation, as at launch.
+      Navigator.of(context).pushNamedAndRemoveUntil(AuthLoadingScreen.routeName, (_) => false);
+      return;
+    }
+
+    setState(() => _signingInWithGoogle = false);
+    // Null: the user closed Google's sheet. Back to this screen with no message.
+    if (result == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result.errorMessage ?? 'Sign in failed'),
+        backgroundColor: AppColors.error,
+      ),
+    );
+  }
+
+  void _continueWithEmail() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const EmailEntryScreen()),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final busy = _signingInWithGoogle;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -33,9 +76,9 @@ class AuthMethodSelectionScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 24),
 
-              // Title
+              // Title: the screen serves sign-in as well as sign-up.
               Text(
-                'How would you like to\nsign up?',
+                'How would you like to\ncontinue?',
                 style: Theme.of(context).textTheme.displayMedium,
               ),
 
@@ -51,37 +94,23 @@ class AuthMethodSelectionScreen extends StatelessWidget {
 
               const SizedBox(height: 48),
 
-              // Phone Number Option - Hidden for now
-              // TODO: Re-enable when phone auth backend is ready
-              // _AuthMethodCard(
-              //   icon: Icons.phone_outlined,
-              //   title: 'Continue with Phone',
-              //   description: 'We\'ll send you a verification code via SMS',
-              //   onTap: () {
-              //     Navigator.push(
-              //       context,
-              //       MaterialPageRoute(
-              //         builder: (context) => const PhoneNumberScreen(),
-              //       ),
-              //     );
-              //   },
-              // ),
-              //
-              // const SizedBox(height: 16),
+              // Phone sign-in stays off (RFC-011 §8).
 
-              // Email Option
-              _AuthMethodCard(
-                icon: Icons.email_outlined,
-                title: 'Continue with Email',
-                description: 'We\'ll send you a verification code via email',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const EmailEntryScreen(),
-                    ),
-                  );
-                },
+              AuthProviderButton(
+                key: const Key('auth-google'),
+                leading: AuthProviderButton.googleMark(),
+                label: 'Continue with Google',
+                loading: _signingInWithGoogle,
+                onPressed: busy ? null : _continueWithGoogle,
+              ),
+
+              const SizedBox(height: 16),
+
+              AuthProviderButton(
+                key: const Key('auth-email'),
+                leading: const Icon(Icons.email_outlined, size: 20),
+                label: 'Continue with Email',
+                onPressed: busy ? null : _continueWithEmail,
               ),
 
               const Spacer(),
@@ -92,80 +121,6 @@ class AuthMethodSelectionScreen extends StatelessWidget {
               const SizedBox(height: 16),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Auth Method Card Widget
-class _AuthMethodCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String description;
-  final VoidCallback onTap;
-
-  const _AuthMethodCard({
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.card),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.border, width: 1.5),
-          borderRadius: BorderRadius.circular(AppRadius.card),
-        ),
-        child: Row(
-          children: [
-            // Icon
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primaryTint,
-                borderRadius: BorderRadius.circular(AppRadius.input),
-              ),
-              child: Icon(icon, size: 28, color: AppColors.primaryDeep),
-            ),
-
-            const SizedBox(width: 16),
-
-            // Text Content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Arrow Icon
-            const Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: AppColors.textTertiary,
-            ),
-          ],
         ),
       ),
     );
