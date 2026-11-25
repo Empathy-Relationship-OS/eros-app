@@ -4,6 +4,7 @@ import 'package:eros_app/core/auth/auth_service.dart';
 import 'package:eros_app/core/constants/languages.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/features/auth/data/repositories/marketing_preference_repository.dart';
+import 'package:eros_app/features/auth/presentation/screens/account_deleted_screen.dart';
 import 'package:eros_app/features/legal/domain/consent_required.dart';
 import 'package:eros_app/features/legal/domain/models/legal_document.dart';
 import 'package:eros_app/features/legal/presentation/legal_routes.dart';
@@ -368,6 +369,21 @@ void main() {
       expect(find.text(AgeSignalCopy.underageTitle), findsOneWidget);
       expect(find.text('Oops! Something went wrong'), findsNothing);
       expect(signOuts, 1);
+    });
+  });
+
+  group('ProfileSubmissionScreen and a deleted account (RFC-011 D-12)', () {
+    testWidgets('409 ACCOUNT_DELETED shows the deleted screen', (tester) async {
+      final api = _LoggingApi(<String>[]);
+      final repository = _FakeProfileRepository(
+        api.log,
+        error: const AccountDeletedFailure('This account was deleted'),
+      );
+
+      await _pump(tester, _draft(), api, repository: repository);
+
+      expect(find.byType(AccountDeletedScreen), findsOneWidget);
+      expect(find.text('Q&A'), findsNothing);
     });
   });
 }

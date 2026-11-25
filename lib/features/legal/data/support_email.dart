@@ -3,11 +3,14 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:eros_app/core/config/support_config.dart';
 import 'package:eros_app/features/legal/presentation/widgets/legal_copy.dart';
 
-/// What a support email from Settings is about. The ops team handles both from the support
+/// What a support email from the app is about. The ops team handles both from the support
 /// mailbox (RFC-009 §5.10, D-9).
 enum SupportRequest {
   dataRequest(PrivacySettingsCopy.dataRequestSubject),
-  complaint(PrivacySettingsCopy.complaintSubject);
+  complaint(PrivacySettingsCopy.complaintSubject),
+
+  /// From the "account deleted" screen: a deleted user asking to use Muse again (RFC-011 D-12).
+  deletedAccount(PrivacySettingsCopy.deletedAccountSubject);
 
   final String subject;
 

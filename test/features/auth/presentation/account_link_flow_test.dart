@@ -4,6 +4,7 @@ import 'package:eros_app/core/auth/sign_out_service.dart';
 import 'package:eros_app/core/theme/app_theme.dart';
 import 'package:eros_app/features/auth/data/repositories/auth_repository.dart';
 import 'package:eros_app/features/auth/domain/models/account_link.dart';
+import 'package:eros_app/features/auth/presentation/screens/account_deleted_screen.dart';
 import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
 import 'package:eros_app/features/auth/presentation/screens/auth_loading_screen.dart';
 import 'package:eros_app/features/auth/presentation/screens/auth_method_selection_screen.dart';
@@ -82,11 +83,16 @@ class _FakeAuthRepository implements AuthRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-/// A user with no profile yet, so the password screen routes to profile creation.
+/// A user with no profile yet, so the password screen routes to profile creation; or, with
+/// [deleted], a deleted account (RFC-011 D-12).
 class _FakeProfileRepository implements ProfileRepository {
+  _FakeProfileRepository({this.deleted = false});
+
+  final bool deleted;
+
   @override
   Future<UserExistsResponse> checkUserExists() async =>
-      UserExistsResponse(exists: false, userId: 'uid-123');
+      UserExistsResponse(exists: false, userId: 'uid-123', deleted: deleted);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -137,11 +143,16 @@ AuthRepository _realRepository(FirebaseAuthException error) => AuthRepository(
       profileDraft: () => throw UnimplementedError(),
     );
 
-Future<void> _pump(WidgetTester tester, AuthRepository repository, Widget home) async {
+Future<void> _pump(
+  WidgetTester tester,
+  AuthRepository repository,
+  Widget home, {
+  bool deleted = false,
+}) async {
   await tester.pumpWidget(ProviderScope(
     overrides: [
       authStateProvider.overrideWith((ref) => AuthStateNotifier(repository)),
-      profileRepositoryProvider.overrideWithValue(_FakeProfileRepository()),
+      profileRepositoryProvider.overrideWithValue(_FakeProfileRepository(deleted: deleted)),
     ],
     child: MaterialApp(
       theme: AppTheme.lightTheme,
@@ -302,6 +313,37 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('profile creation'), findsOneWidget);
     }, variant: _iOS);
+
+    testWidgets('a deleted account goes to the deleted screen and links nothing (SI-F4)',
+        (tester) async {
+      final repository = _FakeAuthRepository();
+      await _pump(
+        tester,
+        repository,
+        PasswordSignInScreen(email: _email, accountLink: _link(LinkingProvider.apple)),
+        deleted: true,
+      );
+
+      await _signIn(tester);
+      await tester.pumpAndSettle();
+
+      expect(repository.passwordSignIns, [_email]);
+      expect(repository.linked, isEmpty);
+      expect(find.byType(AccountDeletedScreen), findsOneWidget);
+      expect(find.text('profile creation'), findsNothing);
+    }, variant: _iOS);
+
+    testWidgets('a deleted account without a pending link goes to the deleted screen too',
+        (tester) async {
+      final repository = _FakeAuthRepository();
+      await _pump(tester, repository, const PasswordSignInScreen(email: _email), deleted: true);
+
+      await _signIn(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AccountDeletedScreen), findsOneWidget);
+      expect(find.text('profile creation'), findsNothing);
+    });
 
     testWidgets('an ordinary email sign-in links nothing', (tester) async {
       final repository = _FakeAuthRepository();

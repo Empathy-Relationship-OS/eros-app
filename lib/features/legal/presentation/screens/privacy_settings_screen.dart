@@ -5,13 +5,12 @@ import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/core/theme/app_theme.dart';
 import 'package:eros_app/core/widgets/app_button.dart';
-import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
-import 'package:eros_app/features/legal/data/account_repository.dart';
 import 'package:eros_app/features/legal/data/legal_repository.dart';
 import 'package:eros_app/features/legal/data/support_email.dart';
 import 'package:eros_app/features/legal/domain/models/legal_document.dart';
 import 'package:eros_app/features/legal/presentation/providers/privacy_settings_provider.dart';
 import 'package:eros_app/features/legal/presentation/widgets/legal_copy.dart';
+import 'package:eros_app/features/settings/presentation/screens/delete_account_screen.dart';
 
 /// "Privacy, safety and legal" in Settings (RFC-009 §5.11, CF-F3): the documents, the consent
 /// choices, data requests and complaints by email (D-9), and account deletion.
@@ -25,7 +24,6 @@ class PrivacySettingsScreen extends ConsumerStatefulWidget {
 class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
   /// Kinds with a change in flight, so their control shows a spinner and can't be tapped twice.
   final Set<DocumentKind> _saving = {};
-  bool _deleting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -118,8 +116,8 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
                 PrivacySettingsCopy.deleteAccountTitle,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.error),
               ),
-              trailing: _deleting ? const _SmallSpinner() : null,
-              onTap: _deleting ? null : _confirmDelete,
+              trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+              onTap: _confirmDelete,
             ),
           ],
         ),
@@ -263,33 +261,9 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
   // Delete account
   // ---------------------------------------------------------------------------------------------
 
-  Future<void> _confirmDelete() async {
-    final confirmed = await _confirm(
-      title: PrivacySettingsCopy.deleteAccountConfirmTitle,
-      body: PrivacySettingsCopy.deleteAccountConfirmBody,
-      confirmLabel: PrivacySettingsCopy.deleteAccountConfirm,
-      confirmKind: AppButtonKind.destructive,
-    );
-    if (confirmed != true || !mounted) return;
-
-    final navigator = Navigator.of(context);
-    setState(() => _deleting = true);
-    try {
-      await ref.read(accountRepositoryProvider).closeAccount();
-    } catch (_) {
-      if (mounted) setState(() => _deleting = false);
-      _snack(PrivacySettingsCopy.deleteAccountFailed);
-      return;
-    }
-
-    // The account is closed: sign out whatever happens next.
-    try {
-      await ref.read(authStateProvider.notifier).signOut();
-    } catch (_) {
-      _snack(PrivacySettingsCopy.signOutFailed);
-    }
-    navigator.pushNamedAndRemoveUntil('/welcome', (route) => false);
-  }
+  /// The Delete account screen (SI-F4), the app's one deletion flow: it checks for active dates,
+  /// revokes Sign in with Apple and confirms (RFC-011 §5.6, D-11).
+  Future<void> _confirmDelete() => DeleteAccountScreen.open(context);
 
   // ---------------------------------------------------------------------------------------------
   // Helpers

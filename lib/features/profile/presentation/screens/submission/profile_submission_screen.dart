@@ -3,6 +3,8 @@ import 'package:eros_app/core/theme/app_radius.dart';
 import 'package:eros_app/core/widgets/app_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
+import 'package:eros_app/core/network/exceptions/api_exception.dart';
+import 'package:eros_app/features/auth/presentation/screens/account_deleted_screen.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/features/profile/domain/models/create_user_request.dart';
 import 'package:eros_app/features/profile/domain/models/displayable_field.dart';
@@ -216,6 +218,9 @@ class _ProfileSubmissionScreenState
         _isSubmitting = false;
         _errorMessage = LegalCopy.updateToSignUp;
       });
+    } on AccountDeletedFailure {
+      // 409 `ACCOUNT_DELETED`: this uid's account was deleted (RFC-011 D-12).
+      if (mounted) AccountDeletedScreen.show(context);
     } on UnderageSignUpException {
       // The backend's 403 `UNDERAGE` (RFC-009 CF-B12): nothing was created.
       if (mounted) UnderageScreen.show(context);

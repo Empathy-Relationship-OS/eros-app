@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:eros_app/core/theme/app_colors.dart';
 import 'package:eros_app/core/widgets/auth_error_boundary.dart';
 import 'package:eros_app/features/auth/presentation/providers/auth_state_provider.dart';
+import 'package:eros_app/features/auth/presentation/screens/account_deleted_screen.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 import 'package:eros_app/core/network/exceptions/api_exception.dart';
 import 'package:eros_app/core/auth/auth_service.dart';
@@ -94,6 +95,13 @@ class _AuthLoadingScreenState extends ConsumerState<AuthLoadingScreen> {
       _logger.i('👤 Checking backend profile...');
       final profileRepository = ref.read(profileRepositoryProvider);
       final userExistsResponse = await profileRepository.checkUserExists();
+
+      if (userExistsResponse.deleted) {
+        // This account was deleted: no profile creation, and no restore (RFC-011 D-12)
+        _logger.i('🗑️  Account deleted - showing the deleted screen');
+        if (mounted) AccountDeletedScreen.show(context);
+        return;
+      }
 
       if (userExistsResponse.exists) {
         // User has completed profile - navigate to home/match screen

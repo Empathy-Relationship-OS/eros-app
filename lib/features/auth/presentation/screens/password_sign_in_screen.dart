@@ -7,6 +7,7 @@ import '../../data/repositories/auth_repository.dart';
 import '../../domain/models/account_link.dart';
 import '../widgets/account_link_banner.dart';
 import 'package:eros_app/core/widgets/fill_or_scroll.dart';
+import 'account_deleted_screen.dart';
 import 'package:eros_app/features/profile/data/repositories/profile_repository.dart';
 import '../../../profile/domain/models/public_profile.dart';
 
@@ -61,7 +62,14 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
 
       if (success) {
         final accountLink = widget.accountLink;
-        if (accountLink != null) await _addPendingSignIn(accountLink);
+        if (accountLink != null) {
+          // A deleted account gets the deleted screen and no new sign-in (RFC-011 D-12).
+          if (await _isDeletedAccount()) {
+            if (mounted) AccountDeletedScreen.show(context);
+            return;
+          }
+          await _addPendingSignIn(accountLink);
+        }
         if (!mounted) return;
 
         // Fetch user profile from backend to check completion status
@@ -92,6 +100,17 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  /// Whether the signed-in account was deleted (RFC-011 D-12), asked before adding a pending
+  /// sign-in to it. A failed check counts as not deleted: the profile check that follows asks
+  /// again and handles the error.
+  Future<bool> _isDeletedAccount() async {
+    try {
+      return (await ref.read(profileRepositoryProvider).checkUserExists()).deleted;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -131,6 +150,12 @@ class _PasswordSignInScreenState extends ConsumerState<PasswordSignInScreen> {
         print('⚠️  WARNING: Backend userId (${userExistsResponse.userId}) does not match Firebase UID ($currentUserId)');
         // ignore: avoid_print
         print('⚠️  This may indicate stale backend data. Using Firebase UID as source of truth.');
+      }
+
+      if (userExistsResponse.deleted) {
+        // This account was deleted: no profile creation, and no restore (RFC-011 D-12)
+        AccountDeletedScreen.show(context);
+        return;
       }
 
       if (!userExistsResponse.exists) {

@@ -93,6 +93,9 @@ class PrivacySettingsCopy {
   /// The subject of the "Make a complaint" email.
   static const String complaintSubject = 'Complaint';
 
+  /// The subject of the email from the "account deleted" screen (RFC-011 D-12).
+  static const String deletedAccountSubject = 'Deleted account';
+
   /// The whole body of a support email: the account id and nothing else personal.
   static String supportEmailBody(String accountId) => 'Account id: $accountId\n\n';
 

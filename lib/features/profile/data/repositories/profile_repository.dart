@@ -55,6 +55,10 @@ class ProfileRepository {
       _logger.i('🔄 Forcing token refresh to get updated role claims...');
       await _authService.getIdToken(forceRefresh: true);
       _logger.i('✅ Token refreshed successfully');
+    } on AccountDeletedFailure {
+      // This uid's account was deleted (RFC-011 D-12): the screen shows AccountDeletedScreen.
+      _logger.w('⚠️  Account was deleted');
+      rethrow;
     } on ConflictException {
       _logger.w('⚠️  User profile already exists');
       throw ProfileRepositoryException(
@@ -366,15 +370,22 @@ class UserExistsResponse {
   final bool exists;
   final String userId;
 
+  /// True when this uid's account was deleted (`exists` is then false): the app shows
+  /// `AccountDeletedScreen` instead of profile creation (RFC-011 §5.6, D-12). False from a
+  /// backend without SI-B2, which doesn't send it.
+  final bool deleted;
+
   UserExistsResponse({
     required this.exists,
     required this.userId,
+    this.deleted = false,
   });
 
   factory UserExistsResponse.fromJson(Map<String, dynamic> json) {
     return UserExistsResponse(
       exists: json['exists'] as bool,
       userId: json['userId'] as String,
+      deleted: json['deleted'] as bool? ?? false,
     );
   }
 
@@ -382,6 +393,7 @@ class UserExistsResponse {
     return {
       'exists': exists,
       'userId': userId,
+      'deleted': deleted,
     };
   }
 }
