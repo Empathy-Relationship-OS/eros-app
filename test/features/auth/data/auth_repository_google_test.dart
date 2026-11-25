@@ -207,7 +207,8 @@ void main() {
       expect(result!.errorMessage, googleUnavailableMessage);
     });
 
-    test('an existing account with another sign-in method gets the generic message', () async {
+    test('an existing account with another sign-in method asks for its password (SI-F3)',
+        () async {
       firebaseAuth.error = FirebaseAuthException(
         code: 'account-exists-with-different-credential',
         email: 'ada@example.com',
@@ -215,8 +216,11 @@ void main() {
 
       final result = await repository.signInWithGoogle();
 
-      // Never says how the email signs in (RFC-011 D-10). SI-F3 adds the linking flow.
-      expect(result!.errorMessage, googleFailedMessage);
+      // No message: the password screen follows, and never says how the email signs in (D-10).
+      // auth_repository_account_link_test.dart covers the rest.
+      expect(result!.needsLink, isTrue);
+      expect(result.errorMessage, isNull);
+      expect(result.pendingLink!.email, 'ada@example.com');
     });
 
     test('a Firebase failure signs out of Google so the next try shows the account picker',
